@@ -1,6 +1,6 @@
 ---
 name: pilot
-description: 1인 개발 프로젝트의 전체 진행을 관리한다. 새 프로젝트 시작, "다음에 뭐 해?", "지금 어디까지 했지?", 단계 전환, 새 기능 추가 사이클 시작 요청 시 사용. PROJECT.md 를 읽고 현재 단계·세부 단계에 맞는 하위 스킬(idea/spec/design/build/guard/launch/operate/grow)로 안내한다.
+description: 1인 개발 프로젝트의 전체 진행을 관리한다. 새 프로젝트 시작, "다음에 뭐 해?", "지금 어디까지 했지?", 단계 전환, 새 기능 추가 사이클 시작 요청 시 사용. PROJECT.md 를 읽고 현재 단계·세부 단계에 맞는 하위 스킬(idea/spec/design/build/guard/launch/operate/grow, 출시 후 정기 점검은 checkup)로 안내한다.
 ---
 
 # Pilot — 오케스트레이터
@@ -44,7 +44,8 @@ description: 1인 개발 프로젝트의 전체 진행을 관리한다. 새 프�
 
 - 게이트 조건이 안 채워지면 다음 단계로 넘어가지 않는다. 남은 세부 단계를 보여 준다.
 - **operate 는 launch 와 동시에 시작한다**(출시 당일 장애 대응이 가능해야 하므로 O1~O3 는 출시 전에 끝낸다).
-- guard 는 4단계 외에도 **배포·출시 직전마다** 다시 돈다.
+- guard 는 5단계 외에도 **배포·출시 직전마다** 다시 돈다.
+- 출시 후에는 **정기 점검 보고서**(`docs/ops/reports/`, `ops-report`·`ops-alert` 이슈)도 다음 할 일의 입력이다. "다음에 뭐 해?"라고 하면 최근 보고서의 FAIL·TODO 부터 확인한다. 자동화 설치는 `/atelier:checkup setup`.
 
 ## 5. 출시 후: 기능 사이클
 출시 뒤 새 기능·큰 변경은 같은 흐름을 **작게** 반복한다.

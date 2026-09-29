@@ -1,0 +1,33 @@
+# Atelier 주간 AI 점검 — 지난 한 주를 요약하고 할 일을 뽑아 `ops-report` 이슈로 남긴다.
+# Anthropic API 사용료가 든다. Secrets 에 ANTHROPIC_API_KEY (또는 CLAUDE_CODE_OAUTH_TOKEN) 필요.
+# 플러그인 저장소가 비공개면 CI 에서 설치할 수 없다 — 공개로 두거나 이 워크플로를 쓰지 않는다.
+name: Weekly AI checkup
+on:
+  schedule:
+    - cron: "43 0 * * 1"   # 매주 월요일 00:43 UTC (한국 09:43)
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+  actions: read
+jobs:
+  checkup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 200
+      - uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEALTH_URLS: ${{ vars.HEALTH_URLS }}
+          TLS_HOSTS: ${{ vars.TLS_HOSTS }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ github.token }}
+          plugin_marketplaces: https://github.com/Mode1221/Atelier.git
+          plugins: atelier@atelier
+          prompt: "/atelier:checkup weekly --ci"
+          claude_args: >-
+            --max-turns 40
+            --allowedTools "Read,Glob,Grep,Write,Bash(./scripts/ops-check.sh:*),Bash(git log:*),Bash(gh issue:*),Bash(gh run list:*),Bash(gh pr list:*),Bash(gh release list:*),Bash(gh label create:*)"

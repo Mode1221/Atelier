@@ -33,6 +33,10 @@ description: 운영 단계. 업타임·에러·비용 모니터링과 알림, �
 ### O7. 릴리스 관리
 `references/release-management.md`. 버전 규칙, 변경 기록, 단계적 출시, 앱 강제 업데이트, 공지.
 
+### O8. 정기 점검 자동화
+`/atelier:checkup setup` 으로 설치한다: 매일 결정적 검사(헬스체크·TLS·만료일·의존성·백업, GitHub Actions, 비용 0) + 매주 AI 점검(요약·할 일, 선택).
+실패하면 이슈가 열리고 휴대폰으로 알림이 온다. 아래 정기 점검 루틴의 자동화 가능한 부분을 대신한다.
+
 ## 정기 점검 루틴
 | 주기 | 할 일 |
 |---|---|
@@ -41,10 +45,11 @@ description: 운영 단계. 업타임·에러·비용 모니터링과 알림, �
 | 매월 | 비용 점검, 백업 복구 확인, 의존성 업데이트, 도메인·인증서·키 만료일 |
 | 분기 | 복구 실습, 런북 갱신, 스토어·법 정책 변경 확인, 불필요한 데이터 파기 |
 
-`/loop` 나 예약 작업으로 점검 보고서를 자동화할 수 있다 (읽기만 하는 점검에 한정).
+자동화: `/atelier:checkup setup` (O8). 수동 실행: `/atelier:checkup weekly` 등.
 
 ## 산출물
 - `docs/runbook.md` (장애 대응), `docs/operations.md` (알림 목록·백업·비용·점검 루틴), `CHANGELOG.md`
+- `scripts/ops-check.sh`, `.github/workflows/ops-checks.yml` (+ `ai-checkup.yml`), `docs/ops/expiry.txt`
 - 장애 발생 시 `docs/incidents/YYYY-MM-DD-<요약>.md` (사후 분석)
 
 ## 완료 조건 (가동 기준)
@@ -54,3 +59,4 @@ description: 운영 단계. 업타임·에러·비용 모니터링과 알림, �
 - [ ] 문의 창구·FAQ·신고 처리 절차
 - [ ] 비용 알림·월 점검 일정
 - [ ] 버전 규칙·CHANGELOG·(앱) 강제 업데이트 수단
+- [ ] 정기 점검 자동화 설치, 수동 실행 1회로 알림 수신 확인
