@@ -74,10 +74,28 @@ jobs:
           npx wrangler deploy | tee deploy.log
           url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)
           echo "url=$url" >> "$GITHUB_OUTPUT"
-      - name: 확인
+      - name: 운영 확인 (스모크)
         if: steps.pre.outputs.go == 'true'
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
         run: |
-          url="${{ steps.deploy.outputs.url }}"
-          for i in 1 2 3 4 5 6; do curl -fsS "$url/health" && break; sleep 5; done
-          curl -fsS "$url/" | grep -q "벌금장부"
-          echo "### 벌금장부 주소: $url" >> "$GITHUB_STEP_SUMMARY"
+          set -euo pipefail
+          # 새 버전이 전 세계에 퍼지는 데 잠시 걸린다 — 최대 2분 재시도
+          ok=""
+          for i in $(seq 1 24); do
+            if curl -fsS "$URL/health" | grep -q '"ok":true' && curl -fsS "$URL/" | grep -q '벌금장부' && curl -fsS -o /dev/null "$URL/static/app.css"; then ok=1; break; fi
+            sleep 5
+          done
+          [ -n "$ok" ] || { echo "::error::배포 후 2분 안에 정상 응답이 오지 않았어요"; curl -sS -i "$URL/" | head -20; exit 1; }
+          # 핵심 흐름 1회: 모임 만들기 → 멤버 → 회차 → 조회 → 삭제 (테스트 데이터는 바로 지운다)
+          g=$(curl -fsS -X POST "$URL/api/groups" -H 'content-type: application/json' -d '{"name":"[배포 확인] 자동 점검","fine_late":1000,"fine_absent":3000,"fine_homework":2000}')
+          id=$(echo "$g" | jq -r .id); key=$(echo "$g" | jq -r .adminKey)
+          echo "::add-mask::$key"
+          m=$(curl -fsS -X POST "$URL/api/groups/$id/members" -H 'content-type: application/json' -H "x-admin-key: $key" -d '{"name":"점검"}' | jq -r .id)
+          curl -fsS -X POST "$URL/api/groups/$id/sessions" -H 'content-type: application/json' -H "x-admin-key: $key" -d "{\"date\":\"2026-01-01\",\"entries\":[{\"member_id\":$m,\"status\":\"late\"}]}" >/dev/null
+          curl -fsS "$URL/g/$id" | grep -q '1,000'
+          curl -fsS -X DELETE "$URL/api/groups/$id" -H "x-admin-key: $key"
+          [ "$(curl -s -o /dev/null -w '%{http_code}' "$URL/g/$id")" = 404 ]
+          echo "핵심 흐름 확인 완료"
+          echo "### 벌금장부 주소: $URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "배포 확인: 상태·첫 화면·정적 파일·모임 생성→기록→조회→삭제 모두 정상" >> "$GITHUB_STEP_SUMMARY"
