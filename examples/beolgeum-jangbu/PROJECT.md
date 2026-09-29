@@ -17,7 +17,7 @@
 ## 현재 단계
 - 단계: 4 구현 게이트 **보류** (reviewer) → 6 출시 L5 도 No-Go. 둘 다 사람 대기
 - 다음 할 일: 아래 '사람 할 일' 완료 → L5 재판정 → 출시
-- 막힌 것: Cloudflare 시크릿 2개 (배포), 사용성 테스트
+- 막힌 것: 사용성 테스트 (Cloudflare 시크릿 등록 완료 → 첫 배포 진행)
 
 ## 사람 할 일 (출시 전)
 - [x] GitHub 저장소 — Atelier 저장소 `examples/beolgeum-jangbu` 에서 운영
