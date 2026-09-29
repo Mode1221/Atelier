@@ -4,7 +4,7 @@
 name: Beolgeum share
 on:
   schedule:
-    - cron: "23 23-13 * * *"   # 08:23~22:23 KST 매시 — 키를 등록하면 1시간 안에 올라간다
+    - cron: "23 0-13,23 * * *"   # 08:23~22:23 KST 매시 — 키를 등록하면 1시간 안에 올라간다
   push:
     branches: [main]
     paths: ["examples/beolgeum-jangbu/docs/share/posts.json", "skills/share/scripts/**", ".github/workflows/beolgeum-share.yml"]
@@ -16,7 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { sparse-checkout: "skills/share/scripts\nexamples/beolgeum-jangbu/docs/share" }
+        with:
+          sparse-checkout: |
+            skills/share/scripts
+            examples/beolgeum-jangbu/docs/share
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - env:
