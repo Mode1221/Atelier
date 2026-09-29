@@ -1,6 +1,6 @@
 ---
 name: company
-description: AI 회사 운영. 부서(대표실·기획·디자인·개발·QA·보안법무·마케팅·고객지원·운영·데이터재무)가 GitHub Issues 업무 보드와 예약 실행으로 스스로 일하고, 사람은 대표로서 결재만 한다. "/atelier:company setup" 으로 회사를 세우고, "/atelier:company run <부서>" 로 부서 하루 업무를 실행한다. 대시보드는 Atelier HQ.
+description: AI 회사 운영. 부서(대표실·기획·디자인·개발·QA·보안법무·마케팅·고객지원·운영·데이터재무)가 GitHub Issues 업무 보드와 예약 실행으로 스스로 일하고, 사람은 대표로서 결재만 한다. "/atelier:company setup" 으로 회사를 세우고, "/atelier:company run <부서>" 로 부서 하루 업무를 실행한다. 대시보드는 Atelier HQ (서버 없음, 브라우저에서 동작).
 ---
 
 # Company — AI 회사
@@ -16,11 +16,11 @@ description: AI 회사 운영. 부서(대표실·기획·디자인·개발·QA·
 **Atelier HQ 대시보드의 "회사 세우기" 버튼이 같은 일을 자동으로 한다.** 대시보드가 없을 때만 이 절차를 쓴다.
 1. 라벨 만들기: `references/board.md` 의 라벨 전부 (`gh label create ... --force`).
 2. `templates/company.yml` → `.github/workflows/atelier-company.yml` 복사.
-3. 사람 할 일 안내:
-   - 저장소 Secrets: `ANTHROPIC_API_KEY`, (대시보드를 쓰면) `ATELIER_HQ_TOKEN`
-   - 저장소 Variables: (대시보드를 쓰면) `ATELIER_HQ_URL`
+3. 데이터 브랜치 `atelier-data` 를 만들고 `hq.json`(회사 이름·부서별 예산·쉬는 부서)을 둔다. 실행 기록은 워크플로가 `runs/YYYY-MM/<부서>__<실행ID>__<비용>__<결과>.json` 으로 쌓는다.
+4. 사람 할 일 안내:
+   - 저장소 Secrets: `ANTHROPIC_API_KEY`
    - Actions 권한: Settings → Actions → General → Workflow permissions → Read and write
-4. 대표실을 한 번 실행해 첫 브리핑을 만든다: Actions → Atelier company → Run workflow → `ceo`.
+5. 대표실을 한 번 실행해 첫 브리핑을 만든다: Actions → Atelier company → Run workflow → `ceo`.
 
 ## B. `run <부서>` — 부서 하루 업무
 1. `references/departments/<부서>.md` 를 읽고 그 **루틴**을 따른다. 참고 스킬이 있으면 그 스킬의 절차·체크리스트를 쓴다.

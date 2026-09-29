@@ -1,0 +1,6 @@
+# Atelier HQ — 정적 파일만 (서버 코드 없음). Cloudflare Workers 정적 자산 무료 등급.
+name = "atelier-hq"
+compatibility_date = "2026-09-01"
+
+[assets]
+directory = "./public"

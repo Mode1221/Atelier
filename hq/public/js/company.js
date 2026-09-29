@@ -1,4 +1,4 @@
-// 회사 도메인: 부서, 업무 보드, 결재, 대표 할 일, 종합 상태, 회사 세우기.
+// 회사 도메인: 부서, 업무 보드, 결재, 대표 할 일, 종합 상태 (브라우저·Node 공용). 회사 세우기는 hqdata.js.
 export const DEPTS = [
   { id: 'ceo', name: '대표실', role: '하루 계획과 주간 보고', when: '매일 아침 8시' },
   { id: 'plan', name: '기획', role: '무엇을 만들지 정하고 명세', when: '월·수 (할 일 있을 때)' },
@@ -138,27 +138,4 @@ export function overallStatus({ serviceSummaries = [], approvals = [], alerts = 
   }
   const headline = { good: '모두 순조로워요', warning: '확인할 일이 있어요', critical: '지금 문제가 있어요' }[level];
   return { level, headline, reasons };
-}
-
-// 회사 세우기: 라벨, 워크플로, 저장소 변수·비밀값
-export async function bootstrap({ gh, workflowYaml, hqUrl, hqToken, anthropicKey }) {
-  const steps = [];
-  for (const [name, color, desc] of LABELS) await gh.ensureLabel(name, color, desc);
-  steps.push(`라벨 ${LABELS.length}개 준비`);
-  const path = `.github/workflows/${WORKFLOW_FILE}`;
-  const cur = await gh.file(path);
-  if (!cur || cur.text !== workflowYaml) {
-    await gh.putFile(path, workflowYaml, cur ? 'chore: Atelier 회사 워크플로 갱신' : 'chore: Atelier 회사 워크플로 추가', cur?.sha);
-    steps.push(cur ? '부서 실행 일정 갱신' : '부서 실행 일정 등록');
-  } else steps.push('부서 실행 일정은 이미 최신');
-  if (hqUrl) {
-    await gh.setVariable('ATELIER_HQ_URL', hqUrl);
-    await gh.setSecret('ATELIER_HQ_TOKEN', hqToken);
-    steps.push('대시보드 연결 정보 등록');
-  }
-  if (anthropicKey) {
-    await gh.setSecret('ANTHROPIC_API_KEY', anthropicKey);
-    steps.push('AI 키 등록 (암호화)');
-  } else steps.push('AI 키 없음 — 연결 화면에서 Claude 를 먼저 연결해 주세요');
-  return steps;
 }

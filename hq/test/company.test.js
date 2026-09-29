@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseApproval, parseHumanTasks, markHumanTaskDone, currentStage, overallStatus, buildBoard, columnOf } from '../src/company.js';
-import { encrypt, decrypt, hashPassword, verifyPassword, loadKey } from '../src/crypto.js';
+import { parseApproval, parseHumanTasks, markHumanTaskDone, currentStage, overallStatus, buildBoard, columnOf } from '../public/js/company.js';
 
 describe('결재 요청 파싱', () => {
   it('board.md 형식을 읽는다', () => {
@@ -43,17 +42,3 @@ describe('보드·상태', () => {
   });
 });
 
-describe('암호화', () => {
-  it('비밀값 왕복, 다른 키로는 실패', () => {
-    const k = loadKey({ envValue: Buffer.alloc(32, 7).toString('base64') });
-    const e = encrypt(k, { token: 'abc' });
-    expect(JSON.stringify(e)).not.toContain('abc');
-    expect(decrypt(k, e)).toEqual({ token: 'abc' });
-    expect(() => decrypt(Buffer.alloc(32, 8), e)).toThrow();
-  });
-  it('비밀번호 해시', () => {
-    const { salt, hash } = hashPassword('correct horse');
-    expect(verifyPassword('correct horse', salt, hash)).toBe(true);
-    expect(verifyPassword('wrong', salt, hash)).toBe(false);
-  });
-});

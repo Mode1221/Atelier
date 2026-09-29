@@ -1,5 +1,5 @@
-# Atelier HQ 를 Fly.io 에 배포한다. 필요한 것: 저장소 Secrets 에 FLY_API_TOKEN, HQ_SETUP_CODE
-# 앱·디스크·암호화 키가 없으면 처음 한 번 자동으로 만든다. HQ 테스트(CI)가 main 에서 통과하면 자동 배포.
+# Atelier HQ (서버 없는 대시보드)를 Cloudflare 무료 정적 호스팅에 배포한다.
+# 필요한 것: 저장소 Secrets CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID (없으면 건너뜀). HQ 테스트가 main 에서 통과하면 자동 배포.
 name: HQ deploy
 on:
   workflow_run:
@@ -13,52 +13,44 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     env:
-      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-      SETUP_CODE: ${{ secrets.HQ_SETUP_CODE }}
-      REGION: ${{ vars.HQ_REGION || 'nrt' }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      WRANGLER_SEND_METRICS: "false"
+    defaults:
+      run:
+        working-directory: hq
     steps:
       - name: 준비 확인
         id: pre
+        working-directory: .
         run: |
-          if [ -z "$FLY_API_TOKEN" ] || [ -z "$SETUP_CODE" ]; then
-            echo "::warning::FLY_API_TOKEN 또는 HQ_SETUP_CODE 시크릿이 없어 배포를 건너뜁니다."
-            echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
-          fi
-          app="${{ vars.HQ_APP }}"
-          [ -z "$app" ] && app="atelier-hq-$(echo '${{ github.repository_owner }}' | tr 'A-Z' 'a-z')"
-          echo "app=$app" >> "$GITHUB_OUTPUT"
-          echo "go=true" >> "$GITHUB_OUTPUT"
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::warning::Cloudflare 시크릿이 없어 배포를 건너뜁니다."; echo "go=false" >> "$GITHUB_OUTPUT"
+          else echo "go=true" >> "$GITHUB_OUTPUT"; fi
       - if: steps.pre.outputs.go == 'true'
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - if: steps.pre.outputs.go == 'true'
-        uses: superfly/flyctl-actions/setup-flyctl@master
-      - name: 앱·디스크·키 (없으면 만들기)
-        if: steps.pre.outputs.go == 'true'
-        env:
-          APP: ${{ steps.pre.outputs.app }}
-        run: |
-          if ! flyctl status -a "$APP" >/dev/null 2>&1; then
-            flyctl apps create "$APP" --org personal
-          fi
-          if [ "$(flyctl volumes list -a "$APP" --json | jq 'length')" = 0 ]; then
-            flyctl volumes create hqdata --size 1 --region "$REGION" -a "$APP" --yes
-          fi
-          names=$(flyctl secrets list -a "$APP" --json | jq -r '.[] | (.Name // .name)')
-          if ! echo "$names" | grep -qx HQ_SECRET; then
-            flyctl secrets set HQ_SECRET="$(openssl rand -base64 32)" -a "$APP" --stage >/dev/null
-          fi
-          flyctl secrets set HQ_SETUP_CODE="$SETUP_CODE" -a "$APP" --stage >/dev/null
+        uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: hq/package-lock.json }
+      - if: steps.pre.outputs.go == 'true'
+        run: npm ci
       - name: 배포
+        id: deploy
         if: steps.pre.outputs.go == 'true'
-        working-directory: hq
-        run: flyctl deploy --app "${{ steps.pre.outputs.app }}" --remote-only --ha=false --primary-region "$REGION"
+        run: |
+          npx wrangler deploy | tee deploy.log
+          echo "url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)" >> "$GITHUB_OUTPUT"
       - name: 확인
         if: steps.pre.outputs.go == 'true'
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
         run: |
-          url="https://${{ steps.pre.outputs.app }}.fly.dev"
-          for i in 1 2 3 4 5 6; do curl -fsS "$url/health" && break; sleep 10; done
-          curl -fsS "$url/health"
-          echo "### 본부 주소: $url" >> "$GITHUB_STEP_SUMMARY"
-          echo "처음 접속하면 설정 코드(HQ_SETUP_CODE)를 넣고 회사를 만들어요." >> "$GITHUB_STEP_SUMMARY"
+          set -euo pipefail
+          for i in $(seq 1 24); do
+            if curl -fsS "$URL/" | grep -q 'Atelier HQ' && curl -fsS "$URL/js/main.js" | grep -q 'githubClient' && curl -fsS -I "$URL/" | grep -qi 'content-security-policy'; then ok=1; break; fi
+            sleep 5
+          done
+          [ -n "${ok:-}" ] || { echo "::error::배포 후 2분 안에 정상 응답이 없어요"; exit 1; }
+          echo "### Atelier HQ 주소: $URL" >> "$GITHUB_STEP_SUMMARY"

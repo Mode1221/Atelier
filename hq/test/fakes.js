@@ -12,6 +12,7 @@ export async function makeFakeWorld({ projectMd = null } = {}) {
     comments: {},
     labels: new Set(),
     files: {},
+    branches: {},
     variables: {},
     secrets: {},
     dispatches: [],
@@ -57,7 +58,7 @@ export async function makeFakeWorld({ projectMd = null } = {}) {
     if (host !== 'api.github.com') return json(404, {});
     if (auth !== `Bearer ${GOOD}`) return json(401, { message: 'Bad credentials' });
     let m;
-    if ((m = p.match(/^\/repos\/([^/]+)\/([^/]+)$/))) return json(200, { full_name: `${m[1]}/${m[2]}`, default_branch: 'main' });
+    if ((m = p.match(/^\/repos\/([^/]+)\/([^/]+)$/))) return json(200, { full_name: `${m[1]}/${m[2]}`, default_branch: 'main', permissions: { push: true } });
     const rest = p.replace(/^\/repos\/[^/]+\/[^/]+/, '');
     if (rest === '/issues' && method === 'GET') {
       const state = u.searchParams.get('state');
@@ -88,7 +89,7 @@ export async function makeFakeWorld({ projectMd = null } = {}) {
       return json(200, i.labels);
     }
     if (rest === '/pulls') return json(200, []);
-    if ((m = rest.match(/^\/actions\/workflows\/([^/]+)\/runs$/))) return s.files[`.github/workflows/${decodeURIComponent(m[1])}`] ? json(200, { workflow_runs: [] }) : json(404, {});
+    if ((m = rest.match(/^\/actions\/workflows\/([^/]+)\/runs/))) return s.files[`.github/workflows/${decodeURIComponent(m[1])}`] ? json(200, { workflow_runs: [] }) : json(404, {});
     if ((m = rest.match(/^\/actions\/workflows\/([^/]+)\/dispatches$/))) {
       if (!s.files[`.github/workflows/${decodeURIComponent(m[1])}`]) return json(404, {});
       s.dispatches.push(body);
@@ -96,16 +97,42 @@ export async function makeFakeWorld({ projectMd = null } = {}) {
     }
     if ((m = rest.match(/^\/contents\/(.+)$/))) {
       const path = decodeURIComponent(m[1]);
+      const ref = method === 'GET' ? u.searchParams.get('ref') : body?.branch;
+      const store = ref && ref !== 'main' ? s.branches[ref] : s.files;
+      if (!store) return json(404, {});
       if (method === 'GET') {
-        const f = s.files[path];
+        const f = store[path];
         return f ? json(200, { sha: f.sha, content: Buffer.from(f.text).toString('base64') }) : json(404, {});
       }
       if (method === 'PUT') {
-        const f = s.files[path];
+        const f = store[path];
         if (f && body.sha !== f.sha) return json(409, { message: 'sha mismatch' });
-        s.files[path] = { text: Buffer.from(body.content, 'base64').toString('utf8'), sha: `sha${s.nextId++}` };
+        store[path] = { text: Buffer.from(body.content, 'base64').toString('utf8'), sha: `sha${s.nextId++}` };
         return json(f ? 200 : 201, {});
       }
+    }
+    // git 데이터 API (데이터 브랜치)
+    if ((m = rest.match(/^\/git\/trees\/([^/?]+)$/)) && method === 'GET') {
+      const b = s.branches[decodeURIComponent(m[1])];
+      return b ? json(200, { tree: Object.keys(b).map((path) => ({ path, type: 'blob' })) }) : json(404, {});
+    }
+    if (rest === '/git/trees' && method === 'POST') {
+      const id = `tree${s.nextId++}`;
+      s.pendingTrees ??= {};
+      s.pendingTrees[id] = Object.fromEntries(body.tree.map((t) => [t.path, { text: t.content, sha: `sha${s.nextId++}` }]));
+      return json(201, { sha: id });
+    }
+    if (rest === '/git/commits' && method === 'POST') return json(201, { sha: body.tree });
+    if (rest === '/git/refs' && method === 'POST') {
+      const name = body.ref.replace('refs/heads/', '');
+      if (s.branches[name]) return json(422, {});
+      s.branches[name] = s.pendingTrees[body.sha];
+      return json(201, {});
+    }
+    if (rest.startsWith('/actions/secrets') && method === 'GET' && !rest.endsWith('public-key')) return json(200, { secrets: Object.keys(s.secrets).map((name) => ({ name })) });
+    if ((m = rest.match(/^\/actions\/secrets\/(.+)$/)) && method === 'DELETE') {
+      delete s.secrets[m[1]];
+      return json(204, null);
     }
     if (rest === '/labels' && method === 'POST') {
       if (s.labels.has(body.name)) return json(422, {});
@@ -153,5 +180,5 @@ export async function makeFakeWorld({ projectMd = null } = {}) {
     return new Promise((ok) => srv.listen(port, '127.0.0.1', () => ok(srv)));
   }
 
-  return { state: s, addIssue, fetch: fetchImpl, listen };
+  return { state: s, addIssue, fetch: fetchImpl, listen, handle };
 }

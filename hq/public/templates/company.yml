@@ -1,6 +1,6 @@
 # Atelier AI 회사 — 부서별 예약 실행
 # 대표(사람)는 결재만. 부서는 GitHub Issues 로 일을 주고받는다.
-# 필요: Secrets ANTHROPIC_API_KEY (+ 대시보드 사용 시 ATELIER_HQ_TOKEN), Variables ATELIER_HQ_URL (선택)
+# 필요: Secrets ANTHROPIC_API_KEY. 예산·실행 기록은 데이터 브랜치(atelier-data) — Atelier HQ "회사 세우기"가 만든다
 name: Atelier company
 on:
   schedule:
@@ -71,8 +71,7 @@ jobs:
     env:
       DEPT: ${{ needs.route.outputs.dept }}
       GH_TOKEN: ${{ github.token }}
-      HQ_URL: ${{ vars.ATELIER_HQ_URL }}
-      HQ_TOKEN: ${{ secrets.ATELIER_HQ_TOKEN }}
+      REPO: ${{ github.repository }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 50 }
@@ -86,10 +85,15 @@ jobs:
               [ "$DEPT" = dev ] && n=$((n + $(gh issue list --label approved --label dept:dev --json number -q 'length')))
               if [ "$n" = 0 ] && [ "${{ github.event_name }}" = schedule ]; then echo "go=false" >> "$GITHUB_OUTPUT"; echo "할 일 없음 — 건너뜀"; exit 0; fi ;;
           esac
-          if [ -n "$HQ_URL" ] && [ -n "$HQ_TOKEN" ]; then
-            b=$(curl -fsS -H "Authorization: Bearer $HQ_TOKEN" "$HQ_URL/api/budget/$DEPT" || echo '{"allowed":true}')
-            if [ "$(echo "$b" | jq -r .allowed)" != true ]; then echo "go=false" >> "$GITHUB_OUTPUT"; echo "이번 달 예산 초과 — 건너뜀: $b"; exit 0; fi
-          fi
+          # 예산: 데이터 브랜치(atelier-data)의 hq.json 과 이번 달 실행 기록(runs/YYYY-MM/부서__실행ID__비용__결과.json)
+          month=$(date -u +%Y-%m)
+          cfg=$(gh api "repos/$REPO/contents/hq.json?ref=atelier-data" --jq .content 2>/dev/null | base64 -d 2>/dev/null || echo '{}')
+          budget=$(echo "$cfg" | jq -r --arg d "$DEPT" '.budgets[$d] // 10')
+          paused=$(echo "$cfg" | jq -r --arg d "$DEPT" '(.paused // []) | index($d) != null')
+          spent=$(gh api "repos/$REPO/git/trees/atelier-data?recursive=1" 2>/dev/null \
+            | jq --arg p "runs/$month/${DEPT}__" '[.tree[]?.path | select(startswith($p)) | split("__")[2] | tonumber] | add // 0' 2>/dev/null || echo 0)
+          echo "이번 달 $DEPT: \$$spent / 예산 \$$budget (쉬는 중: $paused)"
+          if [ "$paused" = true ] || [ "$(echo "$spent >= $budget" | bc -l)" = 1 ]; then echo "go=false" >> "$GITHUB_OUTPUT"; echo "예산 초과 또는 쉬는 중 — 건너뜀"; exit 0; fi
           echo "go=true" >> "$GITHUB_OUTPUT"
       - name: 부서 업무
         id: claude
@@ -104,14 +108,16 @@ jobs:
           claude_args: >-
             --max-turns 60
             --allowedTools "Read,Glob,Grep,Edit,Write,Bash(gh:*),Bash(git:*),Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(./scripts/*),WebSearch,WebFetch"
-      - name: 대시보드에 실행 기록
-        if: always() && steps.gate.outputs.go == 'true' && env.HQ_URL != ''
+      - name: 실행 기록 (데이터 브랜치)
+        if: always() && steps.gate.outputs.go == 'true'
         env:
           EXEC: ${{ steps.claude.outputs.execution_file }}
           OUTCOME: ${{ steps.claude.outcome }}
         run: |
           cost=0
           [ -n "$EXEC" ] && [ -f "$EXEC" ] && cost=$(jq '[.[] | select(.type=="result") | .total_cost_usd // 0] | add // 0' "$EXEC" 2>/dev/null || echo 0)
-          url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          curl -fsS -X POST -H "Authorization: Bearer $HQ_TOKEN" -H 'Content-Type: application/json' \
-            -d "{\"dept\":\"$DEPT\",\"status\":\"$OUTCOME\",\"cost_usd\":$cost,\"url\":\"$url\"}" "$HQ_URL/api/ingest/run" || true
+          cost=$(printf '%.4f' "$cost")
+          # 파일 이름에 부서·실행ID·비용·결과를 담는다 → 동시에 여러 부서가 써도 충돌하지 않고, 목록만으로 합계를 낸다
+          path="runs/$(date -u +%Y-%m)/${DEPT}__${{ github.run_id }}__${cost}__${OUTCOME:-unknown}.json"
+          gh api -X PUT "repos/$REPO/contents/$path" -f message="chore: $DEPT 실행 기록" -f branch=atelier-data \
+            -f content="$(printf '{"at":"%s"}' "$(date -u +%FT%TZ)" | base64 -w0)" >/dev/null || echo "::warning::실행 기록 저장 실패 (데이터 브랜치가 없으면 대시보드에서 회사 세우기를 다시 눌러 주세요)"

@@ -1,0 +1,27 @@
+# Atelier 상태 수집 — 외부 서비스(서비스 상태·지표·Sentry·Stripe 등) 상태를 3시간마다 모아 데이터 브랜치에 저장한다.
+# Atelier HQ(서버 없는 대시보드)가 이 결과를 읽는다. 키는 저장소 비밀값 ATELIER_SVC_* 에 있다.
+name: Atelier collect
+on:
+  schedule:
+    - cron: "23 */3 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { sparse-checkout: .github/atelier }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node .github/atelier/collect.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ATELIER_SVC_ANTHROPIC: ${{ secrets.ATELIER_SVC_ANTHROPIC }}
+          ATELIER_SVC_HEALTH: ${{ secrets.ATELIER_SVC_HEALTH }}
+          ATELIER_SVC_METRICS: ${{ secrets.ATELIER_SVC_METRICS }}
+          ATELIER_SVC_SENTRY: ${{ secrets.ATELIER_SVC_SENTRY }}
+          ATELIER_SVC_FLY: ${{ secrets.ATELIER_SVC_FLY }}
+          ATELIER_SVC_VERCEL: ${{ secrets.ATELIER_SVC_VERCEL }}
+          ATELIER_SVC_STRIPE: ${{ secrets.ATELIER_SVC_STRIPE }}

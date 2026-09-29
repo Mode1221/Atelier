@@ -19,4 +19,5 @@ jobs:
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
-      - run: npm audit --omit=dev --audit-level=high
+      - name: 브라우저 암호화 번들이 원본과 같은지
+        run: node scripts/build-vendor.mjs && git diff --exit-code public/js/sealed.js
