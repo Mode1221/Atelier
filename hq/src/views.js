@@ -56,14 +56,16 @@ ${body}</main></body></html>`;
 }
 
 // --- 첫 설정·로그인
-export const setupPage = ({ err }) =>
+export const setupPage = ({ err, needCode, locked }) =>
   layout({
     title: '회사 만들기',
     bare: true,
     err,
     body: `<section class="card narrow"><h1>AI 회사를 만들어요</h1>
 <p class="muted">대표님은 결재만 하세요. 기획·디자인·개발·QA·마케팅·고객지원 부서는 AI 가 맡아요.</p>
+${locked ? `<p>${badge('critical', '잠김')} 서버에 설정 코드(HQ_SECRET 과 별도인 HQ_SETUP_CODE)가 없어 첫 설정을 막았어요. 배포 설정을 확인해 주세요.</p>` : ''}
 <form method="post" action="/setup" class="stack">
+${needCode ? '<label>설정 코드 (배포할 때 정한 코드)<input name="code" type="password" required autocomplete="off"></label>' : ''}
 <label>회사 이름<input name="company" required maxlength="40" placeholder="예: 벌금장부 컴퍼니"></label>
 <label>대표 비밀번호 (10자 이상)<input name="password" type="password" required minlength="10" autocomplete="new-password"></label>
 <label>비밀번호 한 번 더<input name="password2" type="password" required minlength="10" autocomplete="new-password"></label>

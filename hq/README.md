@@ -34,7 +34,17 @@ npm start          # http://localhost:3100
 ```
 처음 접속하면 회사 이름과 대표 비밀번호를 정해요. 그다음 **연결 → GitHub, Claude → 회사 세우기** 순서로 누르면 끝이에요.
 
-인터넷에 올리려면 Docker 이미지(`Dockerfile`) 또는 Fly.io 예시(`fly.toml`)를 써요. 이때 `HQ_SECRET`(32바이트 base64)을 환경변수로 따로 두세요. 이 값으로 연결 키를 암호화해요.
+### 인터넷에 올리기 (Fly.io, 자동)
+1. fly.io 가입 (결제 카드 등록 필요) → 터미널 없이 대시보드 **Account → Access Tokens** 에서 토큰 만들기
+2. 이 저장소 **Settings → Secrets and variables → Actions → New repository secret**
+   - `FLY_API_TOKEN`: 1번 토큰
+   - `HQ_SETUP_CODE`: 대표님만 아는 아무 문구 (첫 설정 때 한 번 물어봐요)
+3. **Actions → HQ deploy → Run workflow** (이후엔 hq 코드가 바뀌면 자동 배포)
+4. 실행 결과 요약에 나온 주소(`https://atelier-hq-<계정>.fly.dev`)로 접속 → 설정 코드 입력 → 회사 만들기
+
+앱·디스크·암호화 키(`HQ_SECRET`)는 워크플로가 처음 한 번 알아서 만들어요. 앱 이름·지역을 바꾸려면 저장소 Variables 에 `HQ_APP`, `HQ_REGION`.
+
+다른 곳에 올릴 때는 Docker 이미지(`Dockerfile`)를 쓰고, 환경변수 `NODE_ENV=production`, `HQ_SECRET`(32바이트 base64), `HQ_SETUP_CODE` 를 꼭 넣어요. 설정 코드가 없으면 운영 모드에선 첫 설정이 막혀요 (배포 직후 남이 먼저 주인이 되는 것 방지).
 
 ## 동작 방식
 - 부서 실행: 저장소의 `.github/workflows/atelier-company.yml` (회사 세우기가 설치). 부서마다 정해진 시간에 `/atelier:company run <부서>` 를 실행해요.

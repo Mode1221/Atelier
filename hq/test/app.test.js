@@ -97,6 +97,24 @@ describe('첫 설정·로그인·보안', () => {
   });
 });
 
+describe('설정 코드 (배포 직후 선점 방지)', () => {
+  const make = (opts) => createApp({ db: openDb(':memory:'), key: Buffer.alloc(32, 1), fetchImpl: world.fetch, log: () => {}, workflowYaml: 'x', ...opts }).app;
+  const post = (a, form) => a.request(ORIGIN + '/setup', { method: 'POST', headers: { origin: ORIGIN, 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(form).toString(), redirect: 'manual' });
+  it('코드가 틀리면 거부, 맞으면 생성', async () => {
+    const a = make({ setupCode: 'open-sesame-42' });
+    expect(await (await a.request(ORIGIN + '/setup')).text()).toContain('설정 코드');
+    let r = await post(a, { code: 'wrong', password: 'correct-horse-1', password2: 'correct-horse-1' });
+    expect(decodeURIComponent(r.headers.get('location'))).toContain('설정 코드가 맞지 않아요');
+    r = await post(a, { code: 'open-sesame-42', password: 'correct-horse-1', password2: 'correct-horse-1' });
+    expect(r.headers.get('location')).toContain('/connect');
+  });
+  it('운영에서 코드가 없으면 첫 설정 자체를 막는다', async () => {
+    const a = make({ production: true, setupCode: undefined });
+    const r = await post(a, { password: 'correct-horse-1', password2: 'correct-horse-1' });
+    expect(decodeURIComponent(r.headers.get('location'))).toContain('첫 설정을 막았어요');
+  });
+});
+
 describe('회사 세우기', () => {
   it('라벨·워크플로·변수·암호화된 비밀값을 GitHub 에 설치', async () => {
     await setupAndConnect();

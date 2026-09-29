@@ -17,7 +17,9 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const STATIC = { 'app.css': 'text/css', 'app.js': 'text/javascript', 'favicon.svg': 'image/svg+xml' };
 const DEFAULT_BUDGET = 10; // 부서별 월 USD
 
-export function createApp({ db, key, fetchImpl, log = (o) => console.log(JSON.stringify(o)), trustProxyHeader = process.env.TRUST_PROXY_HEADER, workflowYaml } = {}) {
+// setupCode: 첫 설정 때 요구하는 코드 (HQ_SETUP_CODE). 인터넷에 올린 직후 남이 먼저 주인이 되는 것을 막는다.
+// 운영(NODE_ENV=production)에서 코드가 없으면 첫 설정 자체를 막는다.
+export function createApp({ db, key, fetchImpl, log = (o) => console.log(JSON.stringify(o)), trustProxyHeader = process.env.TRUST_PROXY_HEADER, workflowYaml, setupCode = process.env.HQ_SETUP_CODE, production = process.env.NODE_ENV === 'production' } = {}) {
   const store = createStore(db, key);
   const http = makeHttp(fetchImpl);
   const cache = createCache();
@@ -111,10 +113,19 @@ export function createApp({ db, key, fetchImpl, log = (o) => console.log(JSON.st
     await next();
   });
 
-  app.get('/setup', (c) => (store.hasOwner() ? c.redirect('/login') : c.html(V.setupPage({ err: c.req.query('err') }))));
+  const setupLocked = () => production && !setupCode;
+  app.get('/setup', (c) => (store.hasOwner() ? c.redirect('/login') : c.html(V.setupPage({ err: c.req.query('err'), needCode: !!setupCode, locked: setupLocked() }))));
   app.post('/setup', async (c) => {
     if (store.hasOwner()) return c.redirect('/login', 303);
+    if (setupLocked()) return back(c, '/setup', '설정 코드(HQ_SETUP_CODE)가 서버에 없어 첫 설정을 막았어요', 'err');
+    const ip = ipOf(c);
+    const rec = loginFails.get(`setup:${ip}`);
+    if (rec && rec.n >= 10 && Date.now() - rec.at < 15 * 60_000) return back(c, '/setup', '시도가 너무 많아요. 15분 뒤 다시 시도해 주세요', 'err');
     const f = await c.req.parseBody();
+    if (setupCode && !safeEqual(String(f.code ?? ''), setupCode)) {
+      loginFails.set(`setup:${ip}`, { n: (rec?.n ?? 0) + 1, at: Date.now() });
+      return back(c, '/setup', '설정 코드가 맞지 않아요', 'err');
+    }
     const pw = String(f.password ?? '');
     if (pw.length < 10) return back(c, '/setup', '비밀번호는 10자 이상으로 정해 주세요', 'err');
     if (pw !== f.password2) return back(c, '/setup', '비밀번호가 서로 달라요', 'err');
