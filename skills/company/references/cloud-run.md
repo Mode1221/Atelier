@@ -24,6 +24,7 @@ Claude 클라우드 예약 실행(Routine)이 새 세션을 열고 이 절차로
 | `shared/<채널__번호>` | channel, at | 대표가 "올렸어요" |
 | `feedback/<YYYY-MM-DD>` | date, count, items[{kind, message, page, action}], summary, status(new/triaged) | 고객지원 |
 
+시각(`at`, `createdAt` 등)은 실제 현재 시각 — `date -u +%FT%TZ` 결과를 쓴다(추측 금지).
 id 규칙: `approvals`·`tasks`·`human` 은 `<DEPT>-<YYYYMMDD>-<짧은이름>` (같은 일을 두 번 만들지 않게 먼저 조회).
 
 ## 2. 순서
