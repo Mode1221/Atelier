@@ -36,6 +36,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       STATS: ${{ secrets.BEOLGEUM_STATS_TOKEN }}
+      SUPPORT_URL: ${{ vars.BEOLGEUM_SUPPORT_URL }}   # 후원 링크 (선택, 저장소 Variables)
     steps:
       - name: 준비 확인
         id: pre
@@ -71,7 +72,8 @@ jobs:
         id: deploy
         if: steps.pre.outputs.go == 'true'
         run: |
-          npx wrangler deploy | tee deploy.log
+          extra=(); [ -n "$SUPPORT_URL" ] && extra=(--var "SUPPORT_URL:$SUPPORT_URL")
+          npx wrangler deploy "${extra[@]}" | tee deploy.log
           url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)
           echo "url=$url" >> "$GITHUB_OUTPUT"
       - name: 운영 확인 (스모크)

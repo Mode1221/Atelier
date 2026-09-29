@@ -14,7 +14,7 @@ export function dateLabel(d) {
   return `${m}월 ${day}일 (${DOW[new Date(Date.UTC(y, m - 1, day)).getUTCDay()]})`;
 }
 
-function layout({ title, body, description = '출석만 체크하세요. 벌금은 알아서 계산됩니다.', noindex = false }) {
+function layout({ title, body, description = '출석만 체크하세요. 벌금은 알아서 계산됩니다.', noindex = false, support = false }) {
   return `<!doctype html>
 <html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -27,13 +27,14 @@ ${noindex ? '<meta name="robots" content="noindex">' : ''}
 <link rel="stylesheet" href="/static/tokens.css"><link rel="stylesheet" href="/static/app.css">
 <script src="/static/app.js" defer></script>
 </head><body><main>${body}</main>
-<footer><a href="/">벌금장부</a> · <a href="/privacy">개인정보처리방침</a> · <a href="/terms">이용약관</a> · <a href="mailto:atlier.skill@gmail.com">문의</a></footer>
+<footer><a href="/">벌금장부</a> · <a href="/privacy">개인정보처리방침</a> · <a href="/terms">이용약관</a> · <a href="mailto:atlier.skill@gmail.com">문의</a>${support ? ' · <a href="/support" rel="nofollow">☕ 개발자 응원하기</a>' : ''}</footer>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 </body></html>`;
 }
 
-export function homePage() {
+export function homePage({ support } = {}) {
   return layout({
+    support,
     title: '벌금장부 — 가입 없는 스터디 벌금 계산',
     body: `<h1>벌금장부</h1>
 <p class="muted">출석만 체크하세요. 벌금은 알아서 계산됩니다.<br>가입 없이 링크 하나로.</p>
@@ -63,7 +64,7 @@ export function homePage() {
   });
 }
 
-export function groupPage({ group, members, sessions, payments }) {
+export function groupPage({ group, members, sessions, payments }, { support } = {}) {
   const active = members.filter((m) => !m.hidden_at);
   const summary = summarize(members, sessions, payments).filter((r) => !r.member.hidden_at || r.fined || r.paid);
   const memberName = new Map(members.map((m) => [m.id, m.name]));
@@ -99,6 +100,7 @@ export function groupPage({ group, members, sessions, payments }) {
     summary: summary.map((r) => ({ name: r.member.name, hidden: !!r.member.hidden_at, balance: r.balance })),
   };
   return layout({
+    support,
     title: `${group.name} — 벌금장부`,
     description: `${group.name} 벌금 정산 현황`,
     noindex: true,
@@ -157,15 +159,16 @@ ${sessions.length ? `<ul class="plain">${sessionItems}</ul>` : '<p class="empty"
   });
 }
 
-export function notFoundPage() {
+export function notFoundPage({ support } = {}) {
   return layout({
+    support,
     title: '모임을 찾을 수 없어요 — 벌금장부',
     noindex: true,
     body: `<div class="empty"><h1>모임을 찾을 수 없어요</h1><p>링크가 잘못됐거나 삭제된 모임이에요.</p><a class="btn primary" href="/">새 모임 만들기</a></div>`,
   });
 }
 
-export function docPage(title, markdownish) {
+export function docPage(title, markdownish, { support } = {}) {
   // 법률 문서용 최소 마크다운: 제목(#, ##), 목록(-), 표(|), 문단
   const out = [];
   let list = null;
@@ -190,5 +193,5 @@ export function docPage(title, markdownish) {
     }
   }
   flush();
-  return layout({ title: `${title} — 벌금장부`, body: `<div class="doc">${out.join('\n')}</div>` });
+  return layout({ support, title: `${title} — 벌금장부`, body: `<div class="doc">${out.join('\n')}</div>` });
 }

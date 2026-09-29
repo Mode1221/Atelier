@@ -12,6 +12,8 @@ const DOCS = { privacy: ['개인정보처리방침', 'privacy'], terms: ['이용
 
 // trustProxyHeader: 클라이언트 IP 를 믿고 읽을 헤더. Cloudflare 는 'cf-connecting-ip' (wrangler.toml vars).
 // 지정하지 않으면 IP 를 모르는 것으로 본다 — 헤더 위조로 속도 제한을 우회하지 못하게.
+export const SUPPORT_HOSTS = ['toss.me', 'qr.kakaopay.com', 'buymeacoffee.com', 'www.buymeacoffee.com', 'ko-fi.com'];
+
 export function createApp({ log = (o) => console.log(JSON.stringify(o)), limits = {}, trustProxyHeader } = {}) {
   // 쓰기 한도는 인스턴스 메모리로(최선 노력, D1 쓰기 절약). 생성·키 실패 한도는 D1 로(모든 인스턴스 공유).
   const writeLimit = rateLimiter({ limit: limits.writesPerMinute ?? 120, windowMs: 60_000 });
@@ -59,17 +61,34 @@ export function createApp({ log = (o) => console.log(JSON.stringify(o)), limits 
   };
 
   // --- 페이지
-  app.get('/', (c) => c.html(homePage()));
+  // 후원 링크 (SUPPORT_URL). 허용한 송금·후원 서비스의 https 주소만 쓴다 — 없으면 링크를 숨긴다.
+  const supportUrl = (env) => {
+    try {
+      const u = new URL(env?.SUPPORT_URL ?? '');
+      return u.protocol === 'https:' && SUPPORT_HOSTS.includes(u.hostname) ? u.href : null;
+    } catch {
+      return null;
+    }
+  };
+  const pageOpts = (c) => ({ support: !!supportUrl(c.env) });
+  app.get('/support', (c) => {
+    const url = supportUrl(c.env);
+    if (!url) return c.html(notFoundPage(), 404);
+    event(c, 'support_clicked');
+    return c.redirect(url, 302);
+  });
+
+  app.get('/', (c) => c.html(homePage(pageOpts(c))));
   app.get('/g/:id', async (c) => {
     const repo = c.get('repo');
     const group = await repo.getGroup(c.req.param('id'));
-    if (!group) return c.html(notFoundPage(), 404);
+    if (!group) return c.html(notFoundPage(pageOpts(c)), 404);
     event(c, 'view_link_opened');
-    return c.html(groupPage(await loadGroup(repo, group)));
+    return c.html(groupPage(await loadGroup(repo, group), pageOpts(c)));
   });
   app.get('/:doc{privacy|terms}', (c) => {
     const [title, key] = DOCS[c.req.param('doc')];
-    return c.html(docPage(title, LEGAL[key]));
+    return c.html(docPage(title, LEGAL[key], pageOpts(c)));
   });
   // /health — 앱·DB 상태 (업타임 감시·정기 점검용). 백업은 D1 Time Travel 이 자동으로 한다.
   app.get('/health', async (c) => {
@@ -209,7 +228,7 @@ export function createApp({ log = (o) => console.log(JSON.stringify(o)), limits 
     return c.body(null, 204);
   });
 
-  app.notFound((c) => (c.req.path.startsWith('/api/') ? c.json({ error: '찾을 수 없어요' }, 404) : c.html(notFoundPage(), 404)));
+  app.notFound((c) => (c.req.path.startsWith('/api/') ? c.json({ error: '찾을 수 없어요' }, 404) : c.html(notFoundPage(pageOpts(c)), 404)));
 
   return app;
 }

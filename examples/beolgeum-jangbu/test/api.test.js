@@ -255,3 +255,25 @@ it('법률 문서 번들이 원문과 같다 (node scripts/gen-legal.mjs)', asyn
   expect(LEGAL.privacy).toBe(readFileSync('legal/privacy-policy.md', 'utf8'));
   expect(LEGAL.terms).toBe(readFileSync('legal/terms.md', 'utf8'));
 });
+
+describe('R4 후원 링크', () => {
+  it('SUPPORT_URL 이 없으면 링크를 숨기고 /support 는 404', async () => {
+    expect(await (await req('GET', '/')).text()).not.toContain('/support');
+    expect((await req('GET', '/support')).status).toBe(404);
+  });
+  it('허용한 https 주소면 푸터에 보이고 /support 가 이동시키며 클릭을 기록한다', async () => {
+    env.SUPPORT_URL = 'https://toss.me/beolgeum';
+    expect(await (await req('GET', '/')).text()).toContain('href="/support"');
+    const res = await req('GET', '/support');
+    expect(res.status).toBe(302);
+    expect(res.headers.get('location')).toBe('https://toss.me/beolgeum');
+    expect(logs.some((l) => l.event === 'support_clicked')).toBe(true);
+  });
+  it('허용하지 않은 주소·http 는 무시한다', async () => {
+    for (const u of ['https://evil.example/pay', 'http://toss.me/x', 'javascript:alert(1)']) {
+      env.SUPPORT_URL = u;
+      expect((await req('GET', '/support')).status).toBe(404);
+      expect(await (await req('GET', '/')).text()).not.toContain('/support');
+    }
+  });
+});
