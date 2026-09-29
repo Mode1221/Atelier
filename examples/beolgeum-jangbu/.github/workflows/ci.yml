@@ -1,7 +1,6 @@
+# 이 프로젝트를 별도 저장소로 옮겼을 때의 CI. (Atelier 저장소 안에서는 루트의 beolgeum.yml 이 대신 돈다)
 name: CI
-on:
-  push:
-  pull_request:
+on: [push, pull_request]
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -14,24 +13,5 @@ jobs:
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+        env: { WRANGLER_SEND_METRICS: "false" }
       - run: npm audit --omit=dev --audit-level=high
-  deploy:
-    # 운영 배포: main 에서 CI 통과 후. FLY_API_TOKEN 시크릿이 없으면 건너뛴다 (사람: fly tokens create deploy)
-    needs: check
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    concurrency: deploy
-    env:
-      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
-      - if: env.FLY_API_TOKEN != ''
-        uses: superfly/flyctl-actions/setup-flyctl@master
-      - if: env.FLY_API_TOKEN != ''
-        run: flyctl deploy --remote-only
-      - if: env.FLY_API_TOKEN != ''
-        name: Smoke test
-        run: |
-          sleep 10
-          curl -fsS "https://${{ vars.APP_HOST }}/health"
-          curl -fsS "https://${{ vars.APP_HOST }}/" | grep -q "벌금장부"

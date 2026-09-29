@@ -1,5 +1,7 @@
 # 스택 템플릿
 
+> **무료 우선이 기본이다.** 먼저 `free-tier.md` 의 무료 기본 스택을 본다. 아래 표는 무료 스택이 맞지 않을 때의 선택지이며, 유료 항목은 결정 전에 금액을 안내한다.
+
 1인 개발 기준으로 **운영 부담이 적은 조합**을 우선했다. 사용자가 익숙한 스택이 있으면 그걸 우선한다.
 버전·요금·무료 한도는 자주 바뀐다. 추천 전에 공식 사이트에서 최신 정보를 확인한다.
 
@@ -7,9 +9,9 @@
 | 층 | 기본 추천 | 대안 |
 |---|---|---|
 | 프론트+서버 | Next.js (TypeScript) | SvelteKit, Remix, Nuxt |
-| DB·인증·스토리지 | Supabase (Postgres) | Firebase, Neon + Auth.js, PocketBase |
+| DB·인증·스토리지 | Cloudflare D1+R2 (무료) / Supabase 무료 (인증 필요 시) | Firebase Spark, Neon 무료, PocketBase |
 | 결제 | Stripe (해외), 토스페이먼츠·포트원 (국내) | Lemon Squeezy, Paddle (세금 대행) |
-| 배포 | Vercel | Cloudflare Pages, Netlify, Fly.io |
+| 배포 | Cloudflare Workers/Pages (무료) | Netlify (무료), Vercel (Hobby 는 비상업 조건), Fly.io (유료·카드) |
 | 에러 | Sentry | — |
 | 분석 | PostHog | Plausible, Umami, GA4 |
 | 이메일 | Resend | Postmark |

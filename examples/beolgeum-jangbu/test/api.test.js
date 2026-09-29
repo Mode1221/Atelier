@@ -1,19 +1,26 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { openDb } from '../src/db.js';
-import { createApp } from '../src/app.js';
+import { openD1 } from '../src/d1-node.js';
+import { createApp, scheduled } from '../src/app.js';
+import { createRepo } from '../src/repo.js';
 
-let app, repo;
+let app, repo, env;
 const logs = [];
 beforeEach(() => {
   logs.length = 0;
-  ({ app, repo } = createApp({ db: openDb(':memory:'), log: (o) => logs.push(o), limits: { createPerHour: 3, keyFailsPer10Min: 2 }, trustProxyHeader: 'x-forwarded-for' }));
+  env = { DB: openD1() };
+  repo = createRepo(env.DB);
+  app = createApp({ log: (o) => logs.push(o), limits: { createPerHour: 3, keyFailsPer10Min: 2 }, trustProxyHeader: 'x-forwarded-for' });
 });
 const req = (method, path, { body, key, ip = '1.1.1.1' } = {}) =>
-  app.request(path, {
-    method,
-    headers: { 'Content-Type': 'application/json', 'x-forwarded-for': ip, ...(key ? { 'X-Admin-Key': key } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  app.request(
+    path,
+    {
+      method,
+      headers: { 'Content-Type': 'application/json', 'x-forwarded-for': ip, ...(key ? { 'X-Admin-Key': key } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    },
+    env,
+  );
 const newGroup = async () => {
   const res = await req('POST', '/api/groups', { body: { name: '알고리즘 스터디', fine_late: 1000, fine_absent: 3000, fine_homework: 2000 } });
   expect(res.status).toBe(201);
@@ -24,7 +31,7 @@ describe('F1 모임 만들기', () => {
   it('만들면 id·관리 키를 주고, 키는 해시로만 저장', async () => {
     const { id, adminKey } = await newGroup();
     expect(adminKey.length).toBeGreaterThanOrEqual(24);
-    expect(repo.getGroup(id).admin_key_hash).not.toContain(adminKey);
+    expect((await repo.getGroup(id)).admin_key_hash).not.toContain(adminKey);
   });
   it('빈 이름은 필드 오류', async () => {
     const res = await req('POST', '/api/groups', { body: { name: '', fine_late: 1000, fine_absent: 1000, fine_homework: 1000 } });
@@ -125,23 +132,24 @@ describe('F2~F4 멤버·회차·정산', () => {
 
 describe('보안·운영', () => {
   it('신뢰 헤더를 지정하지 않으면 X-Forwarded-For 위조로 한도를 우회할 수 없다', async () => {
-    const { app: strict } = createApp({ db: openDb(':memory:'), log: () => {}, limits: { createPerHour: 2 } });
+    const strict = createApp({ log: () => {}, limits: { createPerHour: 2 } });
+    const DB = openD1();
     const make = (ip) =>
-      strict.request('/api/groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-forwarded-for': ip },
-        body: JSON.stringify({ name: 'x', fine_late: 0, fine_absent: 0, fine_homework: 0 }),
-      });
+      strict.request(
+        '/api/groups',
+        { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-forwarded-for': ip }, body: JSON.stringify({ name: 'x', fine_late: 0, fine_absent: 0, fine_homework: 0 }) },
+        { DB },
+      );
     const codes = [];
     for (const ip of ['1.1.1.1', '2.2.2.2', '3.3.3.3']) codes.push((await make(ip)).status);
     expect(codes).toEqual([201, 201, 429]);
   });
   it('DB 장애: 헬스체크 503, API 는 내부 정보 없는 500', async () => {
-    const db = openDb(':memory:');
-    const { app: broken } = createApp({ db, log: () => {} });
+    const db = openD1();
+    const broken = createApp({ log: () => {} });
     db.close();
-    expect((await broken.request('/health')).status).toBe(503);
-    const res = await broken.request('/api/groups/x');
+    expect((await broken.request('/health', {}, { DB: db })).status).toBe(503);
+    const res = await broken.request('/api/groups/x', {}, { DB: db });
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(JSON.stringify(body)).not.toMatch(/sqlite|stack|at /i);
@@ -173,25 +181,26 @@ describe('보안·운영', () => {
     const { id, adminKey: key } = await newGroup();
     expect((await req('DELETE', `/api/groups/${id}`, { key })).status).toBe(204);
     expect((await req('GET', `/g/${id}`)).status).toBe(404);
-    expect(repo.purgeDeleted(30)).toBe(0);
-    expect(repo.purgeDeleted(-1)).toBe(1);
+    expect(await repo.purgeDeleted(30)).toBe(0);
+    expect(await repo.purgeDeleted(-1)).toBe(1);
   });
   it('헬스체크', async () => {
     expect(await (await req('GET', '/health')).json()).toEqual({ ok: true, db: 'ok' });
   });
-  it('헬스체크 백업 확인: 백업 없으면 503, 방금 백업하면 200', async () => {
-    const { mkdtempSync } = await import('node:fs');
-    const { tmpdir } = await import('node:os');
-    const { join } = await import('node:path');
-    const { runBackup } = await import('../src/backup.js');
-    const dir = mkdtempSync(join(tmpdir(), 'bk-'));
-    const dbPath = join(dir, 'app.db');
-    const { app: a } = createApp({ db: openDb(dbPath), log: () => {}, backupDir: join(dir, 'b') });
-    expect((await a.request('/health?backup=1')).status).toBe(503);
-    runBackup({ dbPath, dir: join(dir, 'b') });
-    const res = await a.request('/health?backup=1');
-    expect(res.status).toBe(200);
-    expect((await res.json()).backup_age_hours).toBe(0);
+  it('매일 정리 작업: 30일 지난 삭제 모임 영구 삭제', async () => {
+    const { id, adminKey: key } = await newGroup();
+    await req('DELETE', `/api/groups/${id}`, { key });
+    await env.DB.prepare("UPDATE groups SET deleted_at = '2000-01-01T00:00:00.000Z'").run();
+    const out = [];
+    await scheduled(env, (o) => out.push(o));
+    expect(out[0]).toMatchObject({ event: 'daily_cleanup', purged: 1 });
+  });
+  it('운영 지표 API: 토큰이 있어야 하고 숫자만 준다', async () => {
+    await newGroup();
+    expect((await req('GET', '/api/stats')).status).toBe(401);
+    env.STATS_TOKEN = 'stats-secret';
+    const res = await app.request('/api/stats', { headers: { authorization: 'Bearer stats-secret' } }, env);
+    expect(await res.json()).toMatchObject({ '전체 모임': 1 });
   });
   it('로그에 관리 키·멤버 이름이 남지 않는다', async () => {
     const { id, adminKey: key } = await newGroup();
@@ -211,4 +220,38 @@ describe('법률 문서', () => {
     expect(privacy).toContain('<li>');
     expect((await req('GET', '/terms')).status).toBe(200);
   });
+});
+
+describe('D1 동시성·일관성', () => {
+  it('회차 생성은 출결과 함께 한 번에 (다른 모임 회차와 섞이지 않음)', async () => {
+    const a = await newGroup();
+    const b = await newGroup();
+    const ma = await (await req('POST', `/api/groups/${a.id}/members`, { body: { name: '가' }, key: a.adminKey })).json();
+    const mb = await (await req('POST', `/api/groups/${b.id}/members`, { body: { name: '나' }, key: b.adminKey })).json();
+    await Promise.all([
+      req('POST', `/api/groups/${a.id}/sessions`, { body: { date: '2026-09-29', entries: [{ member_id: ma.id, status: 'late' }] }, key: a.adminKey }),
+      req('POST', `/api/groups/${b.id}/sessions`, { body: { date: '2026-09-29', entries: [{ member_id: mb.id, status: 'absent' }] }, key: b.adminKey }),
+    ]);
+    const da = await (await req('GET', `/api/groups/${a.id}`)).json();
+    const db = await (await req('GET', `/api/groups/${b.id}`)).json();
+    expect(da.sessions[0].entries).toEqual([expect.objectContaining({ member_id: ma.id, status: 'late' })]);
+    expect(db.sessions[0].entries).toEqual([expect.objectContaining({ member_id: mb.id, status: 'absent' })]);
+  });
+  it('충돌한 수정은 출결을 건드리지 않는다', async () => {
+    const { id, adminKey: key } = await newGroup();
+    const m = await (await req('POST', `/api/groups/${id}/members`, { body: { name: '가' }, key })).json();
+    const s = await (await req('POST', `/api/groups/${id}/sessions`, { body: { date: '2026-09-29', entries: [{ member_id: m.id, status: 'late' }] }, key })).json();
+    await req('PUT', `/api/groups/${id}/sessions/${s.id}`, { body: { date: '2026-09-29', entries: [{ member_id: m.id, status: 'absent' }], expectedUpdatedAt: s.updated_at }, key });
+    const stale = await req('PUT', `/api/groups/${id}/sessions/${s.id}`, { body: { date: '2026-09-29', entries: [], expectedUpdatedAt: s.updated_at }, key });
+    expect(stale.status).toBe(409);
+    const d = await (await req('GET', `/api/groups/${id}`)).json();
+    expect(d.sessions[0].entries).toEqual([expect.objectContaining({ status: 'absent' })]);
+  });
+});
+
+it('법률 문서 번들이 원문과 같다 (node scripts/gen-legal.mjs)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { LEGAL } = await import('../src/legal.gen.js');
+  expect(LEGAL.privacy).toBe(readFileSync('legal/privacy-policy.md', 'utf8'));
+  expect(LEGAL.terms).toBe(readFileSync('legal/terms.md', 'utf8'));
 });

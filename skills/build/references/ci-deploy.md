@@ -22,10 +22,31 @@ jobs:
 ## 로컬 검증 스크립트
 CI 와 같은 명령을 `scripts/check.sh` 하나로 묶어 푸시 전에 돌린다.
 
+## 무료 배포: Cloudflare Workers + D1 (GitHub Actions)
+사람이 할 일은 Cloudflare 가입(카드 불필요)과 시크릿 2개 등록뿐이다. 나머지는 워크플로가 처음 한 번 알아서 만든다.
+```yaml
+deploy:
+  env:
+    CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}   # 템플릿 "Edit Cloudflare Workers" + D1 Edit
+    CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  steps:
+    - run: npm ci
+    - run: |   # D1 이 없으면 만들고, wrangler.toml 의 자리표시 ID 를 실제 ID 로
+        id=$(npx wrangler d1 list --json | jq -r '.[] | select(.name=="<db>") | .uuid')
+        [ -z "$id" ] && npx wrangler d1 create <db> && id=$(npx wrangler d1 list --json | jq -r '.[] | select(.name=="<db>") | .uuid')
+        sed -i "s/LOCAL_PLACEHOLDER/$id/" wrangler.toml
+        npx wrangler d1 migrations apply DB --remote
+    - run: npx wrangler deploy
+```
+- 시크릿이 없으면 배포 단계를 **경고와 함께 건너뛰게** 만든다 (CI 는 녹색 유지).
+- 처음 계정은 Workers & Pages 메뉴를 한 번 열어 `workers.dev` 하위 주소를 정해야 할 수 있다.
+- 예시 전체: Atelier 저장소 `.github/workflows/beolgeum.yml`.
+
 ## 배포 대상
 | 형태 | 배포 | 비고 |
 |---|---|---|
-| 웹 (Next.js 등) | Vercel / Cloudflare | 브랜치마다 미리보기 URL |
+| 웹 (서버·DB 포함) | **Cloudflare Workers + D1 (무료)** | `wrangler rollback`, D1 Time Travel 백업 |
+| 웹 (Next.js 등) | Cloudflare Pages / Netlify (무료), Vercel (Hobby 비상업) | 브랜치마다 미리보기 URL |
 | API 서버 | Fly.io, Render, Railway | 헬스체크 엔드포인트 둔다 |
 | 모바일 (Expo) | EAS Build → TestFlight / Play 내부 테스트 | 스토어 제출은 사람이 최종 확인 |
 | 모바일 (Flutter/네이티브) | Fastlane 또는 Xcode·Play Console | 서명 키 백업 필수 |

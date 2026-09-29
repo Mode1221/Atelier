@@ -1,0 +1,23 @@
+# Cloudflare Workers 무료 등급으로 운영 (Workers + D1 + 정적 자산 + 크론)
+name = "beolgeum-jangbu"
+main = "src/worker.js"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./public"
+
+[vars]
+TRUST_PROXY_HEADER = "cf-connecting-ip"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "beolgeum-jangbu"
+database_id = "LOCAL_PLACEHOLDER"   # 배포 워크플로가 실제 ID 로 바꿔 넣는다 (wrangler d1 list)
+migrations_dir = "migrations"
+
+[triggers]
+crons = ["17 18 * * *"]   # 매일 03:17 KST — 삭제 30일 지난 모임 정리
+
+[observability]
+enabled = true

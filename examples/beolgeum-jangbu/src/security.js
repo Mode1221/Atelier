@@ -28,3 +28,9 @@ export function rateLimiter({ limit, windowMs, now = () => Date.now() }) {
 }
 
 export const hashIp = (ip) => createHash('sha256').update(`ip:${ip}`).digest('hex').slice(0, 12);
+
+export function safeEqual(a, b) {
+  const x = createHash('sha256').update(String(a)).digest();
+  const y = createHash('sha256').update(String(b)).digest();
+  return timingSafeEqual(x, y) && a === b;
+}

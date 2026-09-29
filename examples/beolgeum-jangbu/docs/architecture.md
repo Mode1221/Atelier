@@ -3,10 +3,12 @@
 ## S4. 구성
 ```mermaid
 flowchart LR
-  B[모바일 브라우저] -->|HTML/JSON| S[Node 서버 (Hono)]
+  B[모바일 브라우저] -->|정적 파일| A[Workers 정적 자산]
+  B -->|HTML/JSON| S[Workers (Hono)]
   S --> R[(저장소 어댑터)]
-  R --> DB[(SQLite 파일)]
-  S --> L[구조화 로그 stdout]
+  R --> DB[(D1)]
+  S --> L[Workers 로그]
+  C[Cron Trigger] --> S
   U[업타임 감시] --> H[/health]
 ```
 - 외부 API 없음. 구성 요소 = 서버 1개 + SQLite 파일 1개.
@@ -66,10 +68,16 @@ erDiagram
 | 서비스 | 용도 | 비용 | 폴백 | 키 |
 |---|---|---|---|---|
 | (없음) | | | | |
-| 호스팅 (예: Fly.io + 볼륨) | 서버·SQLite | 무료~소액 | — | 플랫폼 시크릿 |
+| Cloudflare Workers + D1 | 서버·DB·정적 파일·크론 | 무료 등급 (`docs/costs.md`) | — | GitHub Secrets (배포 토큰) |
 
 ## ADR
-### ADR-001: SQLite(node:sqlite) + 저장소 어댑터
+### ADR-004: Cloudflare Workers + D1 로 이전 (무료 운영)
+- 상황: 운영비 0원 목표. 처음 구성(Node 서버 + SQLite 파일 + Fly.io)은 월 수천 원 + 카드 등록 필요
+- 결정: Workers + D1 + 정적 자산 + Cron Triggers. 저장소 어댑터를 D1 API(비동기, batch=트랜잭션)로 교체
+- 결과: 서버 관리·백업(Time Travel)·HTTPS 가 플랫폼 몫. 인스턴스가 여러 개라 메모리 속도 제한은 최선 노력 → 중요한 한도는 D1 테이블로. 테스트는 node:sqlite 기반 D1 흉내(`src/d1-node.js`) + E2E 는 로컬 workerd
+- ADR-001(SQLite 파일)·ADR-003 의 서버 1대 전제는 이 결정으로 대체
+
+### ADR-001: SQLite(node:sqlite) + 저장소 어댑터 — ADR-004 로 대체
 - 상황: 1인 운영, 데이터 작음, 외부 DB 계정 없이 시작
 - 결정: Node 22 내장 `node:sqlite`, 모든 DB 접근은 `src/repo.js` 경유
 - 대안: Postgres(Supabase) — 운영 부담·계정 필요 / better-sqlite3 — 네이티브 빌드

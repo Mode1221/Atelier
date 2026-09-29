@@ -34,6 +34,8 @@ npm start          # http://localhost:3100
 ```
 처음 접속하면 회사 이름과 대표 비밀번호를 정해요. 그다음 **연결 → GitHub, Claude → 회사 세우기** 순서로 누르면 끝이에요.
 
+> **비용 안내**: 아래 Fly.io 방식은 월 약 $0.2~2.2 이고 카드 등록이 필요해요. 무료 원칙에 맞춘 **서버 없는 HQ**(GitHub Pages + 저장소 데이터)는 준비 중이에요. 그 전까지 무료로 쓰려면 내 PC 에서 `npm start` 로 실행하세요 (이때 부서 실행 비용 기록·예산 한도는 동작하지 않아요).
+
 ### 인터넷에 올리기 (Fly.io, 자동)
 1. fly.io 가입 (결제 카드 등록 필요) → 터미널 없이 대시보드 **Account → Access Tokens** 에서 토큰 만들기
 2. 이 저장소 **Settings → Secrets and variables → Actions → New repository secret**

@@ -11,7 +11,8 @@
 - 계정: 없음 (링크 기반 권한)
 - 사용자 데이터 저장: 있음 (모임·멤버 이름·출결·벌금)
 - 경험 수준: 중급 (가정)
-- 스택: Node 22 + Hono + node:sqlite, 서버 렌더링 HTML (ADR-001~003)
+- 스택: Cloudflare Workers + D1 + Hono, 서버 렌더링 HTML (ADR-004, 무료 등급)
+- 예산: 무료 우선 — 운영비 0원 (`docs/costs.md`)
 
 ## 현재 단계
 - 단계: 4 구현 게이트 **보류** (reviewer) → 6 출시 L5 도 No-Go. 둘 다 사람 대기
@@ -19,12 +20,8 @@
 - 막힌 것: 사람 대기 — I4 인터뷰, D5 테스트, 호스팅·에러 모니터링·스테이징·비용 알림 계정
 
 ## 사람 할 일 (출시 전)
-- [ ] GitHub 저장소 생성·푸시, Dependabot 켜기
-- [ ] Fly.io 계정·앱·볼륨 생성, `FLY_API_TOKEN`·`APP_HOST` 설정, 결제 한도
-- [ ] 도메인 (선택), 만료일을 `docs/ops/expiry.txt` 에
-- [ ] 스테이징 앱 1개 추가
-- [ ] 에러 알림: 업타임 서비스 가입 (+ 선택: Sentry)
-- [ ] 오프사이트 백업 저장소 (객체 저장소)
+- [x] GitHub 저장소 — Atelier 저장소 `examples/beolgeum-jangbu` 에서 운영
+- [ ] Cloudflare 가입(무료, 카드 불필요) → API 토큰 → Atelier 저장소 Secrets `CLOUDFLARE_API_TOKEN`·`CLOUDFLARE_ACCOUNT_ID` — B12, O1 (배포·백업·HTTPS·스테이징 미리보기가 한 번에 해결)
 - [ ] 처리방침·약관의 `[운영자 입력]` 칸 (보호책임자·이메일·시행일)
 - [ ] 문의 이메일 만들기
 - [ ] 사용성 테스트 5명 (L1, D5) → 인터뷰(I4) 겸
