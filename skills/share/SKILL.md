@@ -36,6 +36,7 @@ description: SNS 공유·홍보 도우미. 서비스 안에 공유 기능(공유
 - **Atelier HQ → 홍보** 화면: 글마다 "복사"·"○○에 올리기"(공식 공유 창)·"올렸어요"(데이터 브랜치에 기록). 베타 의견도 같은 화면에.
 - HQ 를 안 쓰면: `node kit.mjs docs/share/posts.json` → `docs/share/kit.html` 을 브라우저로 열기.
 - 사람이 하는 일 = 버튼 누르고 확인. 마케팅 부서는 글 준비·일정·결재 요청까지.
+- 완전 자동(선택): Bluesky 는 `scripts/post-bluesky.mjs` 로 공식 API 게시(같은 글은 한 번만). 저장소 Secrets `BLUESKY_HANDLE`·`BLUESKY_APP_PASSWORD` 만 넣으면 워크플로가 올린다 (예: `.github/workflows/beolgeum-share.yml`). 키 등록 자체가 게시 승인이다.
 
 ### S5. 측정 → 다음 글
 - 서비스 로그 `landing` 의 `src` 별 방문 → 가입/생성까지 이어진 비율(활성화)을 채널별로.

@@ -1,0 +1,25 @@
+# Atelier share — 벌금장부 홍보 글 중 Bluesky 글을 공식 API 로 자동 게시 (무료·약관 허용). 같은 글은 한 번만.
+# 켜기: Secrets BLUESKY_HANDLE (예: beolgeum.bsky.social), BLUESKY_APP_PASSWORD (bsky.app → 설정 → 앱 비밀번호). 없으면 건너뜀.
+# 다른 채널은 API 자동 게시가 약관상 안 되거나 유료 → HQ 홍보 화면에서 버튼으로 올린다.
+name: Beolgeum share
+on:
+  schedule:
+    - cron: "23 23-13 * * *"   # 08:23~22:23 KST 매시 — 키를 등록하면 1시간 안에 올라간다
+  push:
+    branches: [main]
+    paths: ["examples/beolgeum-jangbu/docs/share/posts.json", "skills/share/scripts/**", ".github/workflows/beolgeum-share.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bluesky:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { sparse-checkout: "skills/share/scripts\nexamples/beolgeum-jangbu/docs/share" }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - env:
+          BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
+          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+        run: node skills/share/scripts/post-bluesky.mjs examples/beolgeum-jangbu/docs/share/posts.json | tee -a "$GITHUB_STEP_SUMMARY"

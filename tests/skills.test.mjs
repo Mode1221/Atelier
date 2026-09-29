@@ -59,3 +59,32 @@ test('usertest: 예시 계획 파일 형식', () => {
   const ops = new Set(['goto', 'click', 'fill', 'check', 'select', 'see', 'notSee', 'url', 'openFrom']);
   for (const t of plan.tasks) for (const s of [...(t.setup ?? []), ...t.steps]) assert.ok(Object.keys(s).some((k) => ops.has(k)), JSON.stringify(s));
 });
+
+import { buildRecord, postAll } from '../skills/share/scripts/post-bluesky.mjs';
+
+test('bluesky: 링크 facet 는 UTF-8 바이트 위치', () => {
+  const r = buildRecord('한글 글', 'https://a.dev/?x=1');
+  const bytes = new TextEncoder().encode(r.text);
+  const { byteStart, byteEnd } = r.facets[0].index;
+  assert.equal(new TextDecoder().decode(bytes.slice(byteStart, byteEnd)), 'https://a.dev/?x=1');
+});
+
+test('bluesky: 키 없으면 건너뛰고, 이미 올린 글은 다시 안 올린다', async () => {
+  const spec = { url: 'https://a.dev/', campaign: 'b', posts: [{ channel: 'bluesky', text: '첫 글' }, { channel: 'bluesky', text: '둘째 글' }, { channel: 'x', text: 'x' }] };
+  assert.equal((await postAll(spec, { env: {}, log: () => {} })).skipped, true);
+  const created = [];
+  const fetchImpl = async (url, init) => {
+    const u = new URL(url);
+    if (u.pathname.endsWith('createSession')) return Response.json({ did: 'did:plc:me', accessJwt: 'jwt' });
+    if (u.pathname.endsWith('getAuthorFeed')) return Response.json({ feed: [{ post: { record: { text: '첫 글\nhttps://a.dev/?utm_source=bluesky' } } }] });
+    if (u.pathname.endsWith('createRecord')) {
+      assert.equal(init.headers.authorization, 'Bearer jwt');
+      created.push(JSON.parse(init.body).record.text);
+      return Response.json({ uri: 'at://x' });
+    }
+    return new Response('', { status: 404 });
+  };
+  const r = await postAll(spec, { env: { BLUESKY_HANDLE: 'me', BLUESKY_APP_PASSWORD: 'pw' }, fetchImpl, log: () => {} });
+  assert.equal(r.posted, 1);
+  assert.match(created[0], /^둘째 글\nhttps:\/\/a\.dev\/\?utm_source=bluesky&utm_medium=social&utm_campaign=b$/);
+});

@@ -28,6 +28,7 @@
 - [x] 사용성 테스트 — AI 대리 테스트로 대체 (docs/usertest/2026-09-29.md). 사람 5명은 선택
 - [x] 베타 모집 — 공개 베타로 전환, 피드백 자동 수집 (docs/beta.md)
 - [ ] 홍보 글 올리기: HQ → 홍보(또는 docs/share/kit.html)에서 채널별 "올리기" 버튼 (글은 준비됨, 약 10분)
+- [ ] (선택) Bluesky 자동 게시: 계정 만들고 저장소 Secrets `BLUESKY_HANDLE`·`BLUESKY_APP_PASSWORD` 등록 → 1시간 안에 자동 게시
 - [ ] 후원 링크 켜기: 토스아이디 만들고 저장소 Variables `BEOLGEUM_SUPPORT_URL` 등록 (5분, docs/monetization.md)
 
 ## 로드맵
