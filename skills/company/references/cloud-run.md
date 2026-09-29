@@ -4,7 +4,8 @@ Claude 클라우드 예약 실행(Routine)이 새 세션을 열고 이 절차로
 
 ## 0. 준비
 - 프롬프트에 적힌 값: `HQ`(본부 주소), `REPO`(저장소), `PROJECT`(프로젝트 폴더), `DEPT`(부서 ID).
-- 저장소가 세션에 없으면 `add_repo`(access: push) 후 안내대로 clone. Atelier 스킬 문서는 `Mode1221/Atelier` 의 `skills/` (같은 저장소면 한 번만).
+- 저장소가 세션에 없으면 `add_repo`(access: push) 후 안내대로 clone. `add_repo` 가 없는 예약 실행 세션이면 `git clone --depth 50 https://github.com/<REPO>.git` (공개 저장소는 읽기 가능). Atelier 스킬 문서는 `Mode1221/Atelier` 의 `skills/` (같은 저장소면 한 번만).
+- **push 가 안 되는 세션**(저장소가 붙지 않은 예약 실행)에서는 코드·문서를 바꾸지 않는다. 바꿀 내용은 `tasks`(dev)에 구체적으로 남긴다. 저장소에 쓰는 부서(개발 등)는 예약 실행에 저장소를 붙여야 한다 — claude.ai → 루틴 → 해당 부서 → 저장소 추가.
 - 본부 데이터는 `ArtifactData` 도구로 읽고 쓴다 (ToolSearch 로 불러오기, `url`=HQ). 여러 건은 `batch` 한 번으로.
 - 부서 역할: `skills/company/references/departments/<DEPT>.md`. GitHub 이슈·라벨 대신 아래 본부 컬렉션을 쓴다.
 
