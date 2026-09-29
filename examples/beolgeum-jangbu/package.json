@@ -11,7 +11,8 @@
     "test:e2e": "playwright test",
     "lint": "eslint .",
     "legal": "node scripts/gen-legal.mjs",
-    "check": "./scripts/check.sh"
+    "check": "./scripts/check.sh",
+    "usertest": "./scripts/usertest.sh"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

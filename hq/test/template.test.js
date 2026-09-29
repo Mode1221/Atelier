@@ -7,3 +7,9 @@ it('부서 워크플로 템플릿이 스킬 원본과 같다', () => {
   if (!existsSync(src)) return;
   expect(readFileSync(new URL('../public/templates/company.yml', import.meta.url), 'utf8')).toBe(readFileSync(src, 'utf8'));
 });
+
+it('홍보 채널 목록이 share 스킬 원본과 같다', () => {
+  const src = new URL('../../skills/share/scripts/channels.mjs', import.meta.url);
+  if (!existsSync(src)) return;
+  expect(readFileSync(new URL('../public/js/channels.js', import.meta.url), 'utf8')).toBe(readFileSync(src, 'utf8'));
+});

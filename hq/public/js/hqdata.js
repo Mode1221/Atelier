@@ -9,7 +9,7 @@ export const DEFAULT_BUDGET = 10;
 export const SERVICE_SECRET = (id) => `ATELIER_SVC_${id.toUpperCase()}`;
 
 export function defaultSettings() {
-  return { company: '우리 회사', rate: 1400, budgets: Object.fromEntries(DEPTS.map((d) => [d.id, DEFAULT_BUDGET])), paused: [] };
+  return { company: '우리 회사', rate: 1400, budgets: Object.fromEntries(DEPTS.map((d) => [d.id, DEFAULT_BUDGET])), paused: [], sharePath: 'docs/share/posts.json' };
 }
 
 export function normalizeSettings(raw) {
@@ -20,6 +20,8 @@ export function normalizeSettings(raw) {
     rate: Number(s.rate) > 0 ? Number(s.rate) : d.rate,
     budgets: { ...d.budgets, ...Object.fromEntries(Object.entries(s.budgets ?? {}).filter(([k, v]) => d.budgets[k] != null && Number(v) >= 0).map(([k, v]) => [k, Number(v)])) },
     paused: Array.isArray(s.paused) ? s.paused.filter((x) => d.budgets[x] != null) : [],
+    // 홍보 글 파일 (Atelier share 스킬의 posts.json). 저장소 안 상대 경로만
+    sharePath: typeof s.sharePath === 'string' && /^[\w./-]{1,200}$/.test(s.sharePath) && !s.sharePath.includes('..') ? s.sharePath.replace(/^\/+/, '') : d.sharePath,
   };
 }
 
@@ -73,4 +75,18 @@ export async function bootstrap({ gh, templates, anthropicKey, settings }) {
 export async function saveSettings(gh, settings) {
   const cur = await gh.file('hq.json', DATA_BRANCH);
   await gh.putFile('hq.json', JSON.stringify(normalizeSettings(settings), null, 2), 'chore: Atelier HQ 설정 변경', cur?.sha, DATA_BRANCH);
+}
+
+// 홍보 글 올림 기록: 데이터 브랜치 shares/YYYY-MM-DD__채널__번호.json (마케팅 부서가 성과 비교에 쓴다)
+export function parseShares(paths) {
+  const done = new Set();
+  for (const p of paths ?? []) {
+    const m = /^shares\/(\d{4}-\d{2}-\d{2})__([a-z_]+)__(\d+)\.json$/.exec(p);
+    if (m) done.add(`${m[2]}#${m[3]}`);
+  }
+  return done;
+}
+export async function markShared(gh, { channel, index, campaign }, now = new Date()) {
+  const path = `shares/${now.toISOString().slice(0, 10)}__${channel}__${index}.json`;
+  await gh.putFile(path, JSON.stringify({ at: now.toISOString(), channel, index, campaign: campaign ?? null }), `chore: 홍보 글 올림 — ${channel}`, undefined, DATA_BRANCH);
 }

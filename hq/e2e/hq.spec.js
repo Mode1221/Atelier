@@ -113,7 +113,21 @@ test('로그인 → 연결 → 회사 세우기 → 결재 → 할 일 → 업�
   await expect(page.getByText('저장했어요')).toBeVisible();
   expect(JSON.parse((await fakeState(page)).branches['atelier-data']['hq.json'].text).budgets.qa).toBe(20);
 
+  // 홍보: 공식 공유 창 링크(utm 포함) · 올림 기록 · 베타 의견
+  await page.goto('/#/share');
+  const threads = page.locator('article', { hasText: 'Threads' });
+  const href = await threads.getByRole('link', { name: 'Threads에 올리기' }).getAttribute('href');
+  expect(href).toContain('https://www.threads.net/intent/post?text=');
+  expect(decodeURIComponent(href)).toContain('utm_source=threads');
+  await expect(page.locator('article', { hasText: '카카오톡' }).getByRole('link')).toHaveCount(0);
+  await threads.getByRole('button', { name: '올렸어요' }).click();
+  await expect(page.getByText('올린 것으로 기록했어요')).toBeVisible();
+  await expect(page.locator('article', { hasText: 'Threads' })).toContainText('올림');
+  expect(Object.keys((await fakeState(page)).branches['atelier-data']).some((k) => /^shares\/\d{4}-\d{2}-\d{2}__threads__0\.json$/.test(k))).toBe(true);
+  await expect(page.getByRole('link', { name: '베타 피드백 2026-09-29 (3건)' })).toBeVisible();
+
   // 로그아웃하면 토큰이 브라우저에서 지워진다
+  await page.goto('/#/settings');
   await page.getByRole('button', { name: '로그아웃 (토큰 지우기)' }).click();
   await expect(page.getByLabel('GitHub 접근 토큰')).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('hq.auth') ?? sessionStorage.getItem('hq.auth'))).toBeNull();
@@ -125,7 +139,7 @@ for (const scheme of ['light', 'dark']) {
     await page.goto('/');
     expect((await new AxeBuilder({ page }).analyze()).violations.map((v) => v.id)).toEqual([]);
     await login(page);
-    for (const path of ['#/', '#/approvals', '#/board', '#/depts', '#/connect', '#/connect/sentry', '#/settings', '#/help']) {
+    for (const path of ['#/', '#/approvals', '#/board', '#/depts', '#/share', '#/connect', '#/connect/sentry', '#/settings', '#/help']) {
       await page.goto(`/${path}`);
       await page.locator('main h1').first().waitFor();
       const r = await new AxeBuilder({ page }).analyze();

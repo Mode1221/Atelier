@@ -1,0 +1,34 @@
+# Atelier beta — 서비스 "의견 보내기" 피드백을 매일 GitHub 이슈(요약 1건)로 모은다.
+# 설치: 이 파일을 .github/workflows/atelier-feedback.yml 로, feedback-sync.mjs 를 .github/atelier/feedback-sync.mjs 로 복사.
+# 필요: Variables SERVICE_URL (서비스 주소), Secrets FEEDBACK_TOKEN (서비스와 같은 값).
+#   Cloudflare 로 배포하면 FEEDBACK_TOKEN 대신 CLOUDFLARE_API_TOKEN 에서 파생한다 (아래 주석) — 사람이 토큰을 만들 필요 없음.
+name: Atelier feedback
+on:
+  schedule:
+    - cron: "40 0 * * *"   # 매일 09:40 KST
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { sparse-checkout: .github/atelier }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: 피드백 → 이슈
+        env:
+          SERVICE_URL: ${{ vars.SERVICE_URL }}
+          FEEDBACK_TOKEN: ${{ secrets.FEEDBACK_TOKEN }}
+          CF: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$FEEDBACK_TOKEN" ] && [ -n "$CF" ]; then
+            FEEDBACK_TOKEN=$(printf 'atelier-feedback:%s' "$CF" | sha256sum | cut -d' ' -f1)
+          fi
+          [ -n "$FEEDBACK_TOKEN" ] && echo "::add-mask::$FEEDBACK_TOKEN"
+          export FEEDBACK_TOKEN
+          node .github/atelier/feedback-sync.mjs | tee -a "$GITHUB_STEP_SUMMARY"

@@ -88,5 +88,29 @@ for (const scheme of ['light', 'dark']) {
     await expect(page.getByRole('radiogroup', { name: '민수 출결' })).toBeVisible();
     const r = await new AxeBuilder({ page }).analyze();
     expect(r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(' ')}`)).toEqual([]);
+    await page.getByRole('link', { name: '의견 보내기' }).click();
+    const f = await new AxeBuilder({ page }).analyze();
+    expect(f.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(' ')}`)).toEqual([]);
   });
 }
+
+test('베타 의견 보내기: 푸터 링크 → 종류·내용 → 감사 화면', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: '의견 보내기' }).click();
+  await expect(page).toHaveURL(/\/feedback\?from=%2F$/);
+  await page.getByLabel('불편해요').check();
+  await page.getByRole('button', { name: '보내기' }).click();
+  await expect(page.getByText('내용을 적어 주세요')).toBeVisible();
+  await page.getByLabel('내용').fill('벌금 규칙을 나중에 바꾸고 싶어요');
+  await page.getByRole('button', { name: '보내기' }).click();
+  await expect(page.getByRole('heading', { name: '고마워요!' })).toBeFocused();
+});
+
+test('보기 링크로 온 멤버에게 "우리 모임 장부 만들기" 안내, 운영자에겐 숨김', async ({ page, context }) => {
+  await createGroup(page);
+  await expect(page.getByRole('link', { name: '우리 모임 장부 만들기' })).toBeHidden();
+  const viewer = await context.newPage();
+  await viewer.goto(await page.locator('#view-link').inputValue());
+  await viewer.getByRole('link', { name: '우리 모임 장부 만들기' }).click();
+  await expect(viewer).toHaveURL(/\/\?ref=view$/);
+});

@@ -44,3 +44,10 @@ select{width:100%;min-height:var(--tap);padding:0 var(--space-2);border:1px soli
 [hidden]{display:none !important}
 .doc table{font-size:var(--text-sm);display:block;overflow-x:auto}
 .doc th{white-space:normal}
+textarea{width:100%;padding:var(--space-2) var(--space-3);border:1px solid var(--color-border-strong);border-radius:var(--radius-md);background:var(--color-bg);color:var(--color-text);font:inherit}
+fieldset{border:0;padding:0;margin:var(--space-3) 0}
+legend{font-weight:600;margin-bottom:var(--space-1)}
+label.choice{display:flex;align-items:center;gap:var(--space-2);min-height:var(--tap);margin:0;font-weight:500}
+label.choice input{width:22px;height:22px;accent-color:var(--color-primary)}
+.badge{display:inline-block;padding:0 var(--space-1);border:1px solid var(--color-border-strong);border-radius:var(--radius-md);font-size:var(--text-sm)}
+.hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}

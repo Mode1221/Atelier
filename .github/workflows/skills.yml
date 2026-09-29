@@ -1,0 +1,26 @@
+# 스킬 스크립트 단위 테스트 + 플러그인 형식 확인 (의존성 없음)
+name: Skills
+on:
+  push:
+    branches: [main]
+    paths: ["skills/**", "tests/**", ".claude-plugin/**", "examples/beolgeum-jangbu/docs/share/**", "examples/beolgeum-jangbu/docs/usertest/plan.json", ".github/workflows/skills.yml"]
+  pull_request:
+    paths: ["skills/**", "tests/**", ".claude-plugin/**", ".github/workflows/skills.yml"]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node --test tests/*.test.mjs
+      - name: 홍보 글 검사 (예시 프로젝트)
+        run: node skills/share/scripts/kit.mjs --check examples/beolgeum-jangbu/docs/share/posts.json
+      - name: 스킬 앞머리 확인
+        run: |
+          for f in skills/*/SKILL.md; do
+            head -1 "$f" | grep -q '^---$' || { echo "::error file=$f::앞머리(---) 없음"; exit 1; }
+            grep -q '^name: ' "$f" && grep -q '^description: ' "$f" || { echo "::error file=$f::name/description 없음"; exit 1; }
+          done

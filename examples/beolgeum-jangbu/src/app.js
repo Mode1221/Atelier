@@ -3,17 +3,16 @@
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { createRepo, RepoError } from './repo.js';
-import { validateGroup, validateMemberName, validateDate, validateAmount } from './validate.js';
+import { validateGroup, validateMemberName, validateDate, validateAmount, validateFeedback } from './validate.js';
 import { keyMatches, rateLimiter, hashIp, safeEqual } from './security.js';
-import { homePage, groupPage, notFoundPage, docPage } from './views.js';
+import { homePage, groupPage, notFoundPage, docPage, feedbackPage } from './views.js';
 import { LEGAL } from './legal.gen.js';
 
 const DOCS = { privacy: ['개인정보처리방침', 'privacy'], terms: ['이용약관', 'terms'] };
+export const SUPPORT_HOSTS = ['toss.me', 'qr.kakaopay.com', 'buymeacoffee.com', 'www.buymeacoffee.com', 'ko-fi.com'];
 
 // trustProxyHeader: 클라이언트 IP 를 믿고 읽을 헤더. Cloudflare 는 'cf-connecting-ip' (wrangler.toml vars).
 // 지정하지 않으면 IP 를 모르는 것으로 본다 — 헤더 위조로 속도 제한을 우회하지 못하게.
-export const SUPPORT_HOSTS = ['toss.me', 'qr.kakaopay.com', 'buymeacoffee.com', 'www.buymeacoffee.com', 'ko-fi.com'];
-
 export function createApp({ log = (o) => console.log(JSON.stringify(o)), limits = {}, trustProxyHeader } = {}) {
   // 쓰기 한도는 인스턴스 메모리로(최선 노력, D1 쓰기 절약). 생성·키 실패 한도는 D1 로(모든 인스턴스 공유).
   const writeLimit = rateLimiter({ limit: limits.writesPerMinute ?? 120, windowMs: 60_000 });
@@ -78,7 +77,12 @@ export function createApp({ log = (o) => console.log(JSON.stringify(o)), limits 
     return c.redirect(url, 302);
   });
 
-  app.get('/', (c) => c.html(homePage(pageOpts(c))));
+  app.get('/', (c) => {
+    // 유입 경로 (?ref= 또는 utm_source) — 공유·채널별 효과를 본다
+    const src = (c.req.query('ref') ?? c.req.query('utm_source') ?? '').toLowerCase();
+    if (/^[a-z0-9_-]{1,32}$/.test(src)) event(c, 'landing', { src });
+    return c.html(homePage(pageOpts(c)));
+  });
   app.get('/g/:id', async (c) => {
     const repo = c.get('repo');
     const group = await repo.getGroup(c.req.param('id'));
@@ -88,7 +92,7 @@ export function createApp({ log = (o) => console.log(JSON.stringify(o)), limits 
   });
   app.get('/:doc{privacy|terms}', (c) => {
     const [title, key] = DOCS[c.req.param('doc')];
-    return c.html(docPage(title, LEGAL[key], pageOpts(c)));
+    return c.html(docPage(title, LEGAL[key], { ...pageOpts(c), page: `/${c.req.param('doc')}` }));
   });
   // /health — 앱·DB 상태 (업타임 감시·정기 점검용). 백업은 D1 Time Travel 이 자동으로 한다.
   app.get('/health', async (c) => {
@@ -222,7 +226,34 @@ export function createApp({ log = (o) => console.log(JSON.stringify(o)), limits 
     return c.body(null, 204);
   });
 
-  app.post('/api/events/:name{summary_copied}', (c) => {
+  // --- 베타 피드백
+  app.get('/feedback', (c) => c.html(feedbackPage({ ...pageOpts(c), from: c.req.query('from') ?? '' })));
+  app.post('/api/feedback', async (c) => {
+    const repo = c.get('repo');
+    const body = await readJson(c);
+    if (body.website) return c.body(null, 204); // 스팸 봇용 숨은 칸 — 조용히 버린다
+    if (!(await repo.hit(`feedback:${hashIp(ipOf(c))}`, limits.feedbackPerHour ?? 10, 3600)))
+      return c.json({ error: '잠시 후 다시 보내 주세요', code: 'rate_limited' }, 429);
+    const { value, error } = validateFeedback(body);
+    if (error) return c.json({ error }, 400);
+    await repo.addFeedback(value);
+    event(c, 'feedback_sent', { kind: value.kind, page: value.page });
+    return c.body(null, 204);
+  });
+  // 수집 워크플로용 (FEEDBACK_TOKEN). 없으면 꺼져 있다.
+  const feedbackAuth = async (c, next) => {
+    const t = c.env.FEEDBACK_TOKEN;
+    if (!t || !safeEqual(c.req.header('authorization')?.replace(/^Bearer /, '') ?? '', t)) return c.json({ error: 'unauthorized' }, 401);
+    await next();
+  };
+  app.get('/api/feedback', feedbackAuth, async (c) => c.json({ items: await c.get('repo').listFeedback() }));
+  app.post('/api/feedback/ack', feedbackAuth, async (c) => {
+    const upTo = Number((await readJson(c)).upTo);
+    if (!Number.isSafeInteger(upTo) || upTo <= 0) return c.json({ error: 'upTo 가 필요해요' }, 400);
+    return c.json({ acked: await c.get('repo').ackFeedback(upTo) });
+  });
+
+  app.post('/api/events/:name{summary_copied|shared}', (c) => {
     if (!eventLimit(ipOf(c))) return c.body(null, 204); // 지표 부풀리기 방지 — 조용히 무시
     event(c, c.req.param('name'));
     return c.body(null, 204);
@@ -238,5 +269,6 @@ export async function scheduled(env, log = (o) => console.log(JSON.stringify(o))
   const repo = createRepo(env.DB);
   const n = await repo.purgeDeleted(30);
   await repo.cleanupRateLimits();
+  await repo.purgeFeedback(365);
   log({ t: new Date().toISOString(), level: 'info', event: 'daily_cleanup', purged: n });
 }

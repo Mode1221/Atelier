@@ -1,0 +1,643 @@
+{
+  "at": "2026-09-29T15:52:35.704Z",
+  "baseUrl": "http://127.0.0.1:3998",
+  "personas": [
+    {
+      "id": "P1",
+      "name": "민지 (24, 대학 스터디장, 휴대폰, 지금 엑셀로 벌금 관리)",
+      "device": "mobile",
+      "words": {
+        "T1": [
+          "모임 만들기",
+          "지각",
+          "결석"
+        ],
+        "T2": [
+          "멤버",
+          "출석",
+          "저장"
+        ],
+        "T3": [
+          "납부"
+        ],
+        "T4": [
+          "복사"
+        ]
+      },
+      "tasks": [
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ]
+    },
+    {
+      "id": "P2",
+      "name": "정호 (41, 러닝 크루 총무, 앱 설치·가입 싫어함)",
+      "device": "mobile",
+      "words": {
+        "T1": [
+          "가입 없이",
+          "벌금"
+        ],
+        "T2": [
+          "출석"
+        ],
+        "T3": [
+          "입금"
+        ],
+        "T4": [
+          "카톡"
+        ]
+      },
+      "tasks": [
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ]
+    },
+    {
+      "id": "P3",
+      "name": "수아 (19, 멤버 — 단톡방 보기 링크로 들어옴)",
+      "device": "mobile",
+      "tasks": [
+        "T5"
+      ],
+      "words": {
+        "T5": [
+          "미납",
+          "지각"
+        ]
+      }
+    },
+    {
+      "id": "P4",
+      "name": "태윤 (33, 사무실 PC 다크 모드로 관리하는 독서 모임장)",
+      "device": "desktop",
+      "dark": true,
+      "tasks": [
+        "T1",
+        "T2",
+        "T3"
+      ],
+      "words": {
+        "T1": [
+          "모임 이름"
+        ],
+        "T2": [
+          "회차"
+        ],
+        "T3": [
+          "납부 기록"
+        ]
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T1",
+      "goal": "다음 주부터 쓸 스터디 모임을 만든다 (지각 500원, 결석 2000원)"
+    },
+    {
+      "id": "T2",
+      "goal": "멤버 3명을 넣고 오늘 모임을 기록한다 (한 명 지각, 한 명 결석)"
+    },
+    {
+      "id": "T3",
+      "goal": "결석한 사람이 3000원을 냈다 — 기록한다"
+    },
+    {
+      "id": "T4",
+      "goal": "멤버들에게 벌금 현황을 알린다"
+    },
+    {
+      "id": "T5",
+      "goal": "(멤버) 내가 벌금을 얼마 내야 하는지 확인한다"
+    }
+  ],
+  "results": [
+    {
+      "persona": "P1",
+      "task": "T1",
+      "goal": "다음 주부터 쓸 스터디 모임을 만든다 (지각 500원, 결석 2000원)",
+      "status": "성공",
+      "steps": [
+        {
+          "step": "fill \"모임 이름\"",
+          "ok": true,
+          "ms": 36
+        },
+        {
+          "step": "fill \"지각\"",
+          "ok": true,
+          "ms": 8
+        },
+        {
+          "step": "fill \"결석\"",
+          "ok": true,
+          "ms": 6
+        },
+        {
+          "step": "click \"모임 만들기\"",
+          "ok": true,
+          "ms": 49
+        },
+        {
+          "step": "see \"관리 링크를 꼭 저장하세요\"",
+          "ok": true,
+          "ms": 125
+        }
+      ],
+      "ms": 722,
+      "stuck": null,
+      "endShot": "shots/P1-T1-end.jpg",
+      "missingWords": [],
+      "consoleErrors": []
+    },
+    {
+      "persona": "P1",
+      "task": "T2",
+      "goal": "멤버 3명을 넣고 오늘 모임을 기록한다 (한 명 지각, 한 명 결석)",
+      "status": "성공",
+      "steps": [
+        {
+          "step": "click \"멤버 추가하러 가기\"",
+          "ok": true,
+          "ms": 23
+        },
+        {
+          "step": "fill \"이름 (별명 권장)\"",
+          "ok": true,
+          "ms": 6
+        },
+        {
+          "step": "click \"추가\"",
+          "ok": true,
+          "ms": 43
+        },
+        {
+          "step": "see \"추가했어요\"",
+          "ok": true,
+          "ms": 29
+        },
+        {
+          "step": "fill \"이름 (별명 권장)\"",
+          "ok": true,
+          "ms": 7
+        },
+        {
+          "step": "click \"추가\"",
+          "ok": true,
+          "ms": 43
+        },
+        {
+          "step": "see \"지영\"",
+          "ok": true,
+          "ms": 808
+        },
+        {
+          "step": "fill \"이름 (별명 권장)\"",
+          "ok": true,
+          "ms": 9
+        },
+        {
+          "step": "click \"추가\"",
+          "ok": true,
+          "ms": 43
+        },
+        {
+          "step": "click \"지각\" (민수 출결 안)",
+          "ok": true,
+          "ms": 45
+        },
+        {
+          "step": "click \"결석\" (지영 출결 안)",
+          "ok": true,
+          "ms": 32
+        },
+        {
+          "step": "click \"저장\"",
+          "ok": true,
+          "ms": 32
+        },
+        {
+          "step": "see \"합계 4,000원\"",
+          "ok": true,
+          "ms": 4
+        }
+      ],
+      "ms": 1147,
+      "stuck": null,
+      "endShot": "shots/P1-T2-end.jpg",
+      "missingWords": [],
+      "consoleErrors": []
+    },
+    {
+      "persona": "P1",
+      "task": "T3",
+      "goal": "결석한 사람이 3000원을 냈다 — 기록한다",
+      "status": "성공",
+      "steps": [
+        {
+          "step": "select \"멤버\"",
+          "ok": true,
+          "ms": 19
+        },
+        {
+          "step": "fill \"금액\"",
+          "ok": true,
+          "ms": 7
+        },
+        {
+          "step": "click \"기록\"",
+          "ok": true,
+          "ms": 49
+        },
+        {
+          "step": "see \"납부를 기록했어요\"",
+          "ok": true,
+          "ms": 30
+        }
+      ],
+      "ms": 113,
+      "stuck": null,
+      "endShot": "shots/P1-T3-end.jpg",
+      "missingWords": [],
+      "consoleErrors": []
+    },
+    {
+      "persona": "P1",
+      "task": "T4",
+      "goal": "멤버들에게 벌금 현황을 알린다",
+      "status": "성공",
+      "steps": [
+        {
+          "step": "click \"카톡용 요약 복사\"",
+          "ok": true,
+          "ms": 31
+        },
+        {
+          "step": "see \"복사했어요\"",
+          "ok": true,
+          "ms": 9
+        }
+      ],
+      "ms": 45,
+      "stuck": null,
+      "endShot": "shots/P1-T4-end.jpg",
+      "missingWords": [],
+      "consoleErrors": []
+    },
+    {
+      "persona": "P2",
+      "task": "T1",
+      "goal": "다음 주부터 쓸 스터디 모임을 만든다 (지각 500원, 결석 2000원)",
+      "status": "성공",
+      "steps": [
+        {
+          "step": "fill \"모임 이름\"",
+          "ok": true,
+          "ms": 27
+        },
+        {
+          "step": "fill \"지각\"",
+          "ok": true,
+          "ms": 6
+        },
+        {
+          "step": "fill \"결석\"",
+          "ok": true,
+          "ms": 6
+        },
+        {
+          "step": "click \"모임 만들기\"",
+          "ok": true,
+          "ms": 47
+        },
+        {
+          "step": "see \"관리 링크를 꼭 저장하세요\"",
+          "ok": true,
+          "ms": 114
+        }
+      ],
+      "ms": 705,
+      "stuck": null,
+      "endShot": "shots/P2-T1-end.jpg",
+      "missingWords": [],
+      "consoleErrors": []
+    },
+    {
+      "persona": "P2",
+      "task": "T2",
+      "goal": "멤버 3명을 넣고 오늘 모임을 기록한다 (한 명 지각, 한 명 결석)",
+      "status": "성공",
+      "steps": [
+        {
+          "step": "click \"멤버 추가하러 가기\"",
+          "ok": true,
+          "ms": 28
+        },
+        {
+          "step": "fill \"이름 (별명 권장)\"",
+          "ok": true,
+          "ms": 7
+        },
+        {
+          "step": "click \"추가\"",
+          "ok": true,
+          "ms": 40
+        },
+        {
+          "step": "see \"추가했어요\"",
+          "ok": true,
+          "ms": 29
+        },
+        {
+          "step": "fill \"이름 (별명 권장)\"",
+          "ok": true,
+          "ms": 6
+        },
+        {
+          "step": "click \"추가\"",
+          "ok": true,
+          "ms": 44
+        },
+        {
+          "step": "see \"지영\"",
+          "ok": true,
+          "ms": 809
+        },
+        {
+          "step": "fill \"이름 (별명 권장)\"",
+          "ok": true,
+          "ms": 10
+        },
+        {
+          "step": "click \"추가\"",
+          "ok": true,
+          "ms": 40
+        },
+        {
+          "step": "click \"지각\" (민수 출결 안)",
+          "ok": true,
+          "ms": 31
+        },
+        {
+          "step": "click \"결석\" (지영 출결 안)",
+          "ok": true,
+          "ms": 32
+        },
+        {
+          "step": "click \"저장\"",
+          "ok": true,
+          "ms": 32
+        },
+        {
+          "step": "see \"합계 4,000원\"",
+          "ok": true,
+          "ms": 3
+        }
+      ],
+      "ms": 1136,
+      "stuck": null,
+      "endShot": "shots/P2-T2-end.jpg",
+      "missingWords": [],
+      "consoleErrors": []
+    },
+    {
+      "persona": "P2",
+      "task": "T3",
+      "goal": "결석한 사람이 3000원을 냈다 — 기록한다",
+      "status": "성공",
+      "steps": [
+        {
+          "step": "select \"멤버\"",
+          "ok": true,
+          "ms": 23
+        },
+        {
+          "step": "fill \"금액\"",
+          "ok": true,
+          "ms": 5
+        },
+        {
+          "step": "click \"기록\"",
+          "ok": true,
+          "ms": 45
+        },
+        {
+          "step": "see \"납부를 기록했어요\"",
+          "ok": true,
+          "ms": 31
+        }
+      ],
+      "ms": 111,
+      "stuck": null,
+      "endShot": "shots/P2-T3-end.jpg",
+      "missingWords": [],
+      "consoleErrors": []
+    },
+    {
+      "persona": "P2",
+      "task": "T4",
+      "goal": "멤버들에게 벌금 현황을 알린다",
+      "status": "성공",
+      "steps": [
+        {
+          "step": "click \"카톡용 요약 복사\"",
+          "ok": true,
+          "ms": 15
+        },
+        {
+          "step": "see \"복사했어요\"",
+          "ok": true,
+          "ms": 31
+        }
+      ],
+      "ms": 48,
+      "stuck": null,
+      "endShot": "shots/P2-T4-end.jpg",
+      "missingWords": [],
+      "consoleErrors": []
+    },
+    {
+      "persona": "P3",
+      "task": "T5",
+      "goal": "(멤버) 내가 벌금을 얼마 내야 하는지 확인한다",
+      "status": "성공",
+      "steps": [
+        {
+          "step": "see \"수아\" (undefined 안)",
+          "ok": true,
+          "ms": 14
+        },
+        {
+          "step": "see \"1,000\" (undefined 안)",
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "notSee \"관리 링크를 꼭 저장하세요\"",
+          "ok": true,
+          "ms": 3
+        }
+      ],
+      "ms": 25,
+      "stuck": null,
+      "endShot": "shots/P3-T5-end.jpg",
+      "missingWords": [],
+      "consoleErrors": []
+    },
+    {
+      "persona": "P4",
+      "task": "T1",
+      "goal": "다음 주부터 쓸 스터디 모임을 만든다 (지각 500원, 결석 2000원)",
+      "status": "성공",
+      "steps": [
+        {
+          "step": "fill \"모임 이름\"",
+          "ok": true,
+          "ms": 31
+        },
+        {
+          "step": "fill \"지각\"",
+          "ok": true,
+          "ms": 7
+        },
+        {
+          "step": "fill \"결석\"",
+          "ok": true,
+          "ms": 6
+        },
+        {
+          "step": "click \"모임 만들기\"",
+          "ok": true,
+          "ms": 33
+        },
+        {
+          "step": "see \"관리 링크를 꼭 저장하세요\"",
+          "ok": true,
+          "ms": 76
+        }
+      ],
+      "ms": 656,
+      "stuck": null,
+      "endShot": "shots/P4-T1-end.jpg",
+      "missingWords": [],
+      "consoleErrors": []
+    },
+    {
+      "persona": "P4",
+      "task": "T2",
+      "goal": "멤버 3명을 넣고 오늘 모임을 기록한다 (한 명 지각, 한 명 결석)",
+      "status": "성공",
+      "steps": [
+        {
+          "step": "click \"멤버 추가하러 가기\"",
+          "ok": true,
+          "ms": 32
+        },
+        {
+          "step": "fill \"이름 (별명 권장)\"",
+          "ok": true,
+          "ms": 7
+        },
+        {
+          "step": "click \"추가\"",
+          "ok": true,
+          "ms": 44
+        },
+        {
+          "step": "see \"추가했어요\"",
+          "ok": true,
+          "ms": 33
+        },
+        {
+          "step": "fill \"이름 (별명 권장)\"",
+          "ok": true,
+          "ms": 7
+        },
+        {
+          "step": "click \"추가\"",
+          "ok": true,
+          "ms": 33
+        },
+        {
+          "step": "see \"지영\"",
+          "ok": true,
+          "ms": 806
+        },
+        {
+          "step": "fill \"이름 (별명 권장)\"",
+          "ok": true,
+          "ms": 9
+        },
+        {
+          "step": "click \"추가\"",
+          "ok": true,
+          "ms": 31
+        },
+        {
+          "step": "click \"지각\" (민수 출결 안)",
+          "ok": true,
+          "ms": 30
+        },
+        {
+          "step": "click \"결석\" (지영 출결 안)",
+          "ok": true,
+          "ms": 31
+        },
+        {
+          "step": "click \"저장\"",
+          "ok": true,
+          "ms": 34
+        },
+        {
+          "step": "see \"합계 4,000원\"",
+          "ok": true,
+          "ms": 4
+        }
+      ],
+      "ms": 1130,
+      "stuck": null,
+      "endShot": "shots/P4-T2-end.jpg",
+      "missingWords": [],
+      "consoleErrors": []
+    },
+    {
+      "persona": "P4",
+      "task": "T3",
+      "goal": "결석한 사람이 3000원을 냈다 — 기록한다",
+      "status": "성공",
+      "steps": [
+        {
+          "step": "select \"멤버\"",
+          "ok": true,
+          "ms": 18
+        },
+        {
+          "step": "fill \"금액\"",
+          "ok": true,
+          "ms": 8
+        },
+        {
+          "step": "click \"기록\"",
+          "ok": true,
+          "ms": 44
+        },
+        {
+          "step": "see \"납부를 기록했어요\"",
+          "ok": true,
+          "ms": 37
+        }
+      ],
+      "ms": 116,
+      "stuck": null,
+      "endShot": "shots/P4-T3-end.jpg",
+      "missingWords": [],
+      "consoleErrors": []
+    }
+  ],
+  "findings": []
+}

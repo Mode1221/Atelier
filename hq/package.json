@@ -13,7 +13,7 @@
     "test:e2e": "playwright test",
     "lint": "eslint .",
     "build:vendor": "node scripts/build-vendor.mjs",
-    "sync-template": "cp ../skills/company/templates/company.yml public/templates/company.yml"
+    "sync-template": "cp ../skills/company/templates/company.yml public/templates/company.yml && cp ../skills/share/scripts/channels.mjs public/js/channels.js"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

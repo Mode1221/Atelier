@@ -277,3 +277,69 @@ describe('R4 후원 링크', () => {
     }
   });
 });
+
+describe('베타 피드백', () => {
+  const send = (body, ip) => req('POST', '/api/feedback', { body, ip });
+  const auth = (path, init = {}) => app.request(path, { ...init, headers: { authorization: 'Bearer fb-secret', 'Content-Type': 'application/json' } }, env);
+
+  it('의견 페이지와 푸터 링크(보낸 화면 표시)', async () => {
+    expect((await req('GET', '/feedback?from=%2Fg%2F%3Aid')).status).toBe(200);
+    const g = await newGroup();
+    expect(await (await req('GET', `/g/${g.id}`)).text()).toContain('/feedback?from=%2Fg%2F%3Aid');
+  });
+
+  it('저장하면서 연락처·모임 링크를 가리고 경로는 패턴만 남긴다', async () => {
+    env.FEEDBACK_TOKEN = 'fb-secret';
+    const r = await send({ kind: 'hard', message: '연락주세요 a.b@x.com 010-1234-5678 https://beolgeum.dev/g/abcDEF12#k=zzz', page: '/g/abcDEF12' });
+    expect(r.status).toBe(204);
+    const { items } = await (await auth('/api/feedback')).json();
+    expect(items).toHaveLength(1);
+    expect(items[0].message).toBe('연락주세요 [이메일 가림] [전화번호 가림] [모임 링크 가림]');
+    expect(items[0].page).toBe('/g/:id');
+    expect(logs.some((l) => l.event === 'feedback_sent' && l.kind === 'hard')).toBe(true);
+  });
+
+  it('검증: 종류 필수, 좋아요 외엔 내용 필수, 1000자 제한', async () => {
+    expect((await send({ kind: 'nope', message: 'x' })).status).toBe(400);
+    expect((await send({ kind: 'bug', message: '  ' })).status).toBe(400);
+    expect((await send({ kind: 'idea', message: 'x'.repeat(1001) })).status).toBe(400);
+    expect((await send({ kind: 'good', message: '' })).status).toBe(204);
+  });
+
+  it('숨은 칸을 채운 봇은 조용히 버리고, 한도를 넘기면 429', async () => {
+    env.FEEDBACK_TOKEN = 'fb-secret';
+    expect((await send({ kind: 'bug', message: 'spam', website: 'x' })).status).toBe(204);
+    expect((await (await auth('/api/feedback')).json()).items).toHaveLength(0);
+    for (let i = 0; i < 10; i++) expect((await send({ kind: 'good' }, '9.9.9.9')).status).toBe(204);
+    expect((await send({ kind: 'good' }, '9.9.9.9')).status).toBe(429);
+  });
+
+  it('수집 API: 토큰 없으면 401, ack 한 뒤에는 다시 나오지 않는다', async () => {
+    expect((await req('GET', '/api/feedback')).status).toBe(401);
+    env.FEEDBACK_TOKEN = 'fb-secret';
+    expect((await req('GET', '/api/feedback')).status).toBe(401);
+    await send({ kind: 'idea', message: '엑셀 내보내기' });
+    await send({ kind: 'bug', message: '저장이 안 돼요' });
+    const { items } = await (await auth('/api/feedback')).json();
+    const ack = await (await auth('/api/feedback/ack', { method: 'POST', body: JSON.stringify({ upTo: items[0].id }) })).json();
+    expect(ack.acked).toBe(1);
+    const left = (await (await auth('/api/feedback')).json()).items;
+    expect(left.map((i) => i.message)).toEqual(['저장이 안 돼요']);
+    expect((await auth('/api/feedback/ack', { method: 'POST', body: '{}' })).status).toBe(400);
+  });
+});
+
+describe('공유·유입 경로', () => {
+  it('?ref= 를 landing 이벤트로 남기고 이상한 값은 무시', async () => {
+    await req('GET', '/?ref=share');
+    await req('GET', '/?utm_source=threads');
+    await req('GET', '/?ref=%3Cscript%3E');
+    expect(logs.filter((l) => l.event === 'landing').map((l) => l.src)).toEqual(['share', 'threads']);
+  });
+  it('보기 화면에 "우리 모임 장부 만들기" 안내, 공유 이벤트 기록', async () => {
+    const g = await newGroup();
+    expect(await (await req('GET', `/g/${g.id}`)).text()).toContain('/?ref=view');
+    expect((await req('POST', '/api/events/shared')).status).toBe(204);
+    expect(logs.some((l) => l.event === 'shared')).toBe(true);
+  });
+});

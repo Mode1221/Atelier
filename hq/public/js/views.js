@@ -2,6 +2,7 @@
 // 폼은 data-action 으로 main.js 의 처리기와 연결된다. 링크는 #/경로.
 import { DEPTS, COLUMNS } from './company.js';
 import { SERVICES } from './services.js';
+import { CHANNELS, withUtm, length } from './channels.js';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const deptName = (id) => DEPTS.find((d) => d.id === id)?.name ?? '미지정';
@@ -32,6 +33,7 @@ const NAV = [
   ['#/approvals', '결재'],
   ['#/board', '업무'],
   ['#/depts', '부서'],
+  ['#/share', '홍보'],
   ['#/connect', '연결'],
   ['#/settings', '설정'],
 ];
@@ -209,6 +211,40 @@ export function connectServicePage({ svc, secrets }) {
 ${connected ? `<form data-action="disconnect" data-svc="${svc.id}"><button class="danger" data-confirm="연결을 해제할까요?">연결 해제</button></form>` : ''}`;
 }
 
+// --- 홍보·반응: 채널별 글을 눌러서 올리고(공식 공유 창), 베타 피드백을 본다
+export function sharePage({ spec, specErr, sharePath, shared, feedback }) {
+  const fb = feedback.length
+    ? `<ul class="list">${feedback.map((i) => `<li><a href="${esc(i.html_url)}" target="_blank" rel="noopener">${esc(i.title)}</a> ${i.state === 'open' ? badge('warning', '분류 전') : badge('good', '처리됨')}</li>`).join('')}</ul>`
+    : '<p class="muted">아직 들어온 의견이 없어요. 서비스의 "의견 보내기"로 들어온 의견이 매일 여기에 모여요.</p>';
+  let posts;
+  if (!spec) {
+    posts = `<section class="card"><h2>홍보 글이 아직 없어요</h2><p>${specErr ? esc(specErr) : `저장소에 <code>${esc(sharePath)}</code> 파일이 없어요.`}</p>
+<form data-action="newTask" class="stack"><input type="hidden" name="dept" value="marketing"><input type="hidden" name="title" value="홍보 글 써 줘 (Atelier share)">
+<input type="hidden" name="body" value="${esc(`atelier:share 스킬로 채널별 홍보 글을 ${sharePath} 에 써 주세요. 대상 사용자가 있는 채널 3~5개, 채널 규칙 확인 포함.`)}">
+<button class="primary">마케팅 부서에 홍보 글 맡기기</button></form></section>`;
+  } else {
+    posts = spec.posts
+      .map((p, i) => {
+        const ch = CHANNELS[p.channel];
+        if (!ch) return '';
+        const url = withUtm(p.url ?? spec.url, p.channel, spec.campaign);
+        const posted = shared.has(`${p.channel}#${i}`);
+        const n = length(p.text, p.channel) + 24;
+        return `<article class="card"><div class="sec-head"><h2>${esc(ch.name)}</h2>${posted ? badge('good', '올림') : badge('idle', '안 올림')}</div>
+${p.when ? `<p class="tiny muted">${esc(p.when)}</p>` : ''}<pre class="post" id="post-${i}">${esc(`${p.text}\n${url}`)}</pre>
+<p class="tiny ${n > ch.limit ? 'err' : 'muted'}">${n} / ${ch.limit}자${ch.note ? ` · ${esc(ch.note)}` : ''}</p>
+<div class="row"><button type="button" data-click="copy" data-target="post-${i}">글 복사</button>
+${ch.intent ? `<a class="btn primary" href="${esc(ch.intent(p.text, url))}" target="_blank" rel="noopener">${esc(ch.name)}에 올리기</a>` : ''}
+${posted ? '' : `<form data-action="markShared" data-channel="${esc(p.channel)}" data-i="${i}"><button>올렸어요</button></form>`}</div></article>`;
+      })
+      .join('');
+  }
+  return `<h1>홍보·반응</h1>
+<p class="muted">버튼을 누르면 각 SNS 글쓰기 창이 열려요. 확인하고 직접 올리세요 — 자동 게시는 약관 위반이라 하지 않아요. 링크에는 채널 표시가 붙어 어디서 사람이 왔는지 셀 수 있어요.</p>
+${spec ? `<p class="tiny muted">${esc(spec.product ?? '')} · 파일 ${esc(sharePath)}</p>` : ''}${posts}
+<section class="card"><h2>베타 의견</h2>${help('서비스의 "의견 보내기"로 들어온 익명 의견을 매일 한 번 이슈로 모아요. 고객지원 부서가 분류해요.')}${fb}</section>`;
+}
+
 // --- 설정·도움말
 export function settingsPage({ s }) {
   return `<h1>설정</h1>
@@ -217,6 +253,8 @@ export function settingsPage({ s }) {
 <label>환율 (1달러 = 원)<input name="rate" type="number" min="1" max="99999" value="${esc(s.rate)}"></label>
 <h2>부서별 월 AI 예산 (달러)</h2>${help('부서가 한 달에 쓸 수 있는 AI 사용료 상한이에요. 다 쓰면 그 부서는 다음 달까지 멈춰요.')}
 <div class="budget-grid">${DEPTS.map((d) => `<label>${d.name}<input name="budget_${d.id}" type="number" min="0" max="10000" step="1" value="${esc(s.budgets[d.id])}"></label>`).join('')}</div>
+<h2>홍보</h2>${help('마케팅 부서가 쓴 채널별 홍보 글 파일 위치예요. 보통 그대로 두면 돼요.')}
+<label>홍보 글 파일<input name="sharePath" value="${esc(s.sharePath)}" maxlength="200"></label>
 <button class="primary">저장</button><p class="tiny muted">설정은 저장소의 atelier-data 브랜치(hq.json)에 저장돼 부서 실행이 바로 따라요.</p></form>
 <section class="card"><h2>이 기기</h2><p>로그인 정보(토큰)는 이 브라우저에만 있어요. 공용 PC 라면 쓰고 나서 로그아웃하세요.</p><button class="danger" data-click="logout">로그아웃 (토큰 지우기)</button></section>`;
 }

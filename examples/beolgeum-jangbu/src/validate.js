@@ -34,3 +34,31 @@ export function validateAmount(raw) {
   const v = Number(raw);
   return isInt(v) && v > 0 && v <= LIMITS.maxFine ? v : null;
 }
+
+// 베타 피드백. 공개 저장소 이슈로 옮겨질 수 있으므로 연락처·모임 링크처럼 보이는 값은 가린다.
+export const FEEDBACK_KINDS = { good: '좋아요', hard: '불편해요', bug: '오류', idea: '제안' };
+// 경로는 패턴으로만 남긴다 — 모임 ID(보기 링크)가 새지 않게
+const PAGES = [
+  [/^\/$/, '/'],
+  [/^\/g\/[^/]+$/, '/g/:id'],
+  [/^\/(privacy|terms|feedback)$/, null],
+];
+export function feedbackPage(raw) {
+  const path = typeof raw === 'string' ? raw.split(/[?#]/)[0] : '';
+  for (const [re, name] of PAGES) if (re.test(path)) return name ?? path;
+  return '기타';
+}
+export function maskContacts(text) {
+  return text
+    .replace(/https?:\/\/\S*\/g\/[\w-]+\S*/g, '[모임 링크 가림]')
+    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, '[이메일 가림]')
+    .replace(/(\+?82[-\s]?)?0?1[016789][-\s.]?\d{3,4}[-\s.]?\d{4}/g, '[전화번호 가림]');
+}
+export function validateFeedback(input) {
+  const kind = Object.hasOwn(FEEDBACK_KINDS, input?.kind) ? input.kind : null;
+  if (!kind) return { error: '종류를 골라 주세요' };
+  const message = typeof input.message === 'string' ? input.message.trim() : '';
+  if (message.length > 1000) return { error: '1000자까지 적을 수 있어요' };
+  if (!message && kind !== 'good') return { error: '내용을 적어 주세요' };
+  return { value: { kind, message: maskContacts(message), page: feedbackPage(input.page) } };
+}

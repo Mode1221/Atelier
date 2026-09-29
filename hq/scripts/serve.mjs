@@ -20,6 +20,12 @@ if (process.env.FAKE === '1') {
   world.addIssue('결석 체크 버튼 색 대비 고치기', ['dept:design', 'status:review']);
   world.addIssue('정기 점검 실패 2026-09-29', ['dept:ops', 'ops-alert']);
   world.addIssue('랜딩 문구 개선', ['dept:marketing'], '', 'closed');
+  world.addIssue('베타 피드백 2026-09-29 (3건)', ['feedback', 'dept:support']);
+  const posts = { product: '벌금장부 공개 베타', url: 'https://beolgeum.example/', campaign: 'open-beta', posts: [
+    { channel: 'threads', when: 'D-day', text: '스터디 벌금 계산기 공개 베타 열었어요.' },
+    { channel: 'kakaotalk', text: '스터디 벌금 정산 무료 웹이에요.' },
+  ] };
+  world.state.files['docs/share/posts.json'] = { text: JSON.stringify(posts), sha: 'shaP' };
 }
 
 createServer(async (req, res) => {

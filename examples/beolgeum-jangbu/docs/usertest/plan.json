@@ -1,0 +1,424 @@
+{
+  "baseUrl": "http://127.0.0.1:3999",
+  "ipHeader": "cf-connecting-ip",
+  "personas": [
+    {
+      "id": "P1",
+      "name": "민지 (24, 대학 스터디장, 휴대폰, 지금 엑셀로 벌금 관리)",
+      "device": "mobile",
+      "words": {
+        "T1": [
+          "모임 만들기",
+          "지각",
+          "결석"
+        ],
+        "T2": [
+          "멤버",
+          "출석",
+          "저장"
+        ],
+        "T3": [
+          "납부"
+        ],
+        "T4": [
+          "복사"
+        ]
+      },
+      "tasks": [
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ]
+    },
+    {
+      "id": "P2",
+      "name": "정호 (41, 러닝 크루 총무, 앱 설치·가입 싫어함)",
+      "device": "mobile",
+      "words": {
+        "T1": [
+          "가입 없이",
+          "벌금"
+        ],
+        "T2": [
+          "출석"
+        ],
+        "T3": [
+          "입금"
+        ],
+        "T4": [
+          "카톡"
+        ]
+      },
+      "tasks": [
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ]
+    },
+    {
+      "id": "P3",
+      "name": "수아 (19, 멤버 — 단톡방 보기 링크로 들어옴)",
+      "device": "mobile",
+      "tasks": [
+        "T5"
+      ],
+      "words": {
+        "T5": [
+          "미납",
+          "지각"
+        ]
+      }
+    },
+    {
+      "id": "P4",
+      "name": "태윤 (33, 사무실 PC 다크 모드로 관리하는 독서 모임장)",
+      "device": "desktop",
+      "dark": true,
+      "tasks": [
+        "T1",
+        "T2",
+        "T3"
+      ],
+      "words": {
+        "T1": [
+          "모임 이름"
+        ],
+        "T2": [
+          "회차"
+        ],
+        "T3": [
+          "납부 기록"
+        ]
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T1",
+      "goal": "다음 주부터 쓸 스터디 모임을 만든다 (지각 500원, 결석 2000원)",
+      "steps": [
+        {
+          "fill": {
+            "label": "모임 이름",
+            "value": "토익 스터디"
+          }
+        },
+        {
+          "fill": {
+            "label": "지각",
+            "value": "500",
+            "exact": true
+          }
+        },
+        {
+          "fill": {
+            "label": "결석",
+            "value": "2000",
+            "exact": true
+          }
+        },
+        {
+          "click": {
+            "role": "button",
+            "name": "모임 만들기"
+          }
+        },
+        {
+          "see": "관리 링크를 꼭 저장하세요",
+          "note": "저장 안내를 보는가"
+        }
+      ]
+    },
+    {
+      "id": "T2",
+      "goal": "멤버 3명을 넣고 오늘 모임을 기록한다 (한 명 지각, 한 명 결석)",
+      "setup": [
+        {
+          "fill": {
+            "label": "모임 이름",
+            "value": "토익 스터디"
+          }
+        },
+        {
+          "click": {
+            "role": "button",
+            "name": "모임 만들기"
+          }
+        },
+        {
+          "see": "관리 링크를 꼭 저장하세요"
+        }
+      ],
+      "steps": [
+        {
+          "click": {
+            "role": "link",
+            "name": "멤버 추가하러 가기"
+          },
+          "note": "새 모임에서 첫 할 일(멤버 추가)을 찾는가"
+        },
+        {
+          "fill": {
+            "label": "이름 (별명 권장)",
+            "value": "민수"
+          }
+        },
+        {
+          "click": {
+            "role": "button",
+            "name": "추가"
+          }
+        },
+        {
+          "see": "추가했어요"
+        },
+        {
+          "fill": {
+            "label": "이름 (별명 권장)",
+            "value": "지영"
+          }
+        },
+        {
+          "click": {
+            "role": "button",
+            "name": "추가"
+          }
+        },
+        {
+          "see": "지영"
+        },
+        {
+          "fill": {
+            "label": "이름 (별명 권장)",
+            "value": "하늘"
+          }
+        },
+        {
+          "click": {
+            "role": "button",
+            "name": "추가"
+          }
+        },
+        {
+          "click": {
+            "text": "지각",
+            "exact": true
+          },
+          "within": {
+            "role": "radiogroup",
+            "name": "민수 출결"
+          }
+        },
+        {
+          "click": {
+            "text": "결석",
+            "exact": true
+          },
+          "within": {
+            "role": "radiogroup",
+            "name": "지영 출결"
+          }
+        },
+        {
+          "click": {
+            "role": "button",
+            "name": "저장"
+          }
+        },
+        {
+          "see": "합계 4,000원"
+        }
+      ]
+    },
+    {
+      "id": "T3",
+      "goal": "결석한 사람이 3000원을 냈다 — 기록한다",
+      "setup": [
+        {
+          "fill": {
+            "label": "모임 이름",
+            "value": "토익 스터디"
+          }
+        },
+        {
+          "click": {
+            "role": "button",
+            "name": "모임 만들기"
+          }
+        },
+        {
+          "fill": {
+            "label": "이름 (별명 권장)",
+            "value": "지영"
+          }
+        },
+        {
+          "click": {
+            "role": "button",
+            "name": "추가"
+          }
+        },
+        {
+          "click": {
+            "text": "결석",
+            "exact": true
+          },
+          "within": {
+            "role": "radiogroup",
+            "name": "지영 출결"
+          }
+        },
+        {
+          "click": {
+            "role": "button",
+            "name": "저장"
+          }
+        },
+        {
+          "see": "합계 3,000원"
+        }
+      ],
+      "steps": [
+        {
+          "select": {
+            "label": "멤버",
+            "exact": true,
+            "option": "지영"
+          }
+        },
+        {
+          "fill": {
+            "label": "금액",
+            "value": "3000"
+          }
+        },
+        {
+          "click": {
+            "role": "button",
+            "name": "기록"
+          }
+        },
+        {
+          "see": "납부를 기록했어요"
+        }
+      ]
+    },
+    {
+      "id": "T4",
+      "goal": "멤버들에게 벌금 현황을 알린다",
+      "setup": [
+        {
+          "fill": {
+            "label": "모임 이름",
+            "value": "토익 스터디"
+          }
+        },
+        {
+          "click": {
+            "role": "button",
+            "name": "모임 만들기"
+          }
+        },
+        {
+          "fill": {
+            "label": "이름 (별명 권장)",
+            "value": "민수"
+          }
+        },
+        {
+          "click": {
+            "role": "button",
+            "name": "추가"
+          }
+        },
+        {
+          "see": "카톡용 요약 복사"
+        }
+      ],
+      "steps": [
+        {
+          "click": {
+            "role": "button",
+            "name": "카톡용 요약 복사"
+          }
+        },
+        {
+          "see": "복사했어요"
+        }
+      ]
+    },
+    {
+      "id": "T5",
+      "goal": "(멤버) 내가 벌금을 얼마 내야 하는지 확인한다",
+      "setup": [
+        {
+          "fill": {
+            "label": "모임 이름",
+            "value": "토익 스터디"
+          }
+        },
+        {
+          "click": {
+            "role": "button",
+            "name": "모임 만들기"
+          }
+        },
+        {
+          "fill": {
+            "label": "이름 (별명 권장)",
+            "value": "수아"
+          }
+        },
+        {
+          "click": {
+            "role": "button",
+            "name": "추가"
+          }
+        },
+        {
+          "click": {
+            "text": "지각",
+            "exact": true
+          },
+          "within": {
+            "role": "radiogroup",
+            "name": "수아 출결"
+          }
+        },
+        {
+          "click": {
+            "role": "button",
+            "name": "저장"
+          }
+        },
+        {
+          "see": "합계 1,000원"
+        },
+        {
+          "openFrom": {
+            "label": "보기 링크 (멤버에게 공유)"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "see": "수아",
+          "within": {
+            "role": "table"
+          }
+        },
+        {
+          "see": "1,000",
+          "within": {
+            "role": "table"
+          }
+        },
+        {
+          "notSee": "관리 링크를 꼭 저장하세요"
+        }
+      ]
+    }
+  ]
+}

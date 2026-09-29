@@ -64,6 +64,47 @@
     }
     toast('복사했어요');
   }
+  // 휴대폰 공유 창(카톡 등). 지원하지 않는 브라우저는 복사로 대신한다.
+  const canShare = typeof navigator.share === 'function';
+  async function share({ title, text, url }) {
+    if (canShare) {
+      try {
+        await navigator.share({ title, text, url });
+      } catch {
+        return; // 사용자가 닫음
+      }
+    } else await copyText([text, url].filter(Boolean).join('\n'));
+    fetch('/api/events/shared', { method: 'POST' }).catch(() => {});
+  }
+
+  $('#share-app')?.addEventListener('click', () =>
+    share({ title: '벌금장부', text: '스터디 벌금, 아직 엑셀로 계산해? 출석만 체크하면 벌금이 자동으로 쌓여. 가입 없이 링크 하나로.', url: `${location.origin}/?ref=share` }),
+  );
+
+  // --- 의견 보내기
+  const fbForm = $('#feedback-form');
+  if (fbForm) {
+    fbForm.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      showErr($('#fb-err'), '');
+      busy(fbForm.querySelector('button[type=submit]'), async () => {
+        try {
+          await api('POST', '/api/feedback', {
+            kind: fbForm.querySelector('input[name=kind]:checked')?.value,
+            message: $('#fb-message').value,
+            page: $('#fb-from').value,
+            website: $('#fb-website').value,
+          });
+          fbForm.hidden = true;
+          $('#fb-done').hidden = false;
+          $('#fb-done h2').focus();
+        } catch (e) {
+          showErr($('#fb-err'), e.message);
+        }
+      });
+    });
+    return;
+  }
 
   // --- 첫 화면: 모임 만들기
   const createForm = $('#create-form');
@@ -103,14 +144,22 @@
   const gid = data.group.id;
   const key = new URLSearchParams(location.hash.slice(1)).get('k');
 
-  $('#copy-summary')?.addEventListener('click', () => {
+  const summaryText = () => {
     const lines = data.summary
       .filter((r) => !r.hidden || r.balance !== 0)
       .map((r) => (r.balance > 0 ? `${r.name} ${won(r.balance)} 미납` : r.balance < 0 ? `${r.name} ${won(-r.balance)} 선납` : `${r.name} 완납`));
     const total = data.summary.reduce((a, r) => a + Math.max(r.balance, 0), 0);
-    copyText([`[${data.group.name}] 벌금 정산`, ...lines, `미납 합계 ${won(total)}`, `${location.origin}/g/${gid}`].join('\n'));
+    return [`[${data.group.name}] 벌금 정산`, ...lines, `미납 합계 ${won(total)}`].join('\n');
+  };
+  $('#copy-summary')?.addEventListener('click', () => {
+    copyText(`${summaryText()}\n${location.origin}/g/${gid}`);
     fetch('/api/events/summary_copied', { method: 'POST' }).catch(() => {});
   });
+  const shareSummary = $('#share-summary');
+  if (shareSummary && canShare) {
+    shareSummary.hidden = false;
+    shareSummary.addEventListener('click', () => share({ title: data.group.name, text: summaryText(), url: `${location.origin}/g/${gid}` }));
+  }
 
   if (!key) return;
   api('POST', `/api/groups/${gid}/auth`, null, key)
@@ -119,9 +168,14 @@
 
   function enableAdmin() {
     $$('.admin-only').forEach((el) => (el.hidden = false));
+    $$('.viewer-only').forEach((el) => (el.hidden = true));
     $('#admin-link').value = `${location.origin}/g/${gid}#k=${key}`;
     $('#view-link').value = `${location.origin}/g/${gid}`;
     $$('[data-copy]').forEach((b) => b.addEventListener('click', () => copyText($(`#${b.dataset.copy}`).value)));
+    if (canShare) {
+      $('#share-view').hidden = false;
+      $('#share-view').addEventListener('click', () => share({ title: data.group.name, text: `${data.group.name} 벌금 장부예요. 출결·벌금은 여기서 확인하세요.`, url: $('#view-link').value }));
+    }
     const call = (method, path, body) => api(method, `/api/groups/${gid}${path}`, body, key);
     const done = (msg) => {
       toast(msg);
@@ -140,7 +194,12 @@
       const byMember = new Map(entries.map((e) => [e.member_id, e]));
       entriesEl.replaceChildren();
       if (!data.members.length) {
-        entriesEl.innerHTML = '<p class="muted">멤버를 먼저 추가해 주세요.</p>';
+        entriesEl.innerHTML = '<p class="muted">멤버를 먼저 추가해 주세요. <a href="#member-h" id="goto-member">멤버 추가하러 가기</a></p>';
+        $('#goto-member').addEventListener('click', (ev) => {
+          ev.preventDefault();
+          $('#member-h').scrollIntoView({ behavior: 'smooth' });
+          $('#member-name').focus({ preventScroll: true });
+        });
         $('#session-submit').disabled = true;
         return;
       }

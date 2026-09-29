@@ -14,7 +14,7 @@ export function dateLabel(d) {
   return `${m}월 ${day}일 (${DOW[new Date(Date.UTC(y, m - 1, day)).getUTCDay()]})`;
 }
 
-function layout({ title, body, description = '출석만 체크하세요. 벌금은 알아서 계산됩니다.', noindex = false, support = false }) {
+function layout({ title, body, description = '출석만 체크하세요. 벌금은 알아서 계산됩니다.', noindex = false, support = false, page = '/' }) {
   return `<!doctype html>
 <html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -27,7 +27,7 @@ ${noindex ? '<meta name="robots" content="noindex">' : ''}
 <link rel="stylesheet" href="/static/tokens.css"><link rel="stylesheet" href="/static/app.css">
 <script src="/static/app.js" defer></script>
 </head><body><main>${body}</main>
-<footer><a href="/">벌금장부</a> · <a href="/privacy">개인정보처리방침</a> · <a href="/terms">이용약관</a> · <a href="mailto:atlier.skill@gmail.com">문의</a>${support ? ' · <a href="/support" rel="nofollow">☕ 개발자 응원하기</a>' : ''}</footer>
+<footer><a href="/">벌금장부</a> <span class="badge">베타</span> · <a href="/feedback?from=${encodeURIComponent(page)}">의견 보내기</a> · <a href="/privacy">개인정보처리방침</a> · <a href="/terms">이용약관</a> · <a href="mailto:atlier.skill@gmail.com">문의</a>${support ? ' · <a href="/support" rel="nofollow">☕ 개발자 응원하기</a>' : ''}</footer>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 </body></html>`;
 }
@@ -60,7 +60,10 @@ export function homePage({ support } = {}) {
 <p><strong>가입해야 하나요?</strong><br>아니요. 모임을 만들면 나오는 관리 링크만 저장해 두면 돼요.</p>
 <p><strong>돈도 걷어 주나요?</strong><br>아니요. 계산과 기록만 해요. 돈은 모임 통장이나 송금으로 주고받으세요.</p>
 <p><strong>규칙을 바꾸면 지난 벌금도 바뀌나요?</strong><br>아니요. 지난 회차는 그때 규칙으로 계산돼요.</p>
-<p><strong>멤버 이름은 어떻게 적나요?</strong><br>보기 링크를 가진 사람은 누구나 볼 수 있으니 별명을 권해요.</p>`,
+<p><strong>멤버 이름은 어떻게 적나요?</strong><br>보기 링크를 가진 사람은 누구나 볼 수 있으니 별명을 권해요.</p>
+<h2>주변에 알려 주세요</h2>
+<p class="muted">벌금 계산에 지친 다른 모임에도 도움이 될 거예요.</p>
+<button type="button" id="share-app">친구 모임에 알려주기</button>`,
   });
 }
 
@@ -101,6 +104,7 @@ export function groupPage({ group, members, sessions, payments }, { support } = 
   };
   return layout({
     support,
+    page: '/g/:id',
     title: `${group.name} — 벌금장부`,
     description: `${group.name} 벌금 정산 현황`,
     noindex: true,
@@ -110,13 +114,13 @@ export function groupPage({ group, members, sessions, payments }, { support } = 
 <div class="notice"><strong>관리 링크를 꼭 저장하세요.</strong> 잃어버리면 편집할 수 없어요. 멤버에게는 보기 링크만 보내세요.</div>
 <div class="card">
 <label for="admin-link">관리 링크 (나만)</label><div class="linkbox"><input id="admin-link" type="text" readonly><button type="button" data-copy="admin-link">복사</button></div>
-<label for="view-link">보기 링크 (멤버에게 공유)</label><div class="linkbox"><input id="view-link" type="text" readonly><button type="button" data-copy="view-link">복사</button></div>
+<label for="view-link">보기 링크 (멤버에게 공유)</label><div class="linkbox"><input id="view-link" type="text" readonly><button type="button" data-copy="view-link">복사</button><button type="button" id="share-view" hidden>공유</button></div>
 </div></div>
 <p class="error" id="key-err" role="alert" hidden>관리 링크가 올바르지 않아요. 보기 전용으로 표시합니다.</p>
 
 <h2>정산</h2>
 ${summary.length ? `<table><thead><tr><th>멤버</th><th class="num">벌금</th><th class="num">납부</th><th class="num">미납</th></tr></thead><tbody>${summaryRows}</tbody></table>
-<p></p><button type="button" id="copy-summary">카톡용 요약 복사</button>` : `<div class="empty"><p>아직 멤버가 없어요.</p><p class="admin-only" hidden>아래에서 멤버를 추가하면 출결을 체크할 수 있어요.</p></div>`}
+<p></p><button type="button" id="copy-summary">카톡용 요약 복사</button> <button type="button" id="share-summary" hidden>요약 공유</button>` :`<div class="empty"><p>아직 멤버가 없어요.</p><p class="admin-only" hidden>아래에서 멤버를 추가하면 출결을 체크할 수 있어요.</p></div>`}
 
 <section class="admin-only" hidden aria-labelledby="session-h">
 <h2 id="session-h">회차 기록</h2>
@@ -130,11 +134,8 @@ ${summary.length ? `<table><thead><tr><th>멤버</th><th class="num">벌금</th>
 </form>
 </section>
 
-<h2>지난 회차</h2>
-${sessions.length ? `<ul class="plain">${sessionItems}</ul>` : '<p class="empty">아직 기록이 없어요.</p>'}
-
 <section class="admin-only" hidden aria-labelledby="pay-h">
-<h2 id="pay-h">납부 기록</h2>
+<h2 id="pay-h">납부 기록 <span class="muted">(입금 확인)</span></h2>
 <form id="pay-form" class="row" novalidate>
 <div><label for="pay-member">멤버</label><select id="pay-member">${active.map((m) => `<option value="${m.id}">${esc(m.name)}</option>`).join('')}</select></div>
 <div><label for="pay-amount">금액</label><input id="pay-amount" type="number" inputmode="numeric" min="1" max="1000000" step="100"></div>
@@ -142,8 +143,13 @@ ${sessions.length ? `<ul class="plain">${sessionItems}</ul>` : '<p class="empty"
 </form>
 <p class="error" id="pay-err" role="alert" hidden></p>
 <ul class="plain">${payRows}</ul>
+</section>
 
-<h2>멤버</h2>
+<h2>지난 회차</h2>
+${sessions.length ? `<ul class="plain">${sessionItems}</ul>` : '<p class="empty">아직 기록이 없어요.</p>'}
+
+<section class="admin-only" hidden aria-labelledby="member-h">
+<h2 id="member-h">멤버 관리</h2>
 <form id="member-form" class="row" novalidate>
 <div><label for="member-name">이름 (별명 권장)</label><input id="member-name" type="text" maxlength="30" autocomplete="off"></div>
 <div><button type="submit">추가</button></div>
@@ -155,6 +161,7 @@ ${sessions.length ? `<ul class="plain">${sessionItems}</ul>` : '<p class="empty"
 <p class="muted">삭제하면 바로 볼 수 없게 되고 30일 뒤 완전히 지워져요.</p>
 <button type="button" class="danger" id="delete-group">모임 삭제</button>
 </section>
+<div class="card viewer-only"><p><strong>우리 모임도 벌금 계산이 귀찮다면?</strong><br><span class="muted">가입 없이 1분이면 만들어요.</span></p><a class="btn" href="/?ref=view">우리 모임 장부 만들기</a></div>
 <script type="application/json" id="data">${safeJson(data)}</script>`,
   });
 }
@@ -168,7 +175,37 @@ export function notFoundPage({ support } = {}) {
   });
 }
 
-export function docPage(title, markdownish, { support } = {}) {
+const FEEDBACK_CHOICES = [
+  ['good', '좋아요'],
+  ['hard', '불편해요'],
+  ['bug', '오류가 있어요'],
+  ['idea', '이런 게 있으면 좋겠어요'],
+];
+export function feedbackPage({ support, from = '' } = {}) {
+  return layout({
+    support,
+    page: '/feedback',
+    noindex: true,
+    title: '의견 보내기 — 벌금장부',
+    body: `<h1>의견 보내기</h1>
+<p class="muted">벌금장부는 베타예요. 써 보신 느낌을 한 줄만 남겨 주셔도 큰 도움이 돼요.</p>
+<form id="feedback-form" novalidate>
+<fieldset><legend>어떤 의견인가요?</legend>
+${FEEDBACK_CHOICES.map(([v, l], i) => `<label class="choice"><input type="radio" name="kind" value="${v}"${i === 0 ? ' checked' : ''}> ${l}</label>`).join('\n')}
+</fieldset>
+<label for="fb-message">내용</label>
+<textarea id="fb-message" maxlength="1000" rows="5" aria-describedby="fb-help"></textarea>
+<p class="muted" id="fb-help">이름·연락처 같은 개인정보는 적지 마세요. 보내 주신 내용은 개선을 위해 공개 개발 게시판(GitHub)에 익명으로 옮겨질 수 있어요.</p>
+<input type="hidden" id="fb-from" value="${esc(from)}">
+<div class="hp" aria-hidden="true"><label for="fb-website">비워 두세요</label><input id="fb-website" type="text" tabindex="-1" autocomplete="off"></div>
+<p class="error" id="fb-err" role="alert" hidden></p>
+<button class="primary" type="submit">보내기</button>
+</form>
+<div class="empty" id="fb-done" hidden><h2 tabindex="-1">고마워요!</h2><p>보내 주신 의견은 매일 확인해요.</p><a class="btn" href="/">처음으로</a></div>`,
+  });
+}
+
+export function docPage(title, markdownish, { support, page } = {}) {
   // 법률 문서용 최소 마크다운: 제목(#, ##), 목록(-), 표(|), 문단
   const out = [];
   let list = null;
@@ -193,5 +230,5 @@ export function docPage(title, markdownish, { support } = {}) {
     }
   }
   flush();
-  return layout({ support, title: `${title} — 벌금장부`, body: `<div class="doc">${out.join('\n')}</div>` });
+  return layout({ support, page, title: `${title} — 벌금장부`, body: `<div class="doc">${out.join('\n')}</div>` });
 }

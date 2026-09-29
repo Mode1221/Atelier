@@ -4,9 +4,9 @@ name: Beolgeum
 on:
   push:
     branches: [main]
-    paths: ["examples/beolgeum-jangbu/**", ".github/workflows/beolgeum.yml"]
+    paths: ["examples/beolgeum-jangbu/**", "skills/beta/templates/**", "skills/usertest/scripts/**", ".github/workflows/beolgeum.yml"]
   pull_request:
-    paths: ["examples/beolgeum-jangbu/**", ".github/workflows/beolgeum.yml"]
+    paths: ["examples/beolgeum-jangbu/**", "skills/beta/templates/**", "skills/usertest/scripts/**", ".github/workflows/beolgeum.yml"]
   workflow_dispatch:
 defaults:
   run:
@@ -25,6 +25,13 @@ jobs:
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - name: AI 대리 사용성 테스트 (Atelier usertest)
+        run: |
+          npm run -s usertest -- ../../usertest-out
+          cat ../../usertest-out/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: usertest, path: usertest-out, if-no-files-found: ignore, retention-days: 14 }
       - run: npm audit --omit=dev --audit-level=high
 
   deploy:
@@ -68,6 +75,13 @@ jobs:
       - name: 운영 지표 토큰 (선택)
         if: steps.pre.outputs.go == 'true' && env.STATS != ''
         run: echo "$STATS" | npx wrangler secret put STATS_TOKEN
+      - name: 피드백 수집 토큰
+        if: steps.pre.outputs.go == 'true'
+        # 사람이 따로 만들 필요 없게 Cloudflare 토큰에서 한 방향으로 만든다 (수집 워크플로도 같은 방법으로 만든다)
+        run: |
+          t=$(printf 'atelier-feedback:%s' "$CLOUDFLARE_API_TOKEN" | sha256sum | cut -d' ' -f1)
+          echo "::add-mask::$t"
+          echo "$t" | npx wrangler secret put FEEDBACK_TOKEN
       - name: 배포
         id: deploy
         if: steps.pre.outputs.go == 'true'
@@ -96,6 +110,7 @@ jobs:
           m=$(curl -fsS -X POST "$URL/api/groups/$id/members" -H 'content-type: application/json' -H "x-admin-key: $key" -d '{"name":"점검"}' | jq -r .id)
           curl -fsS -X POST "$URL/api/groups/$id/sessions" -H 'content-type: application/json' -H "x-admin-key: $key" -d "{\"date\":\"2026-01-01\",\"entries\":[{\"member_id\":$m,\"status\":\"late\"}]}" >/dev/null
           curl -fsS "$URL/g/$id" | grep -q '1,000'
+          curl -fsS "$URL/feedback" | grep -q '의견 보내기'
           curl -fsS -X DELETE "$URL/api/groups/$id" -H "x-admin-key: $key"
           [ "$(curl -s -o /dev/null -w '%{http_code}' "$URL/g/$id")" = 404 ]
           echo "핵심 흐름 확인 완료"

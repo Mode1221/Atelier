@@ -1,9 +1,9 @@
 name: HQ
 on:
   push:
-    paths: ["hq/**", "skills/company/**", ".github/workflows/hq.yml"]
+    paths: ["hq/**", "skills/company/**", "skills/share/scripts/**", ".github/workflows/hq.yml"]
   pull_request:
-    paths: ["hq/**", "skills/company/**", ".github/workflows/hq.yml"]
+    paths: ["hq/**", "skills/company/**", "skills/share/scripts/**", ".github/workflows/hq.yml"]
 jobs:
   check:
     runs-on: ubuntu-latest

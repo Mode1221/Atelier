@@ -156,15 +156,31 @@ export function createRepo(db) {
       if (r.meta.changes === 0) throw new RepoError('not_found', '납부 기록을 찾을 수 없어요');
     },
 
+    async addFeedback({ kind, message, page }) {
+      await run('INSERT INTO feedback (kind, message, page, created_at) VALUES (?, ?, ?, ?)', kind, message, page, new Date().toISOString());
+    },
+    // 아직 가져가지 않은 피드백 (수집 워크플로가 이슈로 옮긴 뒤 ackFeedback 한다)
+    listFeedback(limit = 100) {
+      return all('SELECT id, kind, message, page, created_at FROM feedback WHERE synced_at IS NULL ORDER BY id LIMIT ?', limit);
+    },
+    async ackFeedback(upTo) {
+      const r = await run('UPDATE feedback SET synced_at = ? WHERE synced_at IS NULL AND id <= ?', new Date().toISOString(), upTo);
+      return r.meta.changes;
+    },
+    async purgeFeedback(days = 365) {
+      await run('DELETE FROM feedback WHERE created_at < ?', new Date(Date.now() - days * 86_400_000).toISOString());
+    },
+
     async stats() {
       const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
-      const [g, c, a, s] = await Promise.all([
+      const [g, c, a, s, f] = await Promise.all([
         one('SELECT COUNT(*) AS n FROM groups WHERE deleted_at IS NULL'),
         one('SELECT COUNT(*) AS n FROM groups WHERE created_at >= ?', since),
         one('SELECT COUNT(DISTINCT group_id) AS n FROM sessions WHERE created_at >= ?', since),
         one('SELECT COUNT(*) AS n FROM sessions WHERE created_at >= ?', since),
+        one('SELECT COUNT(*) AS n FROM feedback WHERE created_at >= ?', since),
       ]);
-      return { '전체 모임': g.n, '이번 주 새 모임': c.n, '주간 기록 모임': a.n, '이번 주 회차': s.n };
+      return { '전체 모임': g.n, '이번 주 새 모임': c.n, '주간 기록 모임': a.n, '이번 주 회차': s.n, '이번 주 피드백': f.n };
     },
   };
 }

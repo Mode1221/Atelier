@@ -118,3 +118,5 @@ dl dt{font-weight:700;margin-top:12px}dl dd{margin:2px 0 0}
   .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.tile{padding:12px}.tile-value{font-size:1.35rem}
 }
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+pre.post{white-space:pre-wrap;word-break:break-all;font:inherit;margin:0 0 8px;background:var(--surface-2);padding:12px;border-radius:var(--radius);border:1px solid var(--line)}
+.tiny.err{color:var(--st-critical)}

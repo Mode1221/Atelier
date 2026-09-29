@@ -1,7 +1,7 @@
 // Atelier HQ (서버 없음) — 화면 전환·데이터 불러오기·버튼 처리.
 import { githubClient, GhError, DATA_BRANCH } from './gh.js';
 import { DEPTS, DEPT_IDS, WORKFLOW_FILE, buildBoard, loadApprovals, parseHumanTasks, markHumanTaskDone, currentStage, overallStatus } from './company.js';
-import { normalizeSettings, parseRuns, bootstrap, saveSettings } from './hqdata.js';
+import { normalizeSettings, parseRuns, bootstrap, saveSettings, parseShares, markShared } from './hqdata.js';
 import { SERVICES } from './services.js';
 import * as V from './views.js';
 
@@ -73,6 +73,17 @@ async function loadAll(force = false) {
     /* 무시 */
   }
   const runs = parseRuns((paths ?? []).filter((p) => p.startsWith('runs/')));
+  // 홍보 글 (없어도 된다)
+  let share = { spec: null, specErr: null };
+  const shareFile = await gh.file(settings.sharePath).catch(() => null);
+  if (shareFile) {
+    try {
+      const spec = JSON.parse(shareFile.text);
+      share = Array.isArray(spec.posts) && typeof spec.url === 'string' ? { spec } : { spec: null, specErr: '홍보 글 파일 형식이 달라요 (url, posts 필요)' };
+    } catch {
+      share = { spec: null, specErr: '홍보 글 파일을 읽지 못했어요 (JSON 형식 오류)' };
+    }
+  }
   const budgetTotal = Object.values(settings.budgets).reduce((a, b) => a + b, 0);
   const runsTotal = Object.values(runs.perDept).reduce((a, r) => a + r.usd, 0);
   const data = {
@@ -82,6 +93,7 @@ async function loadAll(force = false) {
     co: { issues, approvals, board: buildBoard(issues), humanTasks: parseHumanTasks(project?.text), stage: currentStage(project?.text), project, statusAt: status.at },
     svc: status.services ?? {},
     spend: { ...runs, runsTotal, budgetTotal, orgCost: status.services?.anthropic?.summary?.value },
+    share: { ...share, sharePath: settings.sharePath, shared: parseShares(paths), feedback: issues.filter((i) => i.labels?.some((l) => (l.name ?? l) === 'feedback')) },
     ready: { github: true, anthropic: secrets.includes('ANTHROPIC_API_KEY'), bootstrap: paths !== null },
   };
   cache = { at: Date.now(), data };
@@ -121,6 +133,7 @@ async function render() {
     '/board': ['업무', () => V.boardPage(d)],
     '/depts': ['부서', () => V.deptsPage({ ...d, repo: gh.repo })],
     '/connect': ['연결', () => V.connectPage(d)],
+    '/share': ['홍보', () => V.sharePage(d.share)],
     '/settings': ['설정', () => V.settingsPage(d)],
     '/help': ['도움말', () => V.helpPage()],
   };
@@ -239,6 +252,11 @@ const actions = {
     const steps = await bootstrap({ gh, templates, settings: d.s });
     return done(`회사를 세웠어요: ${steps.join(' · ')}`, '/connect');
   },
+  async markShared(_f, ds) {
+    const d = await loadAll();
+    await markShared(gh, { channel: ds.channel, index: Number(ds.i), campaign: d.share.spec?.campaign });
+    return done('올린 것으로 기록했어요. 마케팅 부서가 채널별 반응을 비교해요');
+  },
   async saveSettings(f) {
     const s = (await loadAll()).s;
     const budgets = {};
@@ -246,7 +264,7 @@ const actions = {
       const v = Number(f.get(`budget_${d.id}`));
       if (Number.isFinite(v) && v >= 0 && v <= 10000) budgets[d.id] = v;
     }
-    await saveSettings(gh, { ...s, company: String(f.get('company') ?? s.company), rate: Number(f.get('rate')) || s.rate, budgets });
+    await saveSettings(gh, { ...s, company: String(f.get('company') ?? s.company), rate: Number(f.get('rate')) || s.rate, budgets, sharePath: String(f.get('sharePath') ?? s.sharePath).trim() });
     return done('저장했어요');
   },
 };
@@ -283,6 +301,12 @@ document.addEventListener('click', (e) => {
     flashMsg = { ok: '로그아웃했어요. 이 기기에서 토큰을 지웠어요' };
     location.hash = '#/';
     render();
+  } else if (el.dataset.click === 'copy') {
+    const text = document.getElementById(el.dataset.target)?.textContent ?? '';
+    navigator.clipboard?.writeText(text).then(
+      () => (el.textContent = '복사했어요'),
+      () => (el.textContent = '복사 실패 — 글을 직접 선택하세요'),
+    );
   } else if (el.dataset.click === 'reload') {
     cache = null;
     render();
