@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import sodium from 'libsodium-wrappers';
 import { sealForGitHub } from '../public/js/sealed.js';
 import { githubClient } from '../public/js/gh.js';
-import { parseRuns, normalizeSettings, bootstrap, saveSettings } from '../public/js/hqdata.js';
+import { parseRuns, normalizeSettings, bootstrap, saveSettings, markShared } from '../public/js/hqdata.js';
 import { collect, writeStatus } from '../public/templates/collect.mjs';
 import { makeFakeWorld, GOOD } from './fakes.js';
 
@@ -56,6 +56,17 @@ describe('회사 세우기 (가짜 GitHub)', () => {
     const saved = JSON.parse(world.state.branches['atelier-data']['hq.json'].text);
     expect(saved).toMatchObject({ company: '새 이름', paused: ['marketing'] });
     expect(saved.budgets.dev).toBe(3);
+  });
+});
+
+describe('회사 세우기 전', () => {
+  it('설정 저장·홍보 기록은 데이터 브랜치가 없으면 만들어서 저장한다', async () => {
+    const world = await makeFakeWorld();
+    const gh = githubClient({ token: GOOD, repo: 'o/r', fetchImpl: world.fetch });
+    await saveSettings(gh, { sharePath: 'examples/x/docs/share/posts.json' });
+    expect(JSON.parse(world.state.branches['atelier-data']['hq.json'].text).sharePath).toBe('examples/x/docs/share/posts.json');
+    await markShared(gh, { channel: 'threads', index: 0 }, new Date('2026-09-30T00:00:00Z'));
+    expect(world.state.branches['atelier-data']['shares/2026-09-30__threads__0.json']).toBeTruthy();
   });
 });
 

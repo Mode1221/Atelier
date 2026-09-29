@@ -72,9 +72,15 @@ export async function bootstrap({ gh, templates, anthropicKey, settings }) {
   return steps;
 }
 
+// 데이터 브랜치에 파일 쓰기. 회사 세우기 전이라 브랜치가 없으면 그 파일로 브랜치를 만든다.
+async function putData(gh, path, text, message) {
+  if ((await gh.dataPaths()) === null) return gh.createDataBranch({ [path]: text });
+  const cur = await gh.file(path, DATA_BRANCH);
+  return gh.putFile(path, text, message, cur?.sha, DATA_BRANCH);
+}
+
 export async function saveSettings(gh, settings) {
-  const cur = await gh.file('hq.json', DATA_BRANCH);
-  await gh.putFile('hq.json', JSON.stringify(normalizeSettings(settings), null, 2), 'chore: Atelier HQ 설정 변경', cur?.sha, DATA_BRANCH);
+  await putData(gh, 'hq.json', JSON.stringify(normalizeSettings(settings), null, 2), 'chore: Atelier HQ 설정 변경');
 }
 
 // 홍보 글 올림 기록: 데이터 브랜치 shares/YYYY-MM-DD__채널__번호.json (마케팅 부서가 성과 비교에 쓴다)
@@ -88,5 +94,5 @@ export function parseShares(paths) {
 }
 export async function markShared(gh, { channel, index, campaign }, now = new Date()) {
   const path = `shares/${now.toISOString().slice(0, 10)}__${channel}__${index}.json`;
-  await gh.putFile(path, JSON.stringify({ at: now.toISOString(), channel, index, campaign: campaign ?? null }), `chore: 홍보 글 올림 — ${channel}`, undefined, DATA_BRANCH);
+  await putData(gh, path, JSON.stringify({ at: now.toISOString(), channel, index, campaign: campaign ?? null }), `chore: 홍보 글 올림 — ${channel}`);
 }
