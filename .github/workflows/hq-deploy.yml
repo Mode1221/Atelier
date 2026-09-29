@@ -49,7 +49,7 @@ jobs:
         run: |
           set -euo pipefail
           for i in $(seq 1 24); do
-            if curl -fsS "$URL/" | grep -q 'Atelier HQ' && curl -fsS "$URL/js/main.js" | grep -q 'githubClient' && curl -fsS -I "$URL/" | grep -qi 'content-security-policy'; then ok=1; break; fi
+            if grep -q 'Atelier HQ' <<<"$(curl -fsS "$URL/")" && grep -q 'githubClient' <<<"$(curl -fsS "$URL/js/main.js")" && grep -qi 'content-security-policy' <<<"$(curl -fsS -I "$URL/")"; then ok=1; break; fi
             sleep 5
           done
           [ -n "${ok:-}" ] || { echo "::error::배포 후 2분 안에 정상 응답이 없어요"; exit 1; }

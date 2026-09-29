@@ -99,7 +99,8 @@ jobs:
           # 새 버전이 전 세계에 퍼지는 데 잠시 걸린다 — 최대 2분 재시도 (새 버전에만 있는 화면(/feedback)까지 확인)
           ok=""
           for i in $(seq 1 24); do
-            if curl -fsS "$URL/health" | grep -q '"ok":true' && curl -fsS "$URL/" | grep -q '벌금장부' && curl -fsS -o /dev/null "$URL/static/app.css" && curl -fsS "$URL/feedback" | grep -q '의견 보내기'; then ok=1; break; fi
+            # grep -q 가 먼저 끝나면 curl 이 쓰기 실패(23)로 pipefail 에 걸린다 → 받은 뒤 검사
+            if grep -q '"ok":true' <<<"$(curl -fsS "$URL/health")" && grep -q '벌금장부' <<<"$(curl -fsS "$URL/")" && curl -fsS -o /dev/null "$URL/static/app.css" && grep -q '의견 보내기' <<<"$(curl -fsS "$URL/feedback")"; then ok=1; break; fi
             sleep 5
           done
           [ -n "$ok" ] || { echo "::error::배포 후 2분 안에 정상 응답이 오지 않았어요"; curl -sS -i "$URL/" | head -20; exit 1; }
@@ -109,7 +110,7 @@ jobs:
           echo "::add-mask::$key"
           m=$(curl -fsS -X POST "$URL/api/groups/$id/members" -H 'content-type: application/json' -H "x-admin-key: $key" -d '{"name":"점검"}' | jq -r .id)
           curl -fsS -X POST "$URL/api/groups/$id/sessions" -H 'content-type: application/json' -H "x-admin-key: $key" -d "{\"date\":\"2026-01-01\",\"entries\":[{\"member_id\":$m,\"status\":\"late\"}]}" >/dev/null
-          curl -fsS "$URL/g/$id" | grep -q '1,000'
+          grep -q '1,000' <<<"$(curl -fsS "$URL/g/$id")"
           # 피드백 수집 토큰이 서비스와 맞는지 (수집 워크플로가 매일 쓰는 값)
           ft=$(printf 'atelier-feedback:%s' "$CLOUDFLARE_API_TOKEN" | sha256sum | cut -d' ' -f1)
           echo "::add-mask::$ft"
