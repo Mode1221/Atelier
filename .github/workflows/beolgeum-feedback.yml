@@ -5,6 +5,9 @@ name: Beolgeum feedback
 on:
   schedule:
     - cron: "40 0 * * *"   # 매일 09:40 KST
+  push:
+    branches: [main]
+    paths: [".github/workflows/beolgeum-feedback.yml", "skills/beta/templates/feedback-sync.mjs"]   # 수집기를 바꾸면 한 번 바로 실행
   workflow_dispatch:
 permissions:
   contents: read
