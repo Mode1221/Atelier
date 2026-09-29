@@ -4,7 +4,7 @@
 
 ## 설치
 ```
-/plugin marketplace add <owner>/atelier
+/plugin marketplace add Mode1221/Atelier
 /plugin install atelier@atelier
 ```
 
