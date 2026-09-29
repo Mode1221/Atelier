@@ -1,0 +1,72 @@
+# Atelier 정기 점검 — 결정적 검사 (AI 없음, 비용 0)
+# 매일 실행. 월요일은 weekly, 1일은 monthly, 1·4·7·10월 1일은 quarterly 로 확장된다.
+# 실패하면 `ops-alert` 이슈를 열거나 댓글을 달고, 통과하면 열린 이슈를 닫는다.
+# 설정: Settings → Secrets and variables → Actions
+#   Variables: HEALTH_URLS, TLS_HOSTS (공백 구분)
+#   Secrets(선택): BACKUP_CHECK_CMD, ALERT_WEBHOOK_URL (Slack/Discord 웹훅)
+name: Ops checks
+on:
+  schedule:
+    - cron: "17 0 * * *"   # 매일 00:17 UTC (한국 09:17)
+  workflow_dispatch:
+    inputs:
+      period:
+        description: daily | weekly | monthly | quarterly
+        default: daily
+permissions:
+  contents: read
+  issues: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decide period
+        id: p
+        run: |
+          p="${{ inputs.period }}"
+          if [ -z "$p" ]; then
+            p=daily
+            [ "$(date -u +%u)" = 1 ] && p=weekly
+            [ "$(date -u +%d)" = 01 ] && p=monthly
+            case "$(date -u +%m-%d)" in 01-01|04-01|07-01|10-01) p=quarterly ;; esac
+          fi
+          echo "period=$p" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Run checks
+        id: run
+        env:
+          HEALTH_URLS: ${{ vars.HEALTH_URLS }}
+          TLS_HOSTS: ${{ vars.TLS_HOSTS }}
+          BACKUP_CHECK_CMD: ${{ secrets.BACKUP_CHECK_CMD }}
+        run: |
+          set +e
+          ./scripts/ops-check.sh "${{ steps.p.outputs.period }}" > report.md
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          cat report.md
+      - name: Open or update alert issue
+        if: steps.run.outputs.code != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WEBHOOK: ${{ secrets.ALERT_WEBHOOK_URL }}
+        run: |
+          gh label create ops-alert --color d73a4a --description "Atelier 정기 점검 실패" 2>/dev/null || true
+          n=$(gh issue list --label ops-alert --state open --json number -q '.[0].number')
+          if [ -n "$n" ]; then gh issue comment "$n" --body-file report.md
+          else gh issue create --title "운영 점검 실패 $(date -u +%F)" --label ops-alert --body-file report.md; fi
+          if [ -n "$WEBHOOK" ]; then
+            msg="운영 점검 실패: ${{ github.server_url }}/${{ github.repository }}/issues?q=label%3Aops-alert"
+            curl -sS -X POST -H 'Content-Type: application/json' \
+              -d "{\"text\":\"$msg\",\"content\":\"$msg\"}" "$WEBHOOK" || true
+          fi
+          exit 1
+      - name: Close resolved alert issues
+        if: steps.run.outputs.code == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for n in $(gh issue list --label ops-alert --state open --json number -q '.[].number'); do
+            gh issue close "$n" --comment "점검 통과 — 자동으로 닫습니다."
+          done

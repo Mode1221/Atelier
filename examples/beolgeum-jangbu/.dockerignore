@@ -1,0 +1,10 @@
+node_modules
+data
+backups
+test-results
+playwright-report
+.git
+design
+docs
+e2e
+test

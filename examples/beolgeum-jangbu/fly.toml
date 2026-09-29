@@ -1,0 +1,29 @@
+# Fly.io 예시 (사람: fly launch --no-deploy 로 앱 생성 후 app 이름 교체, fly volumes create data --size 1)
+app = "beolgeum-jangbu"
+primary_region = "nrt"
+
+[build]
+
+[env]
+  PORT = "8080"
+  DB_PATH = "/data/app.db"
+  BACKUP_DIR = "/data/backups"  # 같은 볼륨 — 오프사이트 복사는 사람 할 일
+  TRUST_PROXY_HEADER = "fly-client-ip"  # Fly 프록시가 덮어쓰는 헤더
+
+[mounts]
+  source = "data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/health"
+    timeout = "5s"

@@ -1,0 +1,37 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - run: npm audit --omit=dev --audit-level=high
+  deploy:
+    # 운영 배포: main 에서 CI 통과 후. FLY_API_TOKEN 시크릿이 없으면 건너뛴다 (사람: fly tokens create deploy)
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    concurrency: deploy
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: env.FLY_API_TOKEN != ''
+        uses: superfly/flyctl-actions/setup-flyctl@master
+      - if: env.FLY_API_TOKEN != ''
+        run: flyctl deploy --remote-only
+      - if: env.FLY_API_TOKEN != ''
+        name: Smoke test
+        run: |
+          sleep 10
+          curl -fsS "https://${{ vars.APP_HOST }}/health"
+          curl -fsS "https://${{ vars.APP_HOST }}/" | grep -q "벌금장부"

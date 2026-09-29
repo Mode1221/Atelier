@@ -1,0 +1,41 @@
+/* 벌금장부 디자인 토큰 — 의미 토큰만 화면에서 사용 */
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #f5f6f8;
+  --color-text: #15171a;
+  --color-text-muted: #4d5561;
+  --color-border: #d9dde3;          /* 장식용 구분선 */
+  --color-border-strong: #767f8c;   /* 입력·체크박스 테두리 (3:1 이상) */
+  --color-primary: #1d4ed8;
+  --color-on-primary: #ffffff;
+  --color-danger: #b91c1c;
+  --color-success: #15803d;
+  --color-warning: #92400e;
+  --color-focus: #1d4ed8;
+
+  --font-sans: system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.25rem; --text-xl: 1.5rem;
+  --leading-body: 1.6;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px;
+  --radius-md: 10px; --radius-lg: 14px;
+  --tap: 44px;
+  --duration: 150ms;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0f1115;
+    --color-surface: #1a1d23;
+    --color-text: #eef0f3;
+    --color-text-muted: #a8b0bb;
+    --color-border: #343a44;
+    --color-border-strong: #7d8694;
+    --color-primary: #7aa2ff;
+    --color-on-primary: #0f1115;
+    --color-danger: #ff8a80;
+    --color-success: #5fd38d;
+    --color-warning: #f5b85c;
+    --color-focus: #7aa2ff;
+  }
+}
+@media (prefers-reduced-motion: reduce) { :root { --duration: 0ms; } }

@@ -1,0 +1,33 @@
+{
+  "name": "beolgeum-jangbu",
+  "version": "0.1.0",
+  "description": "가입 없는 스터디 벌금 장부",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "lint": "eslint .",
+    "check": "npm run lint && npm test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.56",
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0",
+    "vitest": "^5.0.2"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.3",
+    "hono": "^4.13.11"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13 <23"
+  }
+}

@@ -1,0 +1,34 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>벌금장부 시안</title><link rel="stylesheet" href="../tokens.css"><link rel="stylesheet" href="../app.css">
+<style>.screens{display:flex;flex-wrap:wrap;gap:24px;padding:16px}.screens>section{width:375px;border:1px dashed var(--color-border);}</style></head>
+<body><div class="screens">
+<section><main>
+<h1>벌금장부</h1><p class="muted">출석만 체크하세요. 벌금은 알아서 계산됩니다.<br>가입 없이 링크 하나로.</p>
+<label for="n">모임 이름</label><input id="n" type="text" value="" aria-invalid="true" aria-describedby="ne"><p class="error" id="ne">모임 이름을 입력해 주세요</p>
+<div class="row"><div><label for="a">지각</label><input id="a" type="number" value="1000"></div><div><label for="b">결석</label><input id="b" type="number" value="3000"></div><div><label for="c">과제</label><input id="c" type="number" value="2000"></div></div>
+<p></p><button class="primary">모임 만들기</button>
+</main></section>
+<section><main>
+<h1>알고리즘 스터디</h1>
+<div class="notice"><strong>관리 링크를 꼭 저장하세요.</strong> 잃어버리면 편집할 수 없어요.</div>
+<div class="card"><label for="al">관리 링크 (나만)</label><div class="linkbox"><input id="al" type="text" readonly value="https://…/g/Xy7…?k=…"><button>복사</button></div>
+<label for="vl">보기 링크 (멤버에게 공유)</label><div class="linkbox"><input id="vl" type="text" readonly value="https://…/g/Xy7…"><button>복사</button></div></div>
+<h2>정산</h2>
+<table><thead><tr><th>멤버</th><th class="num">벌금</th><th class="num">납부</th><th class="num">미납</th></tr></thead>
+<tbody><tr><td>민수</td><td class="num">4,000</td><td class="num">3,000</td><td class="num unpaid">1,000</td></tr>
+<tr><td>지영</td><td class="num">5,000</td><td class="num">5,000</td><td class="num paid">0</td></tr>
+<tr><td>가나다라마바사아자차 (긴 이름)</td><td class="num">120,000</td><td class="num">0</td><td class="num unpaid">120,000</td></tr></tbody></table>
+<p></p><button>카톡용 요약 복사</button>
+</main></section>
+<section><main>
+<h1>9월 29일 (월) 회차</h1>
+<div class="att"><strong>민수</strong><span class="seg" role="radiogroup" aria-label="민수 출결"><label><input type="radio" name="m1"><span>출석</span></label><label><input type="radio" name="m1" checked><span>지각</span></label><label><input type="radio" name="m1"><span>결석</span></label></span>
+<label class="hw"><input type="checkbox"> 과제 미제출</label><span></span></div>
+<div class="att"><strong>지영</strong><span class="seg" role="radiogroup" aria-label="지영 출결"><label><input type="radio" name="m2"><span>출석</span></label><label><input type="radio" name="m2"><span>지각</span></label><label><input type="radio" name="m2" checked><span>결석</span></label></span>
+<label class="hw"><input type="checkbox" checked> 과제 미제출</label><span></span></div>
+<p class="muted">이번 회차 합계 6,000원</p>
+<button class="primary">저장</button>
+<p class="error">저장하지 못했어요. 연결을 확인하고 다시 시도해 주세요.</p>
+</main></section>
+<section><main><div class="empty"><h2>아직 멤버가 없어요</h2><p>멤버를 추가하면 출결을 체크할 수 있어요.</p><button class="primary">멤버 추가</button></div></main></section>
+</div></body></html>

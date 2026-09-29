@@ -1,0 +1,3 @@
+# 만료일 목록 — "YYYY-MM-DD 설명" (Atelier checkup 이 30일 전부터 경고)
+# 도메인·호스팅 결제 수단 등록 후 날짜를 채운다 (사람)
+# 2027-10-01 도메인 beolgeum.example 갱신
