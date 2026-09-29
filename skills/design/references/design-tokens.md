@@ -15,7 +15,8 @@
   --color-surface: #f6f7f9;
   --color-text: #111827;
   --color-text-muted: #4b5563;
-  --color-border: #e5e7eb;
+  --color-border: #e5e7eb;          /* 장식용 구분선 */
+  --color-border-strong: #767f8c;   /* 입력·체크박스 테두리 — 비텍스트 대비 3:1 이상 */
   --color-primary: #2563eb;
   --color-on-primary: #ffffff;
   --color-danger: #dc2626;
@@ -47,6 +48,7 @@
     --color-text: #f3f4f6;
     --color-text-muted: #a1a1aa;
     --color-border: #2a2e35;
+    --color-border-strong: #7d8694;
     --color-primary: #60a5fa;
     --color-on-primary: #0b0d10;
     --color-danger: #f87171;

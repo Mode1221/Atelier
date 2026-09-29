@@ -21,7 +21,7 @@ description: 출시 후 정기 운영 점검. "/atelier:checkup setup" 으로 �
 
 1. 사용자에게 한 번에 하나씩 묻는다 (`docs/architecture.md`·`docs/operations.md` 에 있으면 제안값으로):
    - 헬스체크 URL (운영 `/health` 등), TLS 확인할 도메인
-   - 백업 확인 명령이 있나 (예: 최근 24시간 안에 만든 백업 파일이 있는지 확인하는 명령)
+   - 백업 확인 방법. 백업이 서버 디스크에 있으면 CI 에서 직접 볼 수 없다 → 앱에 **`/health?backup=1`**(최근 백업이 26시간을 넘으면 503)을 만들고 그 URL 을 `HEALTH_URLS` 에 넣는 방식을 권한다. 객체 저장소에 있으면 `BACKUP_CHECK_CMD` 로 확인
    - 만료일 목록: 도메인, 개발자 계정(Apple 연간 등), API 키·토큰, 결제 수단, 인증서(수동 관리 시)
    - 알림을 휴대폰으로 받을 곳: GitHub 모바일 앱 알림(기본) / Slack·Discord 웹훅
    - 주간 AI 점검을 쓸지 (API 사용료 발생, 플러그인 저장소가 공개여야 CI 에서 설치 가능)
