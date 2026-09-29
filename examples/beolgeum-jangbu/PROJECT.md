@@ -23,7 +23,7 @@
 ## 사람 할 일 (출시 전)
 - [x] GitHub 저장소 — Atelier 저장소 `examples/beolgeum-jangbu` 에서 운영
 - [x] Cloudflare 가입·시크릿 등록 → 운영 배포 https://beolgeum-jangbu.atlier-skill.workers.dev
-- [x] 처리방침·약관 연락처 — atlier.skill@gmail.com (시행일은 배포일에 기입)
+- [x] 처리방침·약관 연락처 — atlier.skill@gmail.com (시행일 2026-09-29)
 - [x] 문의 이메일 — atlier.skill@gmail.com
 - [ ] 사용성 테스트 5명 (L1, D5) → 인터뷰(I4) 겸
 - [ ] 비공개 베타 5~10개 모임 (L2)
