@@ -1,0 +1,16 @@
+{
+  "name": "atelier",
+  "owner": {
+    "name": "Mode1221"
+  },
+  "metadata": {
+    "description": "1인 개발 전 과정 가이드 플러그인"
+  },
+  "plugins": [
+    {
+      "name": "atelier",
+      "source": "./",
+      "description": "1인 개발 전 과정 가이드 플러그인"
+    }
+  ]
+}

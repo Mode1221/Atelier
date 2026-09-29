@@ -1,0 +1,8 @@
+{
+  "name": "atelier",
+  "version": "0.1.0",
+  "description": "1인 개발자용 전 과정 가이드: 아이디어 → 구현 → 디자인 → 출시·테스트 → 보안·법률",
+  "author": { "name": "Mode1221" },
+  "license": "MIT",
+  "keywords": ["indie", "solo-dev", "workflow", "launch"]
+}
