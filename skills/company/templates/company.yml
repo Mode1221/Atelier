@@ -1,0 +1,117 @@
+# Atelier AI 회사 — 부서별 예약 실행
+# 대표(사람)는 결재만. 부서는 GitHub Issues 로 일을 주고받는다.
+# 필요: Secrets ANTHROPIC_API_KEY (+ 대시보드 사용 시 ATELIER_HQ_TOKEN), Variables ATELIER_HQ_URL (선택)
+name: Atelier company
+on:
+  schedule:
+    - cron: "5 23 * * *"      # ceo       매일 08:05 KST
+    - cron: "10 0 * * *"      # support   매일 09:10 KST
+    - cron: "20 0 * * *"      # ops       매일 09:20 KST
+    - cron: "30 0 * * *"      # qa        매일 09:30 KST
+    - cron: "0 1 * * 1-5"     # dev       평일 10:00 KST
+    - cron: "40 0 * * 1,3"    # plan      월·수
+    - cron: "50 0 * * 2,4"    # design    화·목
+    - cron: "0 2 * * 1,3,5"   # marketing 월·수·금
+    - cron: "0 3 * * 5"       # security  금
+    - cron: "30 1 * * 1"      # data      월
+  workflow_dispatch:
+    inputs:
+      dept:
+        description: "부서 (ceo plan design dev qa security marketing support ops data)"
+        required: true
+  issues:
+    types: [labeled]
+  pull_request:
+    types: [opened, synchronize]
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  actions: read
+jobs:
+  route:
+    runs-on: ubuntu-latest
+    outputs:
+      dept: ${{ steps.r.outputs.dept }}
+    steps:
+      - id: r
+        env:
+          EVENT: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+          INPUT: ${{ inputs.dept }}
+          LABEL: ${{ github.event.label.name }}
+          LABELS: ${{ toJson(github.event.issue.labels.*.name) }}
+        run: |
+          dept=""
+          case "$EVENT" in
+            workflow_dispatch) dept="$INPUT" ;;
+            pull_request) dept="qa" ;;
+            issues)
+              # 대표가 승인/반려하면 담당 부서를 바로 깨운다
+              if [ "$LABEL" = "approved" ] || [ "$LABEL" = "rejected" ]; then
+                dept=$(echo "$LABELS" | grep -o '"dept:[a-z]*"' | head -1 | tr -d '"' | cut -d: -f2)
+              fi ;;
+            schedule)
+              case "$SCHEDULE" in
+                "5 23 * * *") dept=ceo ;; "10 0 * * *") dept=support ;; "20 0 * * *") dept=ops ;;
+                "30 0 * * *") dept=qa ;; "0 1 * * 1-5") dept=dev ;; "40 0 * * 1,3") dept=plan ;;
+                "50 0 * * 2,4") dept=design ;; "0 2 * * 1,3,5") dept=marketing ;;
+                "0 3 * * 5") dept=security ;; "30 1 * * 1") dept=data ;;
+              esac ;;
+          esac
+          case "$dept" in ceo|plan|design|dev|qa|security|marketing|support|ops|data) ;; *) dept="" ;; esac
+          echo "dept=$dept" >> "$GITHUB_OUTPUT"
+          echo "부서: ${dept:-없음}"
+
+  run:
+    needs: route
+    if: needs.route.outputs.dept != ''
+    runs-on: ubuntu-latest
+    concurrency: atelier-${{ needs.route.outputs.dept }}
+    env:
+      DEPT: ${{ needs.route.outputs.dept }}
+      GH_TOKEN: ${{ github.token }}
+      HQ_URL: ${{ vars.ATELIER_HQ_URL }}
+      HQ_TOKEN: ${{ secrets.ATELIER_HQ_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 50 }
+      - name: 할 일 · 예산 확인
+        id: gate
+        run: |
+          # 이슈 기반 부서는 할 일이 없으면 AI 를 부르지 않는다 (비용 절약)
+          case "$DEPT" in
+            plan|design|dev|security|marketing)
+              n=$(gh issue list --label "dept:$DEPT" --state open --json number -q 'length')
+              [ "$DEPT" = dev ] && n=$((n + $(gh issue list --label approved --label dept:dev --json number -q 'length')))
+              if [ "$n" = 0 ] && [ "${{ github.event_name }}" = schedule ]; then echo "go=false" >> "$GITHUB_OUTPUT"; echo "할 일 없음 — 건너뜀"; exit 0; fi ;;
+          esac
+          if [ -n "$HQ_URL" ] && [ -n "$HQ_TOKEN" ]; then
+            b=$(curl -fsS -H "Authorization: Bearer $HQ_TOKEN" "$HQ_URL/api/budget/$DEPT" || echo '{"allowed":true}')
+            if [ "$(echo "$b" | jq -r .allowed)" != true ]; then echo "go=false" >> "$GITHUB_OUTPUT"; echo "이번 달 예산 초과 — 건너뜀: $b"; exit 0; fi
+          fi
+          echo "go=true" >> "$GITHUB_OUTPUT"
+      - name: 부서 업무
+        id: claude
+        if: steps.gate.outputs.go == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ github.token }}
+          plugin_marketplaces: https://github.com/Mode1221/Atelier.git
+          plugins: atelier@atelier
+          prompt: "/atelier:company run ${{ env.DEPT }}"
+          claude_args: >-
+            --max-turns 60
+            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(gh:*),Bash(git:*),Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(./scripts/*),WebSearch,WebFetch"
+      - name: 대시보드에 실행 기록
+        if: always() && steps.gate.outputs.go == 'true' && env.HQ_URL != ''
+        env:
+          EXEC: ${{ steps.claude.outputs.execution_file }}
+          OUTCOME: ${{ steps.claude.outcome }}
+        run: |
+          cost=0
+          [ -n "$EXEC" ] && [ -f "$EXEC" ] && cost=$(jq '[.[] | select(.type=="result") | .total_cost_usd // 0] | add // 0' "$EXEC" 2>/dev/null || echo 0)
+          url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          curl -fsS -X POST -H "Authorization: Bearer $HQ_TOKEN" -H 'Content-Type: application/json' \
+            -d "{\"dept\":\"$DEPT\",\"status\":\"$OUTCOME\",\"cost_usd\":$cost,\"url\":\"$url\"}" "$HQ_URL/api/ingest/run" || true

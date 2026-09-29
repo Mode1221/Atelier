@@ -29,6 +29,12 @@
 출시 후 새 기능은 `grow → spec → design → build → guard → 릴리스` 기능 사이클로 작게 반복합니다.
 프로필(웹/앱/게임, 과금, 계정 유무)에 따라 해당 없는 세부 단계는 `N/A` 로 표시됩니다.
 
+## AI 회사 모드 + 대시보드 (Atelier HQ)
+출시 후에는 부서 10개(대표실·기획·디자인·개발·QA·보안법무·마케팅·고객지원·운영·데이터재무)가 GitHub Issues 로 일을 주고받으며 **스스로 일하고**, 사람은 **대표로서 결재만** 합니다.
+- `skills/company` — 부서 역할(`references/departments/`), 업무 규칙(`references/board.md`), 부서별 예약 실행 워크플로
+- `hq/` — 개발 경험이 없어도 쓰는 대시보드: 오늘 회사 상태, 결재함(승인·반려), 업무 보드, 부서별 비용·예산, 외부 서비스 연결(GitHub·Claude·Sentry·Fly.io·Vercel·Stripe·상태 확인·지표), **회사 세우기** 버튼 하나로 GitHub 에 자동 설치. 사용법은 `hq/README.md`
+- 하지 않는 것: 애니메이션·영상 제작, API 없는 커뮤니티 자동 게시, 결재 없는 지출·배포·게시
+
 ## 구성
 - `skills/` — 단계별 스킬과 참고 자료(`references/`)
 - `agents/reviewer.md` — 단계 게이트 검토 (테스트 명령 실행 권한을 주면 E2E 까지 직접 확인)

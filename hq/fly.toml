@@ -1,0 +1,20 @@
+# Fly.io 예시: fly launch --no-deploy → app 이름 교체 → fly volumes create hqdata --size 1
+# → fly secrets set HQ_SECRET=$(openssl rand -base64 32) → fly deploy
+app = "atelier-hq"
+primary_region = "nrt"
+
+[env]
+  PORT = "8080"
+  DB_PATH = "/data/hq.db"
+  TRUST_PROXY_HEADER = "fly-client-ip"
+
+[mounts]
+  source = "hqdata"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
