@@ -4,15 +4,17 @@ Claude 클라우드 예약 실행(Routine)이 새 세션을 열고 이 절차로
 
 ## 0. 준비
 - 프롬프트에 적힌 값: `HQ`(본부 주소), `REPO`(저장소), `PROJECT`(프로젝트 폴더), `DEPT`(부서 ID).
-- 파일 읽기: 저장소가 세션에 붙어 있으면 그대로. 없으면(예약 실행 기본) GitHub API — `curl -s -H "Accept: application/vnd.github.raw" https://api.github.com/repos/<REPO>/contents/<경로>`, 폴더 목록은 헤더 없이. 예약 실행 세션은 git clone·push 가 막힐 수 있다.
-- **저장소에 쓸 수 없는 세션**에서는 코드·문서를 바꾸지 않는다. 바꿀 내용은 `tasks`(dev)에 구체적으로 남긴다. 저장소에 쓰는 부서(개발 등)는 예약 실행에 저장소를 붙여야 한다 — claude.ai → 루틴 → 해당 부서 → 저장소 추가.
 - 본부 데이터는 `ArtifactData` 도구로 읽고 쓴다 (ToolSearch 로 불러오기, `url`=HQ). 여러 건은 `batch` 한 번으로.
-- 부서 역할: `skills/company/references/departments/<DEPT>.md`. GitHub 이슈·라벨 대신 아래 본부 컬렉션을 쓴다.
+- **이 절차와 부서 역할은 본부 안에 있다**: `playbook/cloud-run`(이 문서), `playbook/dept-<DEPT>`(부서 역할) — 필드 `text`. 예약 실행 세션은 GitHub 에 접근하지 못할 수 있으므로 GitHub 없이 일할 수 있게 한다.
+- 저장소 파일이 필요하면: 세션에 저장소가 붙어 있을 때만 쓴다. 없으면 코드·문서를 바꾸지 말고 필요한 변경을 `tasks`(dev)에 구체적으로 남긴다. 코드를 바꾸는 부서(개발 등)는 예약 실행에 저장소를 붙여야 한다 — claude.ai → 루틴 → 해당 부서 → 저장소 추가.
+- 서비스 상태는 공개 주소(`company/main.url`, `/health`)로 확인할 수 있다.
+- 부서 역할 문서에 나오는 GitHub 이슈·라벨·댓글은 이 방식에서는 아래 본부 컬렉션(`tasks`·`approvals`·`reports`)으로 바꿔 읽는다.
 
 ## 1. 본부 데이터 (컬렉션)
 | 경로 | 내용 | 누가 쓰나 |
 |---|---|---|
 | `company/main` | name, url, stage, repo, project, routines{부서: trigger_id} | 설치 시 |
+| `playbook/<이름>` | text — 이 절차(`cloud-run`)와 부서 역할(`dept-<부서>`) | 설치 시 (스킬 문서 복사) |
 | `approvals/<id>` | dept, title, kind(배포/외부 게시/지출/약관/데이터 삭제), cost, detail, ifApprove, ifReject, status(pending/approved/rejected), reason, createdAt, decidedAt, done, result | 부서가 만들고 대표가 결정 |
 | `tasks/<id>` | dept, title, detail, status(todo/doing/review/done), by(ceo 또는 부서), note, createdAt, updatedAt | 대표·부서 |
 | `human/<id>` | text, why, link, done, createdAt | 부서가 만들고 대표가 체크 |
@@ -39,9 +41,9 @@ id 규칙: `approvals`·`tasks`·`human` 은 `<DEPT>-<YYYYMMDD>-<짧은이름>` 
 - 비밀값을 본부·커밋·로그에 쓰지 않는다.
 
 ## 4. 부서별 추가 규칙
-- **대표실(ceo)**: 모든 `reports` 를 모아 `reports/ceo` 에 오늘 한 줄 브리핑. `PROJECT.md` "사람 할 일"의 미완료 항목과 `human` 을 맞춘다(없는 것 추가, 끝난 것 done). 멈춘 `tasks`(3일 넘게 doing)를 다시 배정.
-- **고객지원(support)**: 서비스 피드백(예: 저장소 `feedback` 라벨 이슈)을 읽어 `feedback/<날짜>` 에 분류해 쓰고(개인정보는 옮기지 않음), 버그는 `tasks`(qa), 반복 불편·제안은 `tasks`(plan). 옮긴 이슈는 닫는다(가능하면).
-- **마케팅(marketing)**: `docs/share/posts.json` 과 `share/posts` 를 맞춘다. 새 글은 저장소에 쓰고 `kit.mjs --check` 통과 후 본부에 반영. `shared` 기록과 유입(utm)으로 채널 성과를 `reports/marketing` 에.
+- **대표실(ceo)**: 모든 `reports` 를 모아 `reports/ceo` 에 오늘 한 줄 브리핑(결재 대기·대표 할 일 개수 포함). 멈춘 `tasks`(3일 넘게 doing)를 다시 배정. 서비스 주소가 응답하지 않으면 level critical.
+- **고객지원(support)**: 새 `feedback/<날짜>`(status new)를 분류해 각 항목에 action 을 달고 summary·status triaged 로 바꾼다(개인정보는 옮기지 않음). 버그는 `tasks`(qa), 반복 불편·제안은 `tasks`(plan). 피드백을 가져올 길(저장소 `feedback` 이슈 등)에 접근할 수 없으면 그 사실을 보고한다.
+- **마케팅(marketing)**: `share/posts` 가 홍보 글의 원본이다. 채널 규칙에 맞게 다듬거나 새 글(채널당 1개, 글자 수 한도 지키기)을 쓰고, 올리지 않은 채널이 있으면 `human` 에 "○○ 올리기"를 남긴다. `shared` 기록으로 채널별 상태를 `reports/marketing` 에.
 - **데이터·재무(data)**: 서비스가 주는 지표만 `metrics/main` 에. 숫자를 지어내지 않는다 — 없으면 "지표 없음"과 만드는 방법을 `tasks`(dev)로.
 - **QA**: 바뀐 화면이 있으면 `atelier:usertest`(프로젝트의 `npm run usertest`) 결과를 확인한다.
 
