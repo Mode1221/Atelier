@@ -27,7 +27,7 @@ ${noindex ? '<meta name="robots" content="noindex">' : ''}
 <link rel="stylesheet" href="/static/tokens.css"><link rel="stylesheet" href="/static/app.css">
 <script src="/static/app.js" defer></script>
 </head><body><main>${body}</main>
-<footer><a href="/">벌금장부</a> · <a href="/privacy">개인정보처리방침</a> · <a href="/terms">이용약관</a></footer>
+<footer><a href="/">벌금장부</a> · <a href="/privacy">개인정보처리방침</a> · <a href="/terms">이용약관</a> · <a href="mailto:atlier.skill@gmail.com">문의</a></footer>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 </body></html>`;
 }
