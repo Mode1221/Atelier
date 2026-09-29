@@ -48,15 +48,19 @@
 | No-Go 항목 | 상태 |
 |---|---|
 | guard 완료 조건 | ✅ (처리방침 운영자 입력 칸 제외) |
-| build 운영 준비 필수 | ✅ 코드 측 전부 / ⏳ 배포 (Cloudflare 시크릿 대기) |
+| build 운영 준비 필수 | ✅ 운영 배포·스모크 통과 |
 | HTTPS·백업·롤백 | ✅ 플랫폼 제공 (workers.dev HTTPS, D1 Time Travel 7일, `wrangler rollback`) — 배포 후 1회 확인 |
 | 비용 한도 | ✅ 무료 등급이라 청구 없음 (`docs/costs.md`) |
-| 운영 환경 핵심 흐름 1회 성공 | ⏳ 배포 직후 스모크(자동) + 수동 1회 |
-| 에러 알림 | ⏳ 배포 후 정기 점검(`ops-checks`)에 주소 등록 |
+| 운영 환경 핵심 흐름 1회 성공 | ✅ 배포 스모크 자동 (수동 1회는 대표 확인 권장) |
+| 에러 알림 | ✅ 매일 운영 점검 + 이슈 알림 |
 | 문의 채널 | ✅ atlier.skill@gmail.com (화면 하단 링크) |
 | 사용성 테스트·베타 | ⏳ 사람 (L1·L2) |
 
-**판정: No-Go (남은 것 = Cloudflare 시크릿 2개, 사용성 테스트)**. 이전보다 사람 할 일이 계정 5개 → 1개로 줄었다.
+**판정 (배포 후): 비공개 베타 Go / 공개 출시는 L1 후 재판정**
+- 운영 배포 완료: https://beolgeum-jangbu.atlier-skill.workers.dev
+- 운영 스모크: 상태·첫 화면·정적 파일·모임 생성→멤버→회차→조회→삭제 통과 (배포마다 자동)
+- 매일 운영 점검(`beolgeum-ops`) 연결, 실패하면 `ops-alert` 이슈
+- 남은 것: L1 사용성 테스트 5명 (사람)
 
 ## L6. 출시일 운영
 launch `launch-readiness.md` 절차 사용. 대시보드: `fly logs` + `admin.js stats` + `ops-alert` 이슈.

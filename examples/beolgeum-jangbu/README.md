@@ -2,6 +2,8 @@
 
 출석만 체크하세요. 벌금은 알아서 계산됩니다. — 가입 없이 링크 하나로 쓰는 스터디·운동 모임 벌금 장부.
 
+**운영 중**: https://beolgeum-jangbu.atlier-skill.workers.dev
+
 **운영 비용 0원**: Cloudflare Workers 무료 등급(Workers + D1 + 정적 자산 + 크론). 비용이 생기는 조건은 `docs/costs.md`.
 
 ## 실행

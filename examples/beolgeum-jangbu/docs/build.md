@@ -50,7 +50,7 @@
 | 비용 알림 | ⏳ | Fly 결제 한도 |
 | README·CLAUDE.md | ✅ | |
 
-**게이트 판정: 코드 측 필수 항목 통과, 사람 필요 항목 대기** (에러 모니터링, HTTPS/호스팅, 스테이징, GitHub 에서 CI 실행, 비용 알림). reviewer 판정: 보류.
+**게이트 판정 (2026-09-29 배포 후): 통과** — Cloudflare 무료 스택 운영 배포·스모크 통과. (이전 판정:  (에러 모니터링, HTTPS/호스팅, 스테이징, GitHub 에서 CI 실행, 비용 알림). reviewer 판정: 보류).
 
 ## 관리자 절차
 - 신고된 모임 비공개: `node scripts/admin.js delete <모임ID>` (30일 내 `restore` 가능)
