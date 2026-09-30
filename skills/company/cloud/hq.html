@@ -346,8 +346,10 @@ function overview() {
   const items = inboxAll();
   const act = items.filter((x) => x.kind !== 'voice');
   const crit = S.services.filter((v) => levelOf(v.id) === 'critical').length;
+  const waiting = S.services.some((v) => !S.svc[v.id]?.reportsIn);
   const b = crit ? banner('critical', `문제가 있는 서비스 ${crit}개`, '빨간 항목부터 확인해 주세요.')
     : act.length ? banner('warning', `확인할 것 ${act.length}건`, `서비스 ${S.services.length}개 중 ${new Set(act.map((x) => x.svc)).size}개에서 대표님을 기다려요.`)
+    : waiting ? banner('idle', '불러오는 중', '')
     : banner('good', '모든 서비스 이상 없음', `서비스 ${S.services.length}개 — 대표님이 확인할 것이 없어요.`);
   return `<div class="head"><div><h1>전체 서비스</h1><p class="small muted">서비스 ${S.services.length}개 · AI 부서가 일하고 대표님은 확인만 해요</p></div></div>
   ${b}
