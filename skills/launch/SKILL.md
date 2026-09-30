@@ -29,6 +29,7 @@ AI 페르소나가 실제 브라우저로 과제를 수행하는 **AI 대리 테
 PROJECT.md "디자인 도구 계획"의 L3 칸만 실행한다(랜딩 중심이면 `/impeccable onboard`).
 `references/landing-copy.md`. 헤드라인 = 고유 가치 제안. 전환 측정(UTM·이벤트).
 게임은 Steam "Coming Soon" 페이지를 출시 전 충분히 일찍 연다(위시리스트).
+**검색 등록 (웹)**: 공개 페이지가 있으면 Google Search Console·네이버 서치어드바이저에 사이트 등록 + 사이트맵 제출(`../../build/references/web-quality.md`). 소유 확인은 사람이 버튼만(메타 태그·DNS 값은 AI 가 넣는다). 사용자 데이터 화면(비밀 링크·로그인 뒤)은 검색 제외(`noindex`, robots) 확인.
 
 ### L4. 출시 계획·채널별 게시글 → `atelier-dev:share`
 `references/launch-channels.md` 에서 대상 사용자가 있는 채널 3~5개 선택, 채널별로 따로 쓴다. D-14 ~ D+7 일정표.

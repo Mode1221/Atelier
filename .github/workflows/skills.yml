@@ -3,7 +3,7 @@ name: Skills
 on:
   push:
     branches: [main]
-    paths: ["skills/**", "tests/**", ".claude-plugin/**", "examples/beolgeum-jangbu/docs/share/**", "examples/beolgeum-jangbu/docs/usertest/plan.json", "examples/chaenggim-pyo/docs/share/**", "examples/chaenggim-pyo/docs/usertest/plan.json", "examples/chaenggim-pyo/scripts/**", "examples/chaenggim-pyo/ops/**", ".github/workflows/skills.yml"]
+    paths: ["skills/**", "tests/**", ".claude-plugin/**", "examples/*/PROJECT.md", "examples/*/docs/**", "examples/*/design/**", "examples/beolgeum-jangbu/docs/share/**", "examples/beolgeum-jangbu/docs/usertest/plan.json", "examples/chaenggim-pyo/docs/share/**", "examples/chaenggim-pyo/docs/usertest/plan.json", "examples/chaenggim-pyo/scripts/**", "examples/chaenggim-pyo/ops/**", ".github/workflows/skills.yml"]
   pull_request:
     paths: ["skills/**", "tests/**", ".claude-plugin/**", ".github/workflows/skills.yml"]
 permissions:

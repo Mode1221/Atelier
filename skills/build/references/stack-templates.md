@@ -12,6 +12,9 @@
 | 웹 (로그인 있음) | `deploy-first.mjs` + `auth/` (Supabase) | `npm run deploy:first` (키 3개 붙여 넣기) | Cloudflare·Supabase 가입, 키 복사 (auth-accounts.md 첫 절) |
 | 정적 웹·웹 게임 (Phaser 등) | `deploy-first.mjs` (DB 없으면 DB 단계 생략) | `npm run deploy:first` | Cloudflare 가입. itch.io 도 올리려면 itch 가입 후 zip 업로드(선택) |
 | 모바일 앱 (Expo) | `app-first.mjs` | `npm run app:first` → 안드로이드 설치 파일(APK) | expo.dev 가입. 스토어 출시는 계정 비용(Play $25, Apple 연 $99) — 결정 후 |
+| 브라우저 확장 프로그램 | (템플릿 없음) Manifest V3 + 순수 JS, 서버가 필요하면 위 웹 스택 | `zip` → 크롬 웹 스토어 개발자 대시보드 업로드 | Chrome 웹 스토어 개발자 등록($5 1회), 심사 대기 |
+| 챗봇 (카카오·디스코드·텔레그램) | 서버는 위 웹 스택(Workers) + 웹훅 주소 | `npm run deploy:first` 후 플랫폼 콘솔에 웹훅 주소 붙여 넣기 | 플랫폼 개발자 등록(카카오 비즈니스 채널 등) |
+| 데스크톱 앱 | Tauri(가벼움) 또는 Electron, 자동 업데이트 포함 | 빌드 → GitHub Releases | 코드 서명 인증서는 유료(윈도우·맥) — 없으면 설치 때 경고가 뜬다고 미리 안내 |
 | 공통 운영 | `../../operate/templates/` `watchdog/` · `backup.mjs` | `npm run watch:setup` · `npm run backup` | 휴대폰 ntfy 앱, 백업 폴더 선택 |
 
 ## 웹 서비스 / SaaS
