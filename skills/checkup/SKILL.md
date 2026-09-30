@@ -1,6 +1,6 @@
 ---
 name: checkup
-description: 출시 후 정기 운영 점검. "/atelier:checkup setup" 으로 자동 점검(GitHub Actions 일일 검사 + 주간 AI 점검)을 프로젝트에 설치하고, "/atelier:checkup daily|weekly|monthly|quarterly" 로 해당 주기 점검을 실행해 보고서를 만든다. "점검 자동화", "정기 점검 돌려줘", "이번 주 운영 상태 어때?" 같은 요청에 사용.
+description: 출시 후 정기 운영 점검. "/atelier-dev:checkup setup" 으로 자동 점검(GitHub Actions 일일 검사 + 주간 AI 점검)을 프로젝트에 설치하고, "/atelier-dev:checkup daily|weekly|monthly|quarterly" 로 해당 주기 점검을 실행해 보고서를 만든다. "점검 자동화", "정기 점검 돌려줘", "이번 주 운영 상태 어때?" 같은 요청에 사용.
 ---
 
 # Checkup — 정기 점검
@@ -42,9 +42,9 @@ description: 출시 후 정기 운영 점검. "/atelier:checkup setup" 으로 �
 6. `docs/operations.md` 에 점검 구성(무엇을·언제·어디로 알림)을 기록하고, PROJECT.md 의 O8 을 체크한다.
 
 ### CI 가 없거나 GitHub Actions 를 안 쓸 때 (AI 회사 로컬 모드 기본)
-- **죽었을 때 알림**은 서비스 지킴이(`atelier:operate` O1, `npm run watch:setup`)가 한다 — 컴퓨터가 꺼져 있어도 휴대폰으로 온다.
-- 결정적 검사(인증서·의존성·백업 등)는 AI 회사 운영 부서가 `/atelier:company run ops` 때 `scripts/ops-check.sh daily` 를 돌려 `company/<서비스>/reports/ops.json` 에 남긴다(매일 자동이면 `/atelier:company schedule`).
-- Claude Code 예약 작업(클라우드 Routines)이나 `/loop 1d /atelier:checkup daily` (세션이 켜져 있는 동안만) 로 대체한다.
+- **죽었을 때 알림**은 서비스 지킴이(`atelier-dev:operate` O1, `npm run watch:setup`)가 한다 — 컴퓨터가 꺼져 있어도 휴대폰으로 온다.
+- 결정적 검사(인증서·의존성·백업 등)는 AI 회사 운영 부서가 `/atelier-dev:company run ops` 때 `scripts/ops-check.sh daily` 를 돌려 `company/<서비스>/reports/ops.json` 에 남긴다(매일 자동이면 `/atelier-dev:company schedule`).
+- Claude Code 예약 작업(클라우드 Routines)이나 `/loop 1d /atelier-dev:checkup daily` (세션이 켜져 있는 동안만) 로 대체한다.
 - 서버가 있으면 크론으로 `scripts/ops-check.sh` 를 돌리고 실패 시 웹훅을 호출한다.
 
 ---

@@ -25,9 +25,9 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ github.token }}
-          plugin_marketplaces: https://github.com/Mode1221/Atelier.git
-          plugins: atelier@atelier
-          prompt: "/atelier:checkup weekly --ci"
+          plugin_marketplaces: https://github.com/Mode1221/Atelier-dev.git
+          plugins: atelier-dev@atelier
+          prompt: "/atelier-dev:checkup weekly --ci"
           claude_args: >-
             --max-turns 40
             --allowedTools "Read,Glob,Grep,Write,Bash(./scripts/ops-check.sh:*),Bash(git log:*),Bash(gh issue:*),Bash(gh run list:*),Bash(gh pr list:*),Bash(gh release list:*),Bash(gh label create:*)"

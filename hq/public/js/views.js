@@ -220,7 +220,7 @@ export function sharePage({ spec, specErr, sharePath, shared, feedback }) {
   if (!spec) {
     posts = `<section class="card"><h2>홍보 글이 아직 없어요</h2><p>${specErr ? esc(specErr) : `저장소에 <code>${esc(sharePath)}</code> 파일이 없어요.`}</p>
 <form data-action="newTask" class="stack"><input type="hidden" name="dept" value="marketing"><input type="hidden" name="title" value="홍보 글 써 줘 (Atelier share)">
-<input type="hidden" name="body" value="${esc(`atelier:share 스킬로 채널별 홍보 글을 ${sharePath} 에 써 주세요. 대상 사용자가 있는 채널 3~5개, 채널별 글쓰기 가이드(references/channel-guide.md)의 말투·길이·금기에 맞춰 채널마다 따로 쓰기.`)}">
+<input type="hidden" name="body" value="${esc(`atelier-dev:share 스킬로 채널별 홍보 글을 ${sharePath} 에 써 주세요. 대상 사용자가 있는 채널 3~5개, 채널별 글쓰기 가이드(references/channel-guide.md)의 말투·길이·금기에 맞춰 채널마다 따로 쓰기.`)}">
 <button class="primary">마케팅 부서에 홍보 글 맡기기</button></form></section>`;
   } else {
     posts = spec.posts

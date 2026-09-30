@@ -16,4 +16,4 @@
 개인정보를 이슈 본문에 그대로 옮기기
 
 ## 참고 스킬
-`atelier:operate`, `atelier:beta`
+`atelier-dev:operate`, `atelier-dev:beta`

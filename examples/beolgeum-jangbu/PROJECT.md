@@ -105,7 +105,7 @@
 - [x] O5 비용 관리 — 무료 등급 0원 (docs/costs.md), 월 1회 무료 한도 사용률 확인
 - [ ] O6 유지보수 — 절차 ✅, Dependabot 저장소 설정 사람 대기
 - [x] O7 릴리스 관리 (버전·변경 기록·강제 업데이트)
-- [x] O8 정기 점검 자동화 (`/atelier:checkup setup`)
+- [x] O8 정기 점검 자동화 (`/atelier-dev:checkup setup`)
 
 ### 8 성장 — grow (반복)
 - [x] R1 지표 대시보드 (정의·집계 스크립트)

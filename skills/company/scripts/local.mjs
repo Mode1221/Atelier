@@ -83,7 +83,7 @@ export function pickService(root, given) {
   if (given) return given;
   const all = services(root);
   if (all.length === 1) return all[0].id;
-  throw new Error(all.length ? `서비스가 여럿이에요 — 서비스 ID 를 적어 주세요: ${all.map((s) => s.id).join(', ')}` : '아직 회사가 없어요 — /atelier:company setup');
+  throw new Error(all.length ? `서비스가 여럿이에요 — 서비스 ID 를 적어 주세요: ${all.map((s) => s.id).join(', ')}` : '아직 회사가 없어요 — /atelier-dev:company setup');
 }
 
 export function init(root, service, fields = {}, at = new Date()) {
@@ -178,7 +178,7 @@ export function brief(root, service, at = new Date()) {
 const LEVEL = { good: '🟢', warning: '🟡', critical: '🔴' };
 export function briefText(b) {
   const out = [`■ ${b.name} — ${b.date} 브리핑${b.url ? ` (${b.url})` : ''}`];
-  out.push(`오늘: ${b.today ?? '대표실이 아직 일하지 않았어요 — "/atelier:company run ceo"'}`);
+  out.push(`오늘: ${b.today ?? '대표실이 아직 일하지 않았어요 — "/atelier-dev:company run ceo"'}`);
   if (b.focus) out.push(`이번 목표: ${b.focus}`);
   for (const g of b.goals) out.push(`  · ${g.text}: ${g.current ?? '측정 없음'}${g.target != null ? ` / ${g.target}${g.unit}` : ''}`);
   out.push('', `결재 대기 ${b.approvals.length}건${b.approvals.length ? ' — "1번 승인" 또는 "1번 반려: 이유" 로 답해 주세요' : ''}`);

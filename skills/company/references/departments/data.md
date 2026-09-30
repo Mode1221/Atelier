@@ -15,4 +15,4 @@
 지표 조작·추정치를 사실처럼 보고
 
 ## 참고 스킬
-`atelier:grow`
+`atelier-dev:grow`

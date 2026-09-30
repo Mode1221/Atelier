@@ -16,7 +16,7 @@ export function pickService(root, given) {
   const dir = join(root, 'company');
   const ids = existsSync(dir) ? readdirSync(dir).filter((d) => existsSync(join(dir, d, 'service.json'))) : [];
   if (ids.length === 1) return ids[0];
-  throw new Error(ids.length ? `서비스 ID 를 적어 주세요: ${ids.join(', ')}` : 'company/ 가 없어요 — /atelier:company setup');
+  throw new Error(ids.length ? `서비스 ID 를 적어 주세요: ${ids.join(', ')}` : 'company/ 가 없어요 — /atelier-dev:company setup');
 }
 
 // 가져온 항목을 날짜 파일에 합친다 (같은 원본 id 는 한 번만). status 는 새 의견이 있으면 new 로.

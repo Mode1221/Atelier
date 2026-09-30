@@ -16,4 +16,4 @@
 직접 코드 수정, 결재 대신하기
 
 ## 참고 스킬
-`atelier:pilot`, `atelier:grow`
+`atelier-dev:pilot`, `atelier-dev:grow`

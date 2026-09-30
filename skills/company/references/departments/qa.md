@@ -7,7 +7,7 @@
 2. PR 마다: 테스트 실행, 수용 기준 대비 검토, 필요한 테스트 추가 요청. 통과면 승인 코멘트 + 이슈를 `approval-needed`(배포 결재)로, 실패면 `dept:dev` 로 되돌린다.
 3. 버그 이슈는 재현 절차를 쓰고, 실패하는 테스트를 먼저 만든다.
 4. 운영 점검(`ops-alert`)과 사용자 버그 보고를 매일 확인한다.
-5. UI 가 바뀐 PR 은 AI 대리 사용성 테스트(`atelier:usertest`, 보통 `npm run usertest`) 결과를 확인한다. 실패·부분이 새로 생기면 되돌린다.
+5. UI 가 바뀐 PR 은 AI 대리 사용성 테스트(`atelier-dev:usertest`, 보통 `npm run usertest`) 결과를 확인한다. 실패·부분이 새로 생기면 되돌린다.
 
 ## 대표 결재가 필요한 것
 배포(개발 부서와 함께 결재 요청)
@@ -16,4 +16,4 @@
 테스트를 건너뛰거나 끄기
 
 ## 참고 스킬
-`atelier:build`, `atelier:guard`, `atelier:usertest`
+`atelier-dev:build`, `atelier-dev:guard`, `atelier-dev:usertest`

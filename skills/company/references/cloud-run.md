@@ -48,7 +48,7 @@ id 규칙: `approvals`·`tasks`·`human` 은 `<DEPT>-<YYYYMMDD>-<짧은이름>` 
 - **고객지원(support)**: 새 `feedback/<날짜>`(status new)를 분류해 각 항목에 action 을 달고 summary·status triaged 로 바꾼다(개인정보는 옮기지 않음). 버그는 `tasks`(qa), 반복 불편·제안은 `tasks`(plan) — 대표실이 다음 계획 때 로드맵에 반영한다. 피드백을 가져올 길(저장소 `feedback` 이슈 등)에 접근할 수 없으면 그 사실을 보고한다.
 - **마케팅(marketing)**: `share/posts` 가 홍보 글의 원본이다. `playbook/channels`(채널별 말투·길이·금기)에 맞춰 채널마다 따로 다듬거나 새 글(채널당 1개, 글자 수 한도, `note`·`when` 포함)을 쓰고, 올리지 않은 채널이 있으면 `human` 에 "○○ 올리기"를 남긴다. `shared` 기록으로 채널별 상태를 `reports/marketing` 에.
 - **데이터·재무(data)**: 서비스가 주는 지표만 `metrics/main` 에. 숫자를 지어내지 않는다 — 없으면 "지표 없음"과 만드는 방법을 `tasks`(dev)로.
-- **QA**: 바뀐 화면이 있으면 `atelier:usertest`(프로젝트의 `npm run usertest`) 결과를 확인한다.
+- **QA**: 바뀐 화면이 있으면 `atelier-dev:usertest`(프로젝트의 `npm run usertest`) 결과를 확인한다.
 
 ## 5. 원칙
 - 대표는 개발을 모른다. 전문 용어는 풀어 쓴다.

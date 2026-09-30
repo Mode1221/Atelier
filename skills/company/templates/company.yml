@@ -102,9 +102,9 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ github.token }}
-          plugin_marketplaces: https://github.com/Mode1221/Atelier.git
-          plugins: atelier@atelier
-          prompt: "/atelier:company run ${{ env.DEPT }}"
+          plugin_marketplaces: https://github.com/Mode1221/Atelier-dev.git
+          plugins: atelier-dev@atelier
+          prompt: "/atelier-dev:company run ${{ env.DEPT }}"
           claude_args: >-
             --max-turns 60
             --allowedTools "Read,Glob,Grep,Edit,Write,Bash(gh:*),Bash(git:*),Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(./scripts/*),WebSearch,WebFetch"

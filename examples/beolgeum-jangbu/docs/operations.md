@@ -34,7 +34,7 @@
 - 버전: SemVer, `CHANGELOG.md`
 - 배포: main 푸시 → CI → Fly 배포 → 스모크 테스트
 
-## O8. 정기 점검 자동화 (`/atelier:checkup setup`)
+## O8. 정기 점검 자동화 (`/atelier-dev:checkup setup`)
 | 무엇 | 언제 | 알림 |
 |---|---|---|
 | `/health`, `/health?backup=1`, TLS, 만료일, 의존성 | 매일 00:17 UTC (`.github/workflows/ops-checks.yml`) | `ops-alert` 이슈 → GitHub 모바일 |

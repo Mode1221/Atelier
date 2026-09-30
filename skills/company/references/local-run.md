@@ -1,6 +1,6 @@
 # 로컬 모드 — 내 컴퓨터의 Claude Code 만으로 AI 회사
 
-클라우드 세션·GitHub·토큰 없이, **프로젝트 폴더의 파일**이 본부다. 대표는 Claude Code 대화창에서 `/atelier:company` 로 브리핑을 보고 "1번 승인"처럼 답한다.
+클라우드 세션·GitHub·토큰 없이, **프로젝트 폴더의 파일**이 본부다. 대표는 Claude Code 대화창에서 `/atelier-dev:company` 로 브리핑을 보고 "1번 승인"처럼 답한다.
 
 ## 0. 준비
 - 도우미 스크립트: 이 스킬 폴더의 `scripts/local.mjs` (아래 `L` = `node <스킬 폴더>/scripts/local.mjs`). 프로젝트 폴더(`PROJECT.md` 가 있는 곳)에서 실행한다.
@@ -25,7 +25,7 @@
 - 읽기·쓰기는 Read/Write 도구로 직접 해도 되지만, **결재·할 일 체크·부서 켜기는 `L` 로** 한다(번호·시각 규칙이 한곳에). 쓴 뒤에는 `L check` 로 형식을 확인한다.
 - `company/` 는 저장소에 커밋해도 된다(기록이 남음). 비밀값·개인정보는 넣지 않는다.
 
-## 2. 대화형 본부 — `/atelier:company` (인자 없음)
+## 2. 대화형 본부 — `/atelier-dev:company` (인자 없음)
 1. `L services` — 없으면 `setup` 을 안내. 여럿이면 어느 서비스인지 묻거나 전부 짧게.
 2. `L brief [서비스]` 결과를 **그대로 짧게** 보여 준다: 오늘 브리핑(대표실 보고), 목표, 결재 대기(번호 목록 + 승인하면/반려하면), 대표 할 일, 부서 상태.
 3. 대표의 답을 파일에 반영한다:
@@ -35,7 +35,7 @@
    - "지금 일 시켜" → 아래 3절
 4. 승인만으로는 일이 진행되지 않는다 — 그 부서가 다음 실행 때 한다. "바로 해 줘"라고 하면 `run <부서>` 를 이어서 한다.
 
-## 3. 부서 실행 — `/atelier:company run <부서|all>`
+## 3. 부서 실행 — `/atelier-dev:company run <부서|all>`
 - `all` → `L order <서비스> all` 이 주는 순서(켜 둔 부서, 대표실 먼저)로 한 부서씩. 꺼진 부서를 이름으로 부르면 한 번만 실행해도 되는지 확인한다.
 - 부서마다 `cloud-run.md` **2~5절**을 따르되 경로는 1절 표의 파일로:
   1. 승인된 결재(`status approved`, `done` 아님) → 그 일을 하고 `done: true, result`. 반려 → reason 반영.
@@ -47,15 +47,15 @@
 - **고객지원**은 시작할 때 `npm run feedback:pull`(없으면 `node <atelier>/skills/beta/templates/feedback-pull.mjs`)로 서비스의 새 의견을 `feedback/<날짜>.json` 에 가져온 뒤 분류한다. 열쇠가 없다고 나오면 `human` 에 "npm run deploy:first 한 번 실행"을 남긴다.
 - 부서가 끝날 때마다 `L check`. 모든 부서가 끝나면 마지막에 `L brief` 를 보여 준다.
 
-## 4. 예약 — `/atelier:company schedule` (선택)
-매일 정해진 시각에 `claude -p "/atelier:company run all"` 이 돌게 운영체제 예약 작업을 만든다. **사용자 확인 뒤에만 등록한다.**
-- 먼저 알릴 것: **컴퓨터가 켜져 있고 로그인돼 있어야 돈다**(꺼져 있으면 그날은 건너뜀) · 켜 둔 부서 수만큼 매일 Claude 사용량이 든다 · 결재는 다음에 `/atelier:company` 를 열 때 한다.
+## 4. 예약 — `/atelier-dev:company schedule` (선택)
+매일 정해진 시각에 `claude -p "/atelier-dev:company run all"` 이 돌게 운영체제 예약 작업을 만든다. **사용자 확인 뒤에만 등록한다.**
+- 먼저 알릴 것: **컴퓨터가 켜져 있고 로그인돼 있어야 돈다**(꺼져 있으면 그날은 건너뜀) · 켜 둔 부서 수만큼 매일 Claude 사용량이 든다 · 결재는 다음에 `/atelier-dev:company` 를 열 때 한다.
 - 무인 실행은 권한을 물을 사람이 없다: `--permission-mode acceptEdits`(파일 수정만 자동 허용)를 붙이고, 그 외 명령이 막히면 보고에 남는다.
 - 등록 명령을 보여 주고 "등록할까요?"에 "응"이면 실행한다. 경로는 실제 값으로 채운다(`which claude` / `where claude`).
   - 맥·리눅스 (cron, 매일 9시):
-    `( crontab -l 2>/dev/null; echo '0 9 * * * cd "<프로젝트 경로>" && "<claude 경로>" -p "/atelier:company run all" --permission-mode acceptEdits >> company/run.log 2>&1' ) | crontab -`
+    `( crontab -l 2>/dev/null; echo '0 9 * * * cd "<프로젝트 경로>" && "<claude 경로>" -p "/atelier-dev:company run all" --permission-mode acceptEdits >> company/run.log 2>&1' ) | crontab -`
   - 윈도우 (작업 스케줄러):
-    `schtasks /Create /SC DAILY /ST 09:00 /TN "Atelier company" /TR "cmd /c cd /d \"<프로젝트 경로>\" && claude -p \"/atelier:company run all\" --permission-mode acceptEdits >> company\run.log 2>&1"`
+    `schtasks /Create /SC DAILY /ST 09:00 /TN "Atelier company" /TR "cmd /c cd /d \"<프로젝트 경로>\" && claude -p \"/atelier-dev:company run all\" --permission-mode acceptEdits >> company\run.log 2>&1"`
 - 끄기: cron 은 `crontab -e` 에서 그 줄 삭제, 윈도우는 `schtasks /Delete /TN "Atelier company" /F`. `company/run.log` 는 `.gitignore` 에 넣는다.
 
 ## 5. 원칙

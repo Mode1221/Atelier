@@ -8,7 +8,7 @@
   },
   "plugins": [
     {
-      "name": "atelier",
+      "name": "atelier-dev",
       "source": "./",
       "description": "1인 개발 전 과정 가이드 플러그인"
     }

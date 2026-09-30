@@ -13,24 +13,24 @@ description: 출시 단계. 사용성 테스트(usertest), 공개 베타(beta), 
 
 ## 세부 단계
 
-### L1. 사용성 테스트 → `atelier:usertest`
+### L1. 사용성 테스트 → `atelier-dev:usertest`
 AI 페르소나가 실제 브라우저로 과제를 수행하는 **AI 대리 테스트**를 먼저 돌린다(사람 없이). 치명·높음 0 이 될 때까지 고치고 CI 에 넣는다.
 **배포 전에 로컬에서 먼저 한다**: `wrangler dev --local` + 빈 로컬 DB 로 띄워 실행한다(예: `npm run usertest`). build 게이트에서 이미 돌렸으면 여기서는 운영 주소로 한 번 더 확인만 한다. 로컬로 되는 테스트를 "사람 대기"나 "배포 후"로 미루지 않는다.
 사람 5명 테스트(`references/user-testing.md` 1절)는 선택 — 베타 피드백 20건이 보완 근거가 된다.
 
-### L2. 공개 베타 → `atelier:beta`
+### L2. 공개 베타 → `atelier-dev:beta`
 링크를 열어 두고 서비스 안 "의견 보내기" → 매일 GitHub 이슈로 자동 수집 → 고객지원 부서 분류.
 - 웹은 초대 없이 공개 베타가 기본. 앱은 TestFlight 공개 링크 / Play 공개 테스트, 게임은 Steam Playtest·itch.io.
 - 기간 2주 이상. 활성화율·재방문·오류율·피드백 수. 졸업 기준은 beta B6.
-- 링크 퍼뜨리기는 `atelier:share` (서비스 안 공유 고리 + 채널별 한 번 눌러 올리기).
-- 베타 링크가 열리면 한 줄로 확인받고 `atelier:company setup`(로컬 모드)으로 회사를 세운다(pilot 5-1). 의견 분류·홍보 글·운영 점검이 이때부터 부서 일이 된다.
+- 링크 퍼뜨리기는 `atelier-dev:share` (서비스 안 공유 고리 + 채널별 한 번 눌러 올리기).
+- 베타 링크가 열리면 한 줄로 확인받고 `atelier-dev:company setup`(로컬 모드)으로 회사를 세운다(pilot 5-1). 의견 분류·홍보 글·운영 점검이 이때부터 부서 일이 된다.
 
 ### L3. 랜딩·스토어 페이지
 PROJECT.md "디자인 도구 계획"의 L3 칸만 실행한다(랜딩 중심이면 `/impeccable onboard`).
 `references/landing-copy.md`. 헤드라인 = 고유 가치 제안. 전환 측정(UTM·이벤트).
 게임은 Steam "Coming Soon" 페이지를 출시 전 충분히 일찍 연다(위시리스트).
 
-### L4. 출시 계획·채널별 게시글 → `atelier:share`
+### L4. 출시 계획·채널별 게시글 → `atelier-dev:share`
 `references/launch-channels.md` 에서 대상 사용자가 있는 채널 3~5개 선택, 채널별로 따로 쓴다. D-14 ~ D+7 일정표.
 AI: 게시글(`docs/share/posts.json`)·예상 질문 답변·보도자료 초안. 사람: HQ 홍보 화면에서 "올리기" 버튼·답글.
 
