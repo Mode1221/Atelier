@@ -15,4 +15,4 @@ trap 'kill $SERVER 2>/dev/null || true' EXIT
 up=
 for _ in $(seq 1 60); do curl -fs "http://127.0.0.1:$PORT/health" >/dev/null && { up=1; break; }; sleep 1; done
 [ -n "$up" ] || { echo "✗ 테스트 서버가 포트 $PORT 에서 뜨지 않았어요" >&2; exit 1; }
-BASE_URL="http://127.0.0.1:$PORT" node ../../skills/usertest/scripts/walk.mjs docs/usertest/plan.json "$OUT"
+BASE_URL="http://127.0.0.1:$PORT" node scripts/atelier/walk.mjs docs/usertest/plan.json "$OUT"

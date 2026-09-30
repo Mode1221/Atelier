@@ -57,3 +57,17 @@ test('예시 프로젝트: 완료 표시와 산출물이 맞다', () => {
     assert.deepEqual(problems.map((p) => p.id), [], ex);
   }
 });
+
+test('install-tools: 복사본은 같은 폴더 import 로 바뀌고, 예시 프로젝트 복사본은 원본과 같다', async () => {
+  const { vendor, install } = await import('../skills/pilot/scripts/install-tools.mjs');
+  const out = vendor('build/scripts/quality-gate.mjs', "#!/usr/bin/env node\nimport { a } from '../../pilot/scripts/gate-check.mjs';\nimport { b } from './migration-check.mjs';\n");
+  assert.match(out, /^#!\/usr\/bin\/env node\n\/\/ Atelier .* 복사본/);
+  assert.ok(out.includes("from './gate-check.mjs'") && out.includes("from './migration-check.mjs'"));
+  assert.ok(!out.includes('eslint-disable'));
+  assert.ok(vendor('usertest/scripts/walk.mjs', 'const x = document.body;').includes('/* eslint-disable */'));
+  for (const ex of ['beolgeum-jangbu', 'chaenggim-pyo']) {
+    const root = new URL(`../examples/${ex}/`, import.meta.url).pathname;
+    const { results } = install(root, { check: true });
+    assert.deepEqual(results.filter((r) => r.status !== '같음').map((r) => r.file), [], `${ex}: node skills/pilot/scripts/install-tools.mjs examples/${ex} 로 갱신`);
+  }
+});

@@ -21,7 +21,7 @@
 예: `examples/chaenggim-pyo` (F8~F10, `migrations/0004_activity_undo.sql`)
 
 ## 품질 게이트 (자동)
-- [ ] **필수** `npm run quality` (build `scripts/quality-gate.mjs`) 가 CI 에서 매 push 통과 — 증거·요구사항 추적·분석 이벤트 계획·DB 변경 안전·비밀값
+- [ ] **필수** `npm run quality` (install-tools 로 설치한 `scripts/atelier/quality-gate.mjs`) 가 CI 에서 매 push 통과 — 증거·요구사항 추적·분석 이벤트 계획·DB 변경 안전·비밀값
 
 ## 데이터
 - [ ] **필수** 스키마 변경은 마이그레이션으로만

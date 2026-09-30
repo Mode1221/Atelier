@@ -7,6 +7,9 @@ description: 1인 개발 프로젝트의 전체 진행을 관리한다. 새 프�
 
 목표: 아이디어에서 **실제로 운영 가능한 서비스**까지, 빠뜨리는 단계 없이 한 걸음씩 안내한다.
 
+> **경로 규칙** — 모든 스킬 문서의 `<atelier>` 는 **플러그인 폴더**다. 스킬을 불러올 때 표시되는 이 스킬의 폴더(Base directory)에서 두 단계 위(`…/skills/pilot` → `…`). 모르면 `ls ~/.claude/plugins/marketplaces/*/skills/pilot/SKILL.md` 로 찾는다.
+> 사용자 프로젝트의 CI 에는 플러그인 폴더가 없다. CI·`npm` 스크립트에서 쓰는 검사 도구는 **`node <atelier>/skills/pilot/scripts/install-tools.mjs`** 로 프로젝트 `scripts/atelier/` 에 복사해 쓴다(구현 B1 에서 한 번, 플러그인 업데이트 뒤 다시).
+
 ## 1. 상태 확인
 0. **준비물 확인 (처음 한 번, 사용자에게 묻기 전에)** — Bash 로 `node --version`, `git --version` 을 돌려 본다. 사용자는 개발을 모른다고 가정하고, 설치 명령은 **보여 주고 확인받은 뒤 Claude 가 실행**한다.
    | 없음 | Windows | Mac |

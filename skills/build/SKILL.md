@@ -27,6 +27,7 @@ description: 구현 단계. 스택 선택, 프로젝트 생성, 환경 분리(�
 - **환경 분리**: 개발(local) / 스테이징(미리보기) / 운영. 환경마다 DB·키 분리. 운영 데이터로 개발하지 않는다.
 - 시크릿: `.env.example`(이름만), 실제 값은 플랫폼 시크릿. `.gitignore` 확인.
 - CI: 푸시마다 린트·타입체크·테스트·빌드 (`references/ci-deploy.md`).
+- **검사 도구 설치**: `node <atelier>/skills/pilot/scripts/install-tools.mjs` → 프로젝트 `scripts/atelier/` 에 품질 게이트·사용성 테스트 실행기 복사 + `npm run quality`. CI 에 "품질 게이트" 단계를 테스트보다 먼저 넣는다.
 - **종류별 첫 실행**: `references/stack-templates.md` 첫 표 (웹·로그인 웹·웹 게임·모바일 앱). **첫 배포 스크립트**(Cloudflare 스택): `templates/deploy-first.mjs` → 프로젝트 `scripts/deploy-first.mjs`, package.json `"deploy:first": "node scripts/deploy-first.mjs"`. 로그인 확인 → D1 생성(있으면 재사용) → `wrangler.toml` 에 database_id 기록 → 원격 마이그레이션 → 배포 → 비밀값 → 주소 출력까지 한 번에, 다시 실행해도 안전. 비밀값은 `.dev.vars.example` 에 이름만(`FEEDBACK_TOKEN=auto` 처럼 `auto` 면 자동 생성, 빈 값이면 배포 때 붙여 넣기) — 사람에게 `wrangler secret` 을 가르치지 않는다.
 - 프로젝트 `CLAUDE.md`: 스택, 명령, 폴더 구조, 규칙(어댑터 경유 등).
 
@@ -72,7 +73,7 @@ spec 의 신원 모델을 구현한다.
 
 ### B10. 테스트
 `references/testing-strategy.md` 를 따른다. spec 수용 기준 = E2E 시나리오.
-**품질 게이트** `scripts/quality-gate.mjs` 를 프로젝트 `npm run quality` 와 CI 에 넣는다 — 증거 검사·요구사항 추적·분석 이벤트 계획·DB 변경 안전·비밀값 유출을 매 push 마다 자동으로.
+**품질 게이트** (B1 에서 설치한 `scripts/atelier/quality-gate.mjs`, `npm run quality`) 를 CI 에 넣는다 — 증거 검사·요구사항 추적·분석 이벤트 계획·DB 변경 안전·비밀값 유출을 매 push 마다 자동으로.
 
 ### B11. 성능·SEO·다국어
 `references/web-quality.md` 를 따른다. spec S5 비기능 요구 숫자를 측정해서 확인.

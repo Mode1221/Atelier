@@ -24,8 +24,9 @@ description: AI 대리 사용성 테스트. 대상 사용자 페르소나를 만
 
 ### U4. 실행
 ```
-node <atelier>/skills/usertest/scripts/walk.mjs docs/usertest/plan.json docs/usertest/<날짜>
+node scripts/atelier/walk.mjs docs/usertest/plan.json docs/usertest/<날짜>
 ```
+(`scripts/atelier/` 가 없으면 `node <atelier>/skills/pilot/scripts/install-tools.mjs` 로 먼저 설치 — CI 에서도 같은 경로로 돈다)
 - 로컬 서버를 띄워 실행한다(운영 DB 오염 금지). IP 기준 속도 제한이 있으면 `"ipHeader"` 로 방문자를 나눈다.
 - playwright 가 없으면 `npm i -D playwright` (무료). 결과: `summary.md`, `results.json`, `shots/`.
 - **스크립트가 기본이다.** playwright-mcp(대화형 브라우저)는 PROJECT.md "디자인 도구 계획"의 usertest 칸에 있을 때만, 스크립트로 못 찾는 막힘 탐색·재현이 어려운 레이아웃 버그 추적에만 쓴다. 모바일 네이티브는 쓰지 않는다.
@@ -38,7 +39,7 @@ node <atelier>/skills/usertest/scripts/walk.mjs docs/usertest/plan.json docs/use
 `docs/usertest/<날짜>.md` 에 발견 표(심각도·근거·조치). 치명·높음은 **바로 고치고** U4 재실행. 테스트 코드(E2E)도 같이 돌린다 — 라벨 변경이 접근성 이름 충돌을 만들 수 있다.
 
 ### U7. 자동화 (권장)
-프로젝트에 `npm run usertest`(로컬 서버 + 실행기) 를 만들고 CI 에 넣는다. 매 변경마다 과제가 여전히 되는지 확인되고 결과가 CI 요약에 붙는다. 예: `examples/beolgeum-jangbu/scripts/usertest.sh`, `.github/workflows/beolgeum.yml`.
+프로젝트에 `npm run usertest`(로컬 서버 + 실행기) 를 만들고 CI 에 넣는다. 매 변경마다 과제가 여전히 되는지 확인되고 결과가 CI 요약에 붙는다. 예: `examples/beolgeum-jangbu/scripts/usertest.sh`(실행기는 `scripts/atelier/walk.mjs`), `.github/workflows/beolgeum.yml`.
 
 ## 판정
 - 통과: 실패 0, 부분은 검토 완료, 자동 점검 높음 0 → launch L1 완료, **공개 베타로 간다**.

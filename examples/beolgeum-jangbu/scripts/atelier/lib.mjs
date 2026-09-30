@@ -1,3 +1,4 @@
+// Atelier 0.11.0 의 skills/spec/scripts/lib.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
 // spec·build·guard 검사 스크립트 공통: 프로젝트 파일 목록 (node_modules 등 제외)
 import { readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
