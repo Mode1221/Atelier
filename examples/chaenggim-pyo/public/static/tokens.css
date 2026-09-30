@@ -1,0 +1,47 @@
+/* 챙김표 디자인 토큰 — 캠핑 체크리스트(숲 초록 + 크라프트 종이 + 모닥불 주황). 화면은 의미 토큰만 쓴다 */
+:root {
+  --color-bg: #fbf8f1;
+  --color-surface: #f1ebdd;
+  --color-text: #1d2420;
+  --color-text-muted: #4f5a53;
+  --color-border: #ddd4c2;          /* 장식용 구분선 */
+  --color-border-strong: #6f766f;   /* 입력 테두리 (3:1 이상) */
+  --color-primary: #1f5d3f;
+  --color-on-primary: #ffffff;
+  --color-accent: #a4410f;          /* 아직 주인 없는 것 */
+  --color-accent-soft: #fbe3d3;
+  --color-danger: #b42318;
+  --color-success: #1f6b3a;
+  --color-success-soft: #dcefe1;
+  --color-warning: #8a4b08;
+  --color-focus: #1f5d3f;
+
+  --font-sans: "Pretendard", system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.2rem; --text-xl: 1.75rem;
+  --leading-body: 1.6;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px;
+  --radius-md: 10px; --radius-lg: 16px; --radius-pill: 999px;
+  --tap: 44px;
+  --duration: 150ms;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #141814;
+    --color-surface: #1d231e;
+    --color-text: #eef1ea;
+    --color-text-muted: #aab4aa;
+    --color-border: #333b34;
+    --color-border-strong: #7f897f;
+    --color-primary: #7fcf9f;
+    --color-on-primary: #10160f;
+    --color-accent: #ffab7a;
+    --color-accent-soft: #3a2518;
+    --color-danger: #ff8f84;
+    --color-success: #7fcf9f;
+    --color-success-soft: #1d3325;
+    --color-warning: #f5b85c;
+    --color-focus: #7fcf9f;
+  }
+}
+@media (prefers-reduced-motion: reduce) { :root { --duration: 0ms; } }

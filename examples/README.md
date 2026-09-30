@@ -10,4 +10,11 @@
 - 검증: `npm ci && ./scripts/check.sh` — 단위·API 35개, E2E 7개(실제 Cloudflare 런타임 workerd, axe 접근성 포함), 의존성 감사
 - 배포: 루트 `.github/workflows/beolgeum.yml` (시크릿 `CLOUDFLARE_API_TOKEN`·`CLOUDFLARE_ACCOUNT_ID`)
 
+## chaenggim-pyo (챙김표)
+두 번째 자동 모드 예시. 대표는 **아이디어 후보 3개 중 하나만 고르고**(캠핑·여행 준비물 분담), 인터뷰 답·기획·디자인·구현·검증·출시 준비는 AI 가 진행. 가입 없는 준비물 분담 + 장본 돈 n빵 웹 서비스.
+
+- 진행 상태: `PROJECT.md` — 1~5단계 완료, L1 AI 대리 사용성 테스트 통과(치명 1·높음 2 수정), L2 공개 베타 준비
+- 검증: `npm ci && ./scripts/check.sh` — 단위·API 42개(정산 무작위 검사 포함), E2E 8개(두 브라우저 동시 맡기·axe 라이트/다크), `npm run usertest`
+- 배포: 루트 `.github/workflows/chaenggim.yml` (Cloudflare 무료 등급)
+
 예시 폴더 안의 `.github/workflows/` 는 이 저장소에서 실행되지 않는다 (프로젝트를 별도 저장소로 옮기면 동작).

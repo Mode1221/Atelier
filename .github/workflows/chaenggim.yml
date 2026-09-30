@@ -1,0 +1,123 @@
+# 예시 프로젝트 챙김표: 테스트 → Cloudflare Workers(무료 등급) 배포
+# 필요한 것: 저장소 Secrets 에 CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID (없으면 배포는 건너뜀)
+name: Chaenggim
+on:
+  push:
+    branches: [main]
+    paths: ["examples/chaenggim-pyo/**", "skills/beta/templates/**", "skills/usertest/scripts/**", ".github/workflows/chaenggim.yml"]
+  pull_request:
+    paths: ["examples/chaenggim-pyo/**", "skills/beta/templates/**", "skills/usertest/scripts/**", ".github/workflows/chaenggim.yml"]
+  workflow_dispatch:
+defaults:
+  run:
+    working-directory: examples/chaenggim-pyo
+env:
+  WRANGLER_SEND_METRICS: "false"
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: examples/chaenggim-pyo/package-lock.json }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: AI 대리 사용성 테스트 (Atelier usertest)
+        run: |
+          npm run -s usertest -- ../../usertest-out
+          cat ../../usertest-out/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: usertest, path: usertest-out, if-no-files-found: ignore, retention-days: 14 }
+      - run: npm audit --omit=dev --audit-level=high
+
+  deploy:
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    concurrency: chaenggim-deploy
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      STATS: ${{ secrets.CHAENGGIM_STATS_TOKEN }}
+      SUPPORT_URL: ${{ vars.CHAENGGIM_SUPPORT_URL }}   # 후원 링크 (선택, 저장소 Variables)
+    steps:
+      - name: 준비 확인
+        id: pre
+        working-directory: .
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::warning::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID 시크릿이 없어 배포를 건너뜁니다."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.pre.outputs.go == 'true'
+        uses: actions/checkout@v4
+      - if: steps.pre.outputs.go == 'true'
+        uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: examples/chaenggim-pyo/package-lock.json }
+      - if: steps.pre.outputs.go == 'true'
+        run: npm ci
+      - name: D1 데이터베이스 (없으면 만들기)
+        if: steps.pre.outputs.go == 'true'
+        run: |
+          id=$(npx wrangler d1 list --json | jq -r '.[] | select(.name=="chaenggim-pyo") | .uuid')
+          if [ -z "$id" ]; then
+            npx wrangler d1 create chaenggim-pyo --location apac
+            id=$(npx wrangler d1 list --json | jq -r '.[] | select(.name=="chaenggim-pyo") | .uuid')
+          fi
+          sed -i "s/LOCAL_PLACEHOLDER/$id/" wrangler.toml
+          npx wrangler d1 migrations apply DB --remote
+      - name: 운영 지표 토큰 (선택)
+        if: steps.pre.outputs.go == 'true' && env.STATS != ''
+        run: echo "$STATS" | npx wrangler secret put STATS_TOKEN
+      - name: 피드백 수집 토큰
+        if: steps.pre.outputs.go == 'true'
+        # 사람이 따로 만들 필요 없게 Cloudflare 토큰에서 한 방향으로 만든다 (수집 워크플로도 같은 방법으로 만든다)
+        run: |
+          t=$(printf 'atelier-feedback:%s' "$CLOUDFLARE_API_TOKEN" | sha256sum | cut -d' ' -f1)
+          echo "::add-mask::$t"
+          echo "$t" | npx wrangler secret put FEEDBACK_TOKEN
+      - name: 배포
+        id: deploy
+        if: steps.pre.outputs.go == 'true'
+        run: |
+          extra=(); [ -n "$SUPPORT_URL" ] && extra=(--var "SUPPORT_URL:$SUPPORT_URL")
+          npx wrangler deploy "${extra[@]}" | tee deploy.log
+          url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+      - name: 운영 확인 (스모크)
+        if: steps.pre.outputs.go == 'true'
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          set -euo pipefail
+          # 새 버전이 전 세계에 퍼지는 데 잠시 걸린다 — 최대 2분 재시도 (새 버전에만 있는 화면(/feedback)까지 확인)
+          ok=""
+          for i in $(seq 1 24); do
+            # grep -q 가 먼저 끝나면 curl 이 쓰기 실패(23)로 pipefail 에 걸린다 → 받은 뒤 검사
+            if grep -q '"ok":true' <<<"$(curl -fsS "$URL/health")" && grep -q '챙김표' <<<"$(curl -fsS "$URL/")" && curl -fsS -o /dev/null "$URL/static/app.css" && grep -q '의견 보내기' <<<"$(curl -fsS "$URL/feedback")"; then ok=1; break; fi
+            sleep 5
+          done
+          [ -n "$ok" ] || { echo "::error::배포 후 2분 안에 정상 응답이 오지 않았어요"; curl -sS -i "$URL/" | head -20; exit 1; }
+          # 핵심 흐름 1회: 목록 만들기 → 참여 → 맡기 → 화면 확인 → 삭제 (테스트 데이터는 바로 지운다)
+          g=$(curl -fsS -X POST "$URL/api/trips" -H 'content-type: application/json' -d '{"name":"[배포 확인] 자동 점검","template":"camping"}')
+          id=$(echo "$g" | jq -r .id); key=$(echo "$g" | jq -r .adminKey)
+          echo "::add-mask::$key"
+          p=$(curl -fsS -X POST "$URL/api/trips/$id/people" -H 'content-type: application/json' -d '{"name":"점검"}' | jq -r .id)
+          item=$(curl -fsS "$URL/api/trips/$id" | jq -r '.items[] | select(.name=="텐트") | .id')
+          curl -fsS -X PATCH "$URL/api/trips/$id/items/$item" -H 'content-type: application/json' -d "{\"action\":\"claim\",\"person_id\":$p}" >/dev/null
+          grep -q '점검 맡음' <<<"$(curl -fsS "$URL/t/$id")"
+          # 피드백 수집 토큰이 서비스와 맞는지 (수집 워크플로가 매일 쓰는 값)
+          ft=$(printf 'atelier-feedback:%s' "$CLOUDFLARE_API_TOKEN" | sha256sum | cut -d' ' -f1)
+          echo "::add-mask::$ft"
+          [ "$(curl -s -o /dev/null -w '%{http_code}' -H "authorization: Bearer $ft" "$URL/api/feedback")" = 200 ] || { echo "::error::피드백 수집 API 인증 실패"; exit 1; }
+          curl -fsS -X DELETE "$URL/api/trips/$id" -H "x-admin-key: $key"
+          [ "$(curl -s -o /dev/null -w '%{http_code}' "$URL/t/$id")" = 404 ]
+          echo "핵심 흐름 확인 완료"
+          echo "### 챙김표 주소: $URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "배포 확인: 상태·첫 화면·정적 파일·목록 생성→참여→맡기→조회→삭제 모두 정상" >> "$GITHUB_STEP_SUMMARY"

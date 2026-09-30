@@ -1,0 +1,23 @@
+# Cloudflare Workers 무료 등급으로 운영 (Workers + D1 + 정적 자산 + 크론)
+name = "chaenggim-pyo"
+main = "src/worker.js"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./public"
+
+[vars]
+TRUST_PROXY_HEADER = "cf-connecting-ip"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "chaenggim-pyo"
+database_id = "LOCAL_PLACEHOLDER"   # npm run deploy:first (또는 배포 워크플로)가 실제 ID 로 바꿔 넣는다
+migrations_dir = "migrations"
+
+[triggers]
+crons = ["23 18 * * *"]   # 매일 03:23 KST — 삭제·방치 목록 정리
+
+[observability]
+enabled = true

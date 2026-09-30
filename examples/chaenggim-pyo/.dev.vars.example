@@ -1,0 +1,2 @@
+# 배포 비밀값 이름 (npm run deploy:first 가 읽는다). auto = 자동으로 만들어 .atelier/secrets.json 에 보관, 빈 값 = 배포 때 물어봄
+FEEDBACK_TOKEN=auto

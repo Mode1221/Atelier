@@ -55,9 +55,13 @@ test('share: Threads 는 본문에 링크를 넣지 않고 첫 댓글용 링크�
   assert.equal(check({ posts: [{ channel: 'threads', text: 'a'.repeat(500) }] }).length, 0);
 });
 
+const EXAMPLES = ['beolgeum-jangbu', 'chaenggim-pyo'];
+
 test('share: 예시 프로젝트 홍보 글이 검사를 통과한다', () => {
-  const spec = JSON.parse(readFileSync(new URL('../examples/beolgeum-jangbu/docs/share/posts.json', import.meta.url), 'utf8'));
-  assert.deepEqual(check(spec), []);
+  for (const ex of EXAMPLES) {
+    const spec = JSON.parse(readFileSync(new URL(`../examples/${ex}/docs/share/posts.json`, import.meta.url), 'utf8'));
+    assert.deepEqual(check(spec), [], ex);
+  }
 });
 
 test('usertest: 기대 단어는 공백·대소문자를 무시하고 찾는다', () => {
@@ -71,11 +75,13 @@ test('usertest: 단계 설명', () => {
 });
 
 test('usertest: 예시 계획 파일 형식', () => {
-  const plan = JSON.parse(readFileSync(new URL('../examples/beolgeum-jangbu/docs/usertest/plan.json', import.meta.url), 'utf8'));
-  const ids = new Set(plan.tasks.map((t) => t.id));
-  for (const p of plan.personas) for (const t of p.tasks ?? []) assert.ok(ids.has(t), `${p.id} → ${t}`);
   const ops = new Set(['goto', 'click', 'fill', 'check', 'select', 'see', 'notSee', 'url', 'openFrom']);
-  for (const t of plan.tasks) for (const s of [...(t.setup ?? []), ...t.steps]) assert.ok(Object.keys(s).some((k) => ops.has(k)), JSON.stringify(s));
+  for (const ex of EXAMPLES) {
+    const plan = JSON.parse(readFileSync(new URL(`../examples/${ex}/docs/usertest/plan.json`, import.meta.url), 'utf8'));
+    const ids = new Set(plan.tasks.map((t) => t.id));
+    for (const p of plan.personas) for (const t of p.tasks ?? []) assert.ok(ids.has(t), `${ex} ${p.id} → ${t}`);
+    for (const t of plan.tasks) for (const s of [...(t.setup ?? []), ...t.steps]) assert.ok(Object.keys(s).some((k) => ops.has(k)), JSON.stringify(s));
+  }
 });
 
 import { buildRecord, postAll } from '../skills/share/scripts/post-bluesky.mjs';
@@ -192,9 +198,10 @@ test('deploy-first: 비밀값 — auto 는 만들어 로컬에 두고, 빈 값�
 test('build 템플릿: 예시 프로젝트 사본이 원본과 같다', () => {
   for (const f of ['build/templates/deploy-first.mjs', 'build/templates/free-port.mjs', 'beta/templates/feedback-pull.mjs', 'operate/templates/backup.mjs']) {
     const name = f.split('/').pop();
-    assert.equal(readFileSync(`examples/beolgeum-jangbu/scripts/${name}`, 'utf8'), readFileSync(`skills/${f}`, 'utf8'), name);
+    for (const ex of EXAMPLES) assert.equal(readFileSync(`examples/${ex}/scripts/${name}`, 'utf8'), readFileSync(`skills/${f}`, 'utf8'), `${ex} ${name}`);
   }
-  for (const f of ['worker.js', 'setup.mjs']) assert.equal(readFileSync(`examples/beolgeum-jangbu/ops/watchdog/${f}`, 'utf8'), readFileSync(`skills/operate/templates/watchdog/${f}`, 'utf8'), f);
+  for (const ex of EXAMPLES)
+    for (const f of ['worker.js', 'setup.mjs']) assert.equal(readFileSync(`examples/${ex}/ops/watchdog/${f}`, 'utf8'), readFileSync(`skills/operate/templates/watchdog/${f}`, 'utf8'), `${ex} ${f}`);
 });
 
 test('free-port: 빈 포트를 고르고, 쓰이는 포트는 이유와 함께 거절한다', async () => {

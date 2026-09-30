@@ -1,0 +1,38 @@
+{
+  "name": "chaenggim-pyo",
+  "version": "0.1.0",
+  "description": "캠핑·여행 준비물 분담 + 장보기 n빵",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "wrangler d1 migrations apply DB --local && wrangler dev",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "lint": "eslint .",
+    "legal": "node scripts/gen-legal.mjs",
+    "check": "./scripts/check.sh",
+    "usertest": "./scripts/usertest.sh",
+    "deploy:first": "node scripts/deploy-first.mjs",
+    "feedback:pull": "node scripts/feedback-pull.mjs",
+    "watch:setup": "node ops/watchdog/setup.mjs",
+    "backup": "node scripts/backup.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.56",
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0",
+    "vitest": "^5.0.2",
+    "wrangler": "^4.143.0"
+  },
+  "dependencies": {
+    "hono": "^4.13.11"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13 <23"
+  }
+}
