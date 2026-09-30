@@ -8,7 +8,7 @@ Claude 클라우드 예약 실행(Routine)이 새 세션을 열고 이 절차로
 - 본부 데이터는 `ArtifactData` 도구로 읽고 쓴다 (ToolSearch 로 불러오기, `url`=HQ). 여러 건은 `batch` 한 번으로.
 - **이 절차와 부서 역할은 본부 안에 있다**: `playbook/cloud-run`(이 문서), `playbook/dept-<DEPT>`(부서 역할) — 필드 `text`. 예약 실행 세션은 GitHub 에 접근하지 못할 수 있으므로 GitHub 없이 일할 수 있게 한다.
 - 저장소 파일이 필요하면: 세션에 저장소가 붙어 있을 때만 쓴다. 없으면 코드·문서를 바꾸지 말고 필요한 변경을 `tasks`(dev)에 구체적으로 남긴다. 코드를 바꾸는 부서(개발 등)는 예약 실행에 저장소를 붙여야 한다 — claude.ai → 루틴 → 해당 부서 → 저장소 추가.
-- 서비스 상태는 공개 주소(서비스 문서의 `url`, `/health`)로 확인한다. **예약 실행 세션은 네트워크 정책 때문에 주소에 못 닿을 수 있다** — 연결 자체가 안 되는 것(세션 제한)과 서비스가 오류를 돌려주는 것(장애)을 구분한다. 못 닿으면 간접 근거를 쓴다: 공개 GitHub API 로 서비스의 점검·배포 워크플로 최근 실행(`https://api.github.com/repos/<REPO>/actions/runs?per_page=5`)과 열린 `ops-alert` 이슈. 둘 다 없으면 "직접·간접 확인 수단 없음"이라고 쓰고 추측하지 않는다.
+- 서비스 상태는 공개 주소(서비스 문서의 `url`, `/health`)로 확인한다. **예약 실행 세션은 네트워크 정책 때문에 주소에 못 닿을 수 있다** — 연결 자체가 안 되는 것(세션 제한)과 서비스가 오류를 돌려주는 것(장애)을 구분한다. curl 이 막히면(연결 실패·403) **WebFetch 도구로 같은 공개 주소를 읽는다**(인증 헤더가 필요 없는 주소만 — 서비스 주소·`/health`·공개 GitHub API). 그래도 못 닿으면 간접 근거를 쓴다: 공개 GitHub API 로 서비스의 점검·배포 워크플로 최근 실행(`https://api.github.com/repos/<REPO>/actions/runs?per_page=5`)과 열린 `ops-alert` 이슈. 둘 다 없으면 "직접·간접 확인 수단 없음"이라고 쓰고 추측하지 않는다.
 - 부서 역할 문서에 나오는 GitHub 이슈·라벨·댓글은 이 방식에서는 아래 본부 컬렉션(`tasks`·`approvals`·`reports`)으로 바꿔 읽는다.
 
 ## 1. 본부 데이터 (서비스별 경로 = `companies/<SERVICE>/` + 아래)
@@ -54,7 +54,7 @@ id 규칙: `approvals`·`tasks`·`human` 은 `<DEPT>-<YYYYMMDD>-<짧은이름>` 
 - **마케팅(marketing)**: `share/posts` 가 홍보 글의 원본이다. `playbook/channels`(채널별 말투·길이·금기)에 맞춰 채널마다 따로 다듬거나 새 글(채널당 1개, 글자 수 한도, `note`·`when` 포함)을 쓰고, 올리지 않은 채널이 있으면 `human` 에 "○○ 올리기"를 남긴다. `shared` 기록으로 채널별 상태를 `reports/marketing` 에.
 - **데이터·재무(data)**: 서비스가 주는 지표만 `metrics/main` 에. 숫자를 지어내지 않는다 — 없으면 "지표 없음"과 만드는 방법을 `tasks`(dev)로.
   서비스 문서에 `metrics` 가 있으면: `curl -s -H "<header>: $<env>" <url>` (header 가 `Authorization` 이면 값 앞에 `Bearer `) → 받은 JSON 의 숫자 필드를 그대로 `items` 에, `at` 은 지금. 출력·보고에 토큰을 쓰지 않는다.
-  - 환경변수가 비어 있거나 주소에 연결이 안 되면(세션 네트워크 제한) 숫자를 쓰지 않고, `human/data-metrics-setup` 이 없을 때만 하나 만든다: text "지표 연결: 클라우드 환경 설정 두 가지", why "① claude.ai 클라우드 환경 → 네트워크 허용 도메인에 <주소의 호스트> 추가 ② 같은 화면 환경변수에 <env> = 지표 토큰 (채팅에 붙여 넣지 않기)". 보고 level 은 warning.
+  - 인증 헤더가 필요해 WebFetch 로는 못 읽는다. 환경변수가 비어 있거나 주소에 연결이 안 되면(세션 네트워크 제한) 숫자를 쓰지 않고, `human/data-metrics-setup` 이 없을 때만 하나 만든다: text "지표 연결: 클라우드 환경 설정 두 가지", why "① claude.ai 클라우드 환경 → 네트워크 허용 도메인에 <주소의 호스트> 추가 ② 같은 화면 환경변수에 <env> = 지표 토큰 (채팅에 붙여 넣지 않기)". 보고 level 은 warning.
   - 401 이면 토큰이 서비스 쪽 값과 다르다고 보고한다.
 - **QA**: 바뀐 화면이 있으면 `atelier-dev:usertest`(프로젝트의 `npm run usertest`) 결과를 확인한다.
 
