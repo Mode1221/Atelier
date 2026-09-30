@@ -1,0 +1,33 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>여행 경비 정산</title>
+<style>@font-face{font-family:'Pretendard';src:url('../package/dist/web/variable/woff2/PretendardVariable.woff2') format('woff2-variations');font-weight:45 920}
+/* design-tokens.md 기본값 그대로 (D0 없음) — 폰트만 환경 차이를 없애려 Pretendard 를 앞에 둠 */
+:root{--color-bg:#ffffff;--color-surface:#f6f7f9;--color-text:#111827;--color-text-muted:#4b5563;--color-border:#e5e7eb;--color-primary:#2563eb;--color-on-primary:#fff;--color-success:#15803d;--color-danger:#dc2626;--font-sans:"Pretendard",system-ui,sans-serif;--radius:12px;--shadow:0 1px 3px rgba(0,0,0,.1)}
+@media (prefers-color-scheme:dark){:root{--color-bg:#0b1220;--color-surface:#111827;--color-text:#f3f4f6;--color-text-muted:#9ca3af;--color-border:#1f2937;--color-primary:#3b82f6}}
+body{margin:0;background:var(--color-surface);color:var(--color-text);font:16px/1.6 var(--font-sans)}
+header{background:var(--color-primary);color:var(--color-on-primary);padding:20px 16px}
+header small{display:block;opacity:.8;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+header h1{margin:4px 0 0;font-size:22px}
+main{padding:16px;display:grid;gap:12px}
+.card{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat .v{font-size:22px;font-weight:700}.stat .l{color:var(--color-text-muted);font-size:13px}
+h2{font-size:16px;margin:0 0 8px}
+.row{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--color-border)}
+.row:last-child{border:0}
+.muted{color:var(--color-text-muted);font-size:13px}
+.btn{display:block;width:100%;min-height:44px;border:0;border-radius:10px;background:var(--color-primary);color:#fff;font:600 16px var(--font-sans)}
+.btn.sec{background:var(--color-bg);color:var(--color-primary);border:1px solid var(--color-primary)}
+</style></head><body>
+<header><small>TRIP SETTLEMENT</small><h1 id="t"></h1></header>
+<main>
+<div class="stats"><div class="card stat"><div class="l">총 지출</div><div class="v" id="total"></div></div><div class="card stat"><div class="l">1인당</div><div class="v" id="per"></div></div></div>
+<section class="card"><h2>정산 결과 →</h2><div id="tr"></div></section>
+<section class="card"><h2>지출 내역</h2><div id="ex"></div></section>
+<button class="btn">+ 지출 추가</button><button class="btn sec">결과 공유하기 →</button>
+</main>
+<script src="../data.js"></script><script>
+const T=TRIP,total=T.expenses.reduce((a,e)=>a+e.amount,0);
+t.textContent=T.name;document.getElementById('total').textContent=won(total);per.textContent=won(Math.round(total/T.people.length));
+tr.innerHTML=T.transfers.map(x=>'<div class="row"><span>'+x.from+' → '+x.to+'</span><b>'+won(x.amount)+'</b></div>').join('');
+ex.innerHTML=T.expenses.map(e=>'<div class="row"><span>'+e.title+'<br><span class="muted">'+e.by+' · '+e.with+'명</span></span><span>'+won(e.amount)+'</span></div>').join('');
+</script></body></html>
