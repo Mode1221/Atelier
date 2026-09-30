@@ -171,6 +171,117 @@ describe('F4 장본 돈 나누기', () => {
   });
 });
 
+describe('F8 되돌리기·변경 기록', () => {
+  it('지운 준비물은 목록에서 빠지고 "최근 변경"에서 되살린다 (누가 했는지 남음)', async () => {
+    const { id } = await newTrip();
+    const m = await join(id, '민수');
+    const torch = await itemByName(id, '토치');
+    expect((await req('DELETE', `/api/trips/${id}/items/${torch.id}`, { body: { by: m.id } })).status).toBe(204);
+    const d = await load(id);
+    expect(d.items.find((i) => i.name === '토치')).toBeUndefined();
+    expect(d.activity[0]).toMatchObject({ who: '민수', action: 'item_delete', target: '토치', restorable: true });
+    const html = await (await req('GET', `/t/${id}`)).text();
+    expect(html).toContain('<strong>민수</strong> · 지움: 토치');
+    expect(html).toContain('aria-label="토치 되살리기"');
+    expect((await req('POST', `/api/trips/${id}/items/${torch.id}/restore`, { body: { by: m.id } })).status).toBe(204);
+    const after = await load(id);
+    expect(after.items.find((i) => i.name === '토치')).toBeTruthy();
+    expect(after.activity[0]).toMatchObject({ action: 'item_restore' });
+    expect(after.activity.find((a) => a.action === 'item_delete').restorable).toBe(false);
+    expect((await req('POST', `/api/trips/${id}/items/${torch.id}/restore`)).status).toBe(404);
+  });
+  it('지운 준비물은 맡을 수 없고, 다른 목록 것은 되살릴 수 없다', async () => {
+    const a = await newTrip();
+    const b = await newTrip();
+    const m = await join(a.id, '민수');
+    const tent = await itemByName(a.id, '텐트');
+    await req('DELETE', `/api/trips/${a.id}/items/${tent.id}`);
+    expect((await req('PATCH', `/api/trips/${a.id}/items/${tent.id}`, { body: { action: 'claim', person_id: m.id } })).status).toBe(404);
+    expect((await req('POST', `/api/trips/${b.id}/items/${tent.id}/restore`)).status).toBe(404);
+  });
+  it('낸 돈도 지우고 되살리면 정산에 다시 들어간다', async () => {
+    const { id } = await newTrip('blank');
+    const [a, b] = [await join(id, '민수'), await join(id, '지영')];
+    const { id: eid } = await (await req('POST', `/api/trips/${id}/expenses`, { body: { paid_by: a.id, amount: 20_000, memo: '마트', shares: [a.id, b.id] } })).json();
+    await req('DELETE', `/api/trips/${id}/expenses/${eid}`, { body: { by: b.id } });
+    expect((await load(id)).expenses).toEqual([]);
+    expect((await load(id)).activity[0]).toMatchObject({ who: '지영', action: 'expense_delete', target: '마트 20,000원', restorable: true });
+    await req('POST', `/api/trips/${id}/expenses/${eid}/restore`);
+    expect(await (await req('GET', `/t/${id}`)).text()).toContain('<strong>지영</strong> → <strong>민수</strong> 10,000원');
+  });
+  it('남의 id 를 by 로 보내도 이름이 남지 않는다', async () => {
+    const a = await newTrip('blank');
+    const b = await newTrip('blank');
+    const other = await join(b.id, '남');
+    await req('POST', `/api/trips/${a.id}/items`, { body: { name: '물', by: other.id } });
+    expect((await load(a.id)).activity[0]).toMatchObject({ who: null, action: 'item_add', target: '물' });
+  });
+  it('지운 것까지 합쳐 한도의 2배를 넘지 않는다 (지우고 넣기 도배 방지), 7일 지나면 정리', async () => {
+    const { id } = await newTrip('blank');
+    const ins = env.DB.prepare("INSERT INTO items (trip_id, name, qty, kind, created_at, deleted_at) VALUES (?, 'x', 1, 'personal', '2000-01-01', '2000-01-01T00:00:00.000Z')");
+    for (let i = 0; i < 400; i++) await ins.bind(id).run();
+    expect((await req('POST', `/api/trips/${id}/items`, { body: { name: 'x' } })).status).toBe(422);
+    expect(await repo.purgeSoftDeleted(7)).toBe(400);
+    expect((await req('POST', `/api/trips/${id}/items`, { body: { name: 'x' } })).status).toBe(201);
+  });
+});
+
+describe('F9 고치기', () => {
+  it('준비물 이름·수량 고치기 (기록 남음), 검증', async () => {
+    const { id } = await newTrip();
+    const m = await join(id, '민수');
+    const chair = await itemByName(id, '캠핑 의자');
+    const edit = (body) => req('PATCH', `/api/trips/${id}/items/${chair.id}`, { body: { action: 'edit', by: m.id, ...body } });
+    expect((await edit({ name: '캠핑 의자', qty: 6 })).status).toBe(204);
+    expect((await load(id)).activity[0]).toMatchObject({ who: '민수', action: 'item_edit', target: '캠핑 의자 수량 4 → 6' });
+    expect((await edit({ name: '릴렉스 체어', qty: 6 })).status).toBe(204);
+    expect(await itemByName(id, '릴렉스 체어')).toMatchObject({ qty: 6 });
+    expect((await edit({ name: '', qty: 1 })).status).toBe(400);
+    expect((await edit({ name: 'x', qty: 100 })).status).toBe(400);
+  });
+  it('목록 이름·날짜 고치기', async () => {
+    const { id } = await newTrip();
+    expect((await req('PATCH', `/api/trips/${id}`, { body: { name: '홍천 캠핑', starts_on: '2026-11-01' } })).status).toBe(204);
+    expect((await load(id)).trip).toMatchObject({ name: '홍천 캠핑', starts_on: '2026-11-01' });
+    expect((await load(id)).activity[0]).toMatchObject({ action: 'trip_edit', target: '이름 → 홍천 캠핑, 날짜 → 2026-11-01' });
+    expect((await req('PATCH', `/api/trips/${id}`, { body: { name: '' } })).status).toBe(400);
+  });
+});
+
+describe('F10 자동 새로고침', () => {
+  it('무엇이든 바뀌면 version 이 바뀐다', async () => {
+    const { id } = await newTrip();
+    const v0 = (await (await req('GET', `/api/trips/${id}/version`)).json()).v;
+    await new Promise((r) => setTimeout(r, 5));
+    await join(id, '민수');
+    const v1 = (await (await req('GET', `/api/trips/${id}/version`)).json()).v;
+    expect(v1).not.toBe(v0);
+    expect(await (await req('GET', `/t/${id}`)).text()).toContain(`"v":"${v1}"`);
+  });
+});
+
+describe('F11 지표 화면', () => {
+  it('/stats 는 검색 제외 빈 화면, 날짜별 API 는 토큰 필요', async () => {
+    const html = await (await req('GET', '/stats')).text();
+    expect(html).toContain('지표 토큰');
+    expect(html).toContain('noindex');
+    expect((await req('GET', '/api/stats/daily')).status).toBe(401);
+  });
+  it('날짜별: 만든 목록 / 2명 이상 / 정산까지', async () => {
+    const a = await newTrip('blank');
+    const b = await newTrip('blank');
+    const [x, y] = [await join(a.id, '민수'), await join(a.id, '지영')];
+    await join(b.id, '혼자');
+    await req('POST', `/api/trips/${a.id}/expenses`, { body: { paid_by: x.id, amount: 1000, shares: [x.id, y.id] } });
+    env.STATS_TOKEN = 's';
+    const h = { headers: { authorization: 'Bearer s' } };
+    const { days } = await (await app.request('/api/stats/daily', h, env)).json();
+    expect(days).toHaveLength(1);
+    expect(days[0]).toMatchObject({ created: 2, together: 1, settled: 1 });
+    expect(await (await app.request('/api/stats', h, env)).json()).toMatchObject({ '이번 주 2명 이상 함께 쓴 목록': 1 });
+  });
+});
+
 describe('F5 관리 링크', () => {
   it('관리 키 없이 삭제·내보내기 → 403, 틀린 키 반복 → 429', async () => {
     const { id } = await newTrip();

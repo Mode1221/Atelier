@@ -121,6 +121,62 @@
     return;
   }
 
+  // --- 지표 화면
+  const statsForm = $('#stats-form');
+  if (statsForm) {
+    const TOKEN_KEY = 'chaenggim:stats-token';
+    const fromHash = new URLSearchParams(location.hash.slice(1)).get('t');
+    const tokenEl = $('#stats-token');
+    tokenEl.value = fromHash || store.get(TOKEN_KEY) || '';
+    const cell = (text, cls) => Object.assign(document.createElement('td'), { textContent: text, className: cls || '' });
+    async function show() {
+      showErr($('#stats-err'), '');
+      const token = tokenEl.value.trim();
+      if (!token) return showErr($('#stats-err'), '지표 토큰을 넣어 주세요');
+      const get = async (url) => {
+        const res = await fetch(url, { headers: { authorization: `Bearer ${token}` } }).catch(() => null);
+        if (!res) throw new Error(NET_ERR);
+        if (res.status === 401) throw new Error('토큰이 맞지 않아요');
+        if (!res.ok) throw new Error('잠시 문제가 생겼어요. 다시 시도해 주세요');
+        return res.json();
+      };
+      try {
+        const [kpis, { days }] = await Promise.all([get('/api/stats'), get('/api/stats/daily')]);
+        store.set(TOKEN_KEY, token);
+        const dl = $('#stats-kpis');
+        dl.replaceChildren();
+        for (const [k, v] of Object.entries(kpis)) {
+          const box = document.createElement('div');
+          box.append(Object.assign(document.createElement('dt'), { textContent: k }), Object.assign(document.createElement('dd'), { textContent: Number(v).toLocaleString('ko-KR') }));
+          dl.append(box);
+        }
+        const body = $('#stats-days');
+        body.replaceChildren();
+        for (const d of days) {
+          const tr = document.createElement('tr');
+          const rate = d.created ? Math.round((d.together / d.created) * 100) : 0;
+          const bar = Object.assign(document.createElement('meter'), { min: 0, max: 100, value: rate });
+          bar.setAttribute('aria-label', `${d.date} 함께 쓴 비율 ${rate}%`);
+          const last = document.createElement('td');
+          last.append(bar, ` ${rate}%`);
+          tr.append(cell(d.date.slice(5)), cell(String(d.created), 'num'), cell(String(d.together), 'num'), cell(String(d.settled), 'num'), last);
+          body.append(tr);
+        }
+        if (!days.length) body.innerHTML = '<tr><td colspan="5" class="muted">최근 14일 동안 만든 목록이 없어요</td></tr>';
+        $('#stats-at').textContent = `불러온 시각 ${new Date().toLocaleString('ko-KR')}`;
+        $('#stats-out').hidden = false;
+      } catch (e) {
+        showErr($('#stats-err'), e.message);
+      }
+    }
+    statsForm.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      show();
+    });
+    if (tokenEl.value) show();
+    return;
+  }
+
   // --- 첫 화면: 목록 만들기
   const createForm = $('#create-form');
   if (createForm) {
@@ -161,9 +217,11 @@
   const ME_KEY = `chaenggim:me:${tid}`;
   const people = new Map(data.people.map((p) => [p.id, p.name]));
   let me = Number(store.get(ME_KEY)) || null;
+  let editing = false; // 고치는 중이면 자동 새로고침 대신 알림만
   if (me && !people.has(me)) me = null;
 
-  const call = (method, path, body) => api(method, `/api/trips/${tid}${path}`, body, key);
+  // 쓰기 요청에는 "누가"(by)를 붙인다 — 최근 변경 기록에 이름이 남는다
+  const call = (method, path, body) => api(method, `/api/trips/${tid}${path}`, method === 'GET' ? undefined : { ...(body ?? {}), by: me ?? undefined }, key);
   const reload = (msg) => {
     toast(msg);
     setTimeout(() => location.reload(), 400);
@@ -239,14 +297,42 @@
       }
       if (!owner || owner === me)
         box.append(
-          btn('삭제', `${name} 삭제`, 'ghost', (b) => {
-            if (!confirm(`"${name}"을(를) 목록에서 지울까요?`)) return;
-            busy(b, () => call('DELETE', `/items/${id}`).then(() => reload('지웠어요'), (e) => toast(e.message)));
-          }),
+          btn('고치기', `${name} 고치기`, 'ghost', () => openEdit(li)),
+          btn('삭제', `${name} 삭제`, 'ghost', (b) => busy(b, () => call('DELETE', `/items/${id}`).then(() => reload('지웠어요 — "최근 변경"에서 되살릴 수 있어요'), (e) => toast(e.message)))),
         );
       li.classList.toggle('mine', !!owner && owner === me);
     }
     applyFilter();
+  }
+  // 준비물 이름·수량 고치기 (그 자리에서)
+  function openEdit(li) {
+    editing = true;
+    const it = data.items.find((x) => x.id === Number(li.dataset.itemId));
+    const form = document.createElement('form');
+    form.className = 'row edit';
+    form.noValidate = true;
+    const uid = `e${it.id}`;
+    form.innerHTML = `<div class="grow"><label for="${uid}-n">준비물 이름</label><input id="${uid}-n" type="text" maxlength="30"></div>
+<div class="qty"><label for="${uid}-q">수량</label><input id="${uid}-q" type="number" inputmode="numeric" min="1" max="99"></div>
+<div><button type="submit">저장</button></div><div><button type="button" class="ghost">취소</button></div>`;
+    form.querySelector(`#${uid}-n`).value = it.name;
+    form.querySelector(`#${uid}-q`).value = it.qty;
+    const err = Object.assign(document.createElement('p'), { className: 'error', hidden: true });
+    err.setAttribute('role', 'alert');
+    li.replaceChildren(form, err);
+    li.classList.add('editing');
+    form.querySelector(`#${uid}-n`).focus();
+    form.querySelector('button.ghost').addEventListener('click', () => location.reload());
+    form.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      showErr(err, '');
+      busy(form.querySelector('button[type=submit]'), () =>
+        call('PATCH', `/items/${it.id}`, { action: 'edit', name: form.querySelector(`#${uid}-n`).value, qty: Number(form.querySelector(`#${uid}-q`).value) }).then(
+          () => reload('고쳤어요'),
+          (e) => showErr(err, e.message),
+        ),
+      );
+    });
   }
   function applyFilter() {
     const f = document.querySelector('input[name=filter]:checked')?.value ?? 'all';
@@ -275,11 +361,30 @@
   addItem($('#item-form'), $('#item-name'), $('#item-err'), 'shared', $('#item-qty'));
   addItem($('#personal-form'), $('#personal-name'), $('#personal-err'), 'personal');
   $$('[data-delete-item]').forEach((b) =>
+    b.addEventListener('click', () => busy(b, () => call('DELETE', `/items/${b.dataset.deleteItem}`).then(() => reload('지웠어요 — "최근 변경"에서 되살릴 수 있어요'), (e) => toast(e.message)))),
+  );
+  // 되살리기 (최근 변경)
+  $$('[data-restore]').forEach((b) =>
     b.addEventListener('click', () => {
-      if (!confirm('목록에서 지울까요?')) return;
-      busy(b, () => call('DELETE', `/items/${b.dataset.deleteItem}`).then(() => reload('지웠어요'), (e) => toast(e.message)));
+      const [kind, id] = b.dataset.restore.split(':');
+      busy(b, () => call('POST', `/${kind === 'item' ? 'items' : 'expenses'}/${id}/restore`).then(() => reload('되살렸어요'), (e) => toast(e.message)));
     }),
   );
+  // 목록 이름·날짜 고치기
+  $('#trip-edit').addEventListener('click', () => {
+    editing = true;
+    $('#trip-form').hidden = false;
+    $('#trip-edit').hidden = true;
+    $('#trip-name').focus();
+  });
+  $('#trip-cancel').addEventListener('click', () => location.reload());
+  $('#trip-form').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    showErr($('#trip-err'), '');
+    busy(ev.target.querySelector('button[type=submit]'), () =>
+      call('PATCH', '', { name: $('#trip-name').value, starts_on: $('#trip-date').value || null }).then(() => reload('고쳤어요'), (e) => showErr($('#trip-err'), e.message)),
+    );
+  });
 
   // 장본 돈
   $('#expense-form')?.addEventListener('submit', (ev) => {
@@ -294,10 +399,7 @@
     busy(ev.target.querySelector('button[type=submit]'), () => call('POST', '/expenses', body).then(() => reload('기록했어요'), (e) => showErr($('#exp-err'), e.message)));
   });
   $$('[data-delete-expense]').forEach((b) =>
-    b.addEventListener('click', () => {
-      if (!confirm('이 지출 기록을 지울까요?')) return;
-      busy(b, () => call('DELETE', `/expenses/${b.dataset.deleteExpense}`).then(() => reload('지웠어요'), (e) => toast(e.message)));
-    }),
+    b.addEventListener('click', () => busy(b, () => call('DELETE', `/expenses/${b.dataset.deleteExpense}`).then(() => reload('지웠어요 — "최근 변경"에서 되살릴 수 있어요'), (e) => toast(e.message)))),
   );
 
   // 카톡용 현황
@@ -330,6 +432,36 @@
     renderItems();
     $('#me-status').textContent = people.size ? '이름을 고르면 준비물을 맡을 수 있어요.' : '';
   }
+
+  // 자동 새로고침: 화면이 보일 때 15초마다 "바뀌었나"만 확인 (D1 읽기 1번).
+  // 입력 중이면 새로고침 대신 알림 막대. 20분 동안 손대지 않으면 멈췄다가 다시 만지면 이어서.
+  let lastTouch = Date.now();
+  const touched = () => {
+    const idle = Date.now() - lastTouch > IDLE_MS;
+    lastTouch = Date.now();
+    if (idle) poll();
+  };
+  const IDLE_MS = 20 * 60_000;
+  ['pointerdown', 'keydown', 'scroll'].forEach((t) => addEventListener(t, touched, { passive: true }));
+  const busyTyping = () =>
+    editing || $$('main input[type=text], main input[type=number]').some((i) => i === document.activeElement || (!i.readOnly && i.value && !['item-qty'].includes(i.id) && !i.closest('#trip-form')));
+  let changed = false;
+  $('#update-reload').addEventListener('click', () => location.reload());
+  async function poll() {
+    if (changed || document.hidden || Date.now() - lastTouch > IDLE_MS) return;
+    try {
+      const res = await fetch(`/api/trips/${tid}/version`);
+      if (res.ok && (await res.json()).v !== data.trip.v) {
+        changed = true;
+        if (busyTyping()) $('#update-bar').hidden = false;
+        else location.reload();
+      }
+    } catch {
+      /* 잠깐 끊김 — 다음 번에 다시 */
+    }
+  }
+  setInterval(poll, 15_000);
+  document.addEventListener('visibilitychange', () => !document.hidden && poll());
 
   // 관리 링크
   if (!key) return;

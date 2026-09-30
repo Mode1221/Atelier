@@ -13,15 +13,20 @@
 | F5 | 총무로서 목록을 관리하고 싶다 | 관리 링크로만 사람 내보내기(맡은 것 풀림, 지출은 정산에 남음)·목록 삭제(30일 뒤 영구 삭제) |
 | F6 | 단톡방에 현황을 알리고 싶다 | "카톡용 현황 복사": 주인 없는 것 / 사람별 맡은 것(챙김 ✓) / 송금 안내 / 초대 링크 |
 | F7 | 의견을 보내고 싶다 | `/feedback` 익명, 연락처·목록 링크 자동 가림 |
+| F8 | 실수·장난을 되돌리고 싶다 | 준비물·낸 돈 지우기는 표시만, "최근 변경"(20개, 누가·무엇·언제)에서 7일 동안 되살리기. 지울 때 확인 창 없음(되살릴 수 있으므로) |
+| F9 | 잘못 적은 걸 고치고 싶다 | 준비물 이름·수량 그 자리에서 고치기(주인 없거나 내 것), 목록 이름·날짜 고치기 — 모두 기록 |
+| F10 | 친구가 바꾼 게 바로 보였으면 | 화면이 보일 때 15초마다 바뀜 확인 → 자동 새로고침, 입력 중이면 "친구가 바꾼 내용이 있어요" 막대만. 20분 손대지 않으면 멈춤 |
+| F11 | 운영자로서 지표를 보고 싶다 | `/stats` (토큰 입력 또는 `#t=`) — 이번 주 숫자 + 최근 14일 만든 목록·2명 이상·정산까지 |
 
 ## S2. 기능 정책
 - **권한**: 목록 ID(16자, 96비트) = 참여 권한. 링크를 가진 사람은 누구나 참여·맡기·추가·삭제·지출 기록. 관리 키(144비트, 해시 저장) = 삭제·내보내기. **"나는 누구"는 브라우저 저장소 — 서버는 신원을 확인하지 않는다**(친구끼리 도구, 가입 없음의 대가. 약관·홈 FAQ 에 명시).
 - **동시성**: 맡기는 `claimed_by IS NULL` 조건부 UPDATE — 동시에 눌러도 한 명만. 실패하면 409 + "OO님이 먼저 맡았어요" 후 새로고침.
 - **한도**: 사람 30, 준비물 200, 지출 300 / 목록 생성 IP당 시간당 10 (D1), 쓰기 IP×목록 분당 120 (메모리), 관리 키 실패 10분 20회, 의견 시간당 10, 본문 32KB.
+- **되돌리기**: 지운 준비물·낸 돈은 7일 뒤 영구 삭제, 변경 기록은 60일. 지운 것 포함 준비물은 400개(한도 2배)까지 — 지우고 넣기 도배 방지. 기록의 "누가"는 브라우저가 보낸 참여자 id — 다른 목록 사람이면 이름을 남기지 않음.
 - **보관**: 삭제 30일 뒤 영구 삭제. 만든 지 180일 + 날짜 지난 목록 자동 삭제. 의견 1년.
 
 ## S3. 데이터 모델
-`migrations/0001_init.sql`: trips(id, name, starts_on, admin_key_hash, created_at, deleted_at) · people(trip_id, name, hidden_at) · items(trip_id, name, qty, kind shared|personal, claimed_by, packed) · expenses(trip_id, paid_by, amount, memo) · expense_shares(expense_id, person_id). 0002 rate_limits, 0003 feedback.
+`migrations/0004_activity_undo.sql`: trips.updated_at, items/expenses.deleted_at, activity(who, action, target, ref). `migrations/0001_init.sql`: trips(id, name, starts_on, admin_key_hash, created_at, deleted_at) · people(trip_id, name, hidden_at) · items(trip_id, name, qty, kind shared|personal, claimed_by, packed) · expenses(trip_id, paid_by, amount, memo) · expense_shares(expense_id, person_id). 0002 rate_limits, 0003 feedback.
 
 ## S4. 아키텍처
 `docs/architecture.md`.

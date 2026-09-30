@@ -3,7 +3,10 @@ import AxeBuilder from '@axe-core/playwright';
 
 test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
 
+let visitor = 0;
 async function createTrip(page, name = '가평 캠핑') {
+  // 테스트마다 다른 방문자로 (목록 생성 한도는 IP 당 시간당 10개)
+  await page.setExtraHTTPHeaders({ 'cf-connecting-ip': `10.9.${process.pid % 250}.${++visitor}` });
   await page.goto('/');
   await page.getByLabel('어디 가요?').fill(name);
   await page.getByRole('button', { name: '준비물 목록 만들기' }).click();
@@ -87,6 +90,66 @@ test('친구 흐름: 초대 링크 → 이름 → 맡기, 먼저 맡은 건 뺏�
   await expect(item(f, '텐트')).toBeHidden();
   await expect(item(f, '타프')).toBeVisible();
   await f.context().close();
+});
+
+test('실수로 지운 준비물 되살리기 + 누가 했는지', async ({ page }) => {
+  await createTrip(page);
+  await joinAs(page, '민수');
+  await page.getByRole('button', { name: '토치 삭제' }).click();
+  await expect(page.getByText('지웠어요')).toBeVisible();
+  await expect(item(page, '토치')).toHaveCount(0);
+  await expect(page.getByText('민수 · 지움: 토치')).toBeVisible();
+  await page.getByRole('button', { name: '토치 되살리기' }).click();
+  await expect(item(page, '토치')).toContainText('아직 없음');
+  await expect(page.getByText('민수 · 되살림: 토치')).toBeVisible();
+});
+
+test('준비물·목록 고치기', async ({ page }) => {
+  await createTrip(page);
+  await joinAs(page, '민수');
+  await page.getByRole('button', { name: '캠핑 의자 고치기' }).click();
+  await expect(page.getByLabel('준비물 이름')).toBeFocused();
+  await page.getByLabel('준비물 이름').fill('릴렉스 체어');
+  const editing = page.locator('li.editing');
+  await editing.getByLabel('수량').fill('6');
+  await editing.getByRole('button', { name: '저장' }).click();
+  await expect(item(page, '릴렉스 체어')).toContainText('×6');
+  await page.getByRole('button', { name: '이름·날짜 고치기' }).click();
+  await page.getByLabel('이름', { exact: true }).fill('홍천 캠핑');
+  await page.getByRole('button', { name: '저장' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('홍천 캠핑');
+});
+
+test('자동 새로고침: 친구가 맡으면 몇 초 안에 내 화면에도, 입력 중이면 알림만', async ({ page, browser }) => {
+  test.setTimeout(90_000);
+  await createTrip(page);
+  await joinAs(page, '민수');
+  const f = await friend(browser, await page.locator('#invite-link').inputValue());
+  await joinAs(f, '지영');
+  await f.getByRole('button', { name: '버너 내가 챙길게' }).click();
+  await expect(item(f, '버너')).toContainText('지영 맡음');
+  await expect(item(page, '버너')).toContainText('지영 맡음', { timeout: 25_000 }); // 새로고침 없이
+  // 민수가 준비물 이름을 적는 중이면 새로고침하지 않고 알림 막대만
+  await page.getByLabel('준비물 추가').fill('마시멜로');
+  await f.getByRole('button', { name: '타프 내가 챙길게' }).click();
+  await expect(page.getByText('친구가 바꾼 내용이 있어요')).toBeVisible({ timeout: 25_000 });
+  await expect(page.getByLabel('준비물 추가')).toHaveValue('마시멜로');
+  await page.getByRole('button', { name: '새로 보기' }).click();
+  await expect(item(page, '타프')).toContainText('지영 맡음');
+  await f.context().close();
+});
+
+test('지표 화면: 토큰으로 보기, 틀린 토큰 안내', async ({ page }) => {
+  await createTrip(page);
+  await page.goto('/stats');
+  await page.getByLabel('지표 토큰').fill('wrong');
+  await page.getByRole('button', { name: '보기' }).click();
+  await expect(page.getByText('토큰이 맞지 않아요')).toBeVisible();
+  await page.goto('about:blank');
+  await page.goto('/stats#t=e2e-stats');
+  await expect(page.getByText('전체 목록')).toBeVisible();
+  await expect(page.locator('#stats-days tr')).toHaveCount(1);
+  expect((await new AxeBuilder({ page }).analyze()).violations.map((v) => v.id)).toEqual([]);
 });
 
 test('입력 오류: 빈 이름이면 오류 문구와 포커스', async ({ page }) => {

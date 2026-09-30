@@ -2,7 +2,7 @@
 
 | 단계 | 내용 |
 |---|---|
-| O1 모니터링 | `/health`, Workers observability 로그, 서비스 지킴이(`npm run watch:setup` → 5분마다 확인, 2번 연속 실패 시 휴대폰 ntfy 알림) |
+| O1 모니터링 | 매시간 운영 점검(`chaenggim-ops.yml`, 실패 시 `ops-alert-chaenggim` 이슈 → GitHub 알림 메일), 서비스 지킴이(저장소 Secrets `CHAENGGIM_NTFY_TOPIC` 이 있으면 배포 때 자동 설치 → 5분마다 확인, 10분 응답 없으면 휴대폰 ntfy 알림), 지표 화면 `/stats` |
 | O2 런북 | 아래 |
 | O3 백업 | D1 Time Travel(자동 7일) + `npm run backup`(코드 번들 + DB 내보내기, 14개 보관) |
 | O4 고객 지원 | `/feedback` → `npm run feedback:pull` → `company/chaenggim/feedback/`, 문의 atlier.skill@gmail.com |

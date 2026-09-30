@@ -68,13 +68,46 @@ export function homePage({ support } = {}) {
   });
 }
 
+const ACTIONS = {
+  join: '참여',
+  person_hide: '내보냄',
+  trip_edit: '목록 고침',
+  item_add: '추가',
+  item_edit: '고침',
+  item_delete: '지움',
+  item_restore: '되살림',
+  item_claim: '맡음',
+  item_unclaim: '맡기 취소',
+  item_pack: '챙김 ✓',
+  item_unpack: '챙김 취소',
+  expense_add: '낸 돈 기록',
+  expense_delete: '낸 돈 지움',
+  expense_restore: '낸 돈 되살림',
+};
+export function ago(iso, now = Date.now()) {
+  const m = Math.max(0, Math.floor((now - Date.parse(iso)) / 60_000));
+  if (m < 1) return '방금';
+  if (m < 60) return `${m}분 전`;
+  if (m < 1440) return `${Math.floor(m / 60)}시간 전`;
+  return `${Math.floor(m / 1440)}일 전`;
+}
+function activityItem(a) {
+  const who = a.who ? `<strong>${esc(a.who)}</strong> · ` : '';
+  const what = a.action === 'join' ? `${ACTIONS.join}` : `${ACTIONS[a.action] ?? esc(a.action)}: ${esc(a.target)}`;
+  const label = a.action === 'join' ? esc(a.target) : '';
+  const restore = a.restorable
+    ? `<button type="button" class="ghost" data-restore="${a.ref_kind}:${a.ref_id}" aria-label="${esc(a.target)} 되살리기">되살리기</button>`
+    : '';
+  return `<li class="personal"><span>${a.action === 'join' ? `<strong>${label}</strong> · ${what}` : `${who}${what}`} <span class="muted">${ago(a.created_at)}</span></span>${restore}</li>`;
+}
+
 function ownerLabel(item, names) {
   if (item.claimed_by == null) return '<span class="tag tag-open">아직 없음</span>';
   const who = esc(names.get(item.claimed_by) ?? '?');
   return item.packed ? `<span class="tag tag-done">${who} · 챙김 ✓</span>` : `<span class="tag">${who} 맡음</span>`;
 }
 
-export function tripPage({ trip, people, items, expenses }, { support } = {}) {
+export function tripPage({ trip, people, items, expenses, activity = [] }, { support } = {}) {
   const active = people.filter((p) => !p.hidden_at);
   const names = new Map(people.map((p) => [p.id, p.name]));
   const shared = items.filter((i) => i.kind === 'shared');
@@ -108,7 +141,7 @@ export function tripPage({ trip, people, items, expenses }, { support } = {}) {
     )
     .join('');
   const data = {
-    trip: { id: trip.id, name: trip.name },
+    trip: { id: trip.id, name: trip.name, starts_on: trip.starts_on, v: trip.updated_at ?? trip.created_at },
     people: active.map(({ id, name }) => ({ id, name })),
     items: items.map(({ id, name, qty, kind, claimed_by, packed }) => ({ id, name, qty, kind, claimed_by, packed })),
     moves: moves.map((m) => ({ from: names.get(m.from), to: names.get(m.to), amount: m.amount })),
@@ -121,8 +154,15 @@ export function tripPage({ trip, people, items, expenses }, { support } = {}) {
     title: `${trip.name} 준비물 — ${NAME}`,
     description: `${trip.name} 준비물, 누가 뭘 챙길지 여기서 맡아 주세요.`,
     body: `<p class="eyebrow">${NAME}</p>
+<div class="notice update-bar" id="update-bar" role="status" hidden>친구가 바꾼 내용이 있어요. <button type="button" id="update-reload">새로 보기</button></div>
 <h1>${esc(trip.name)}</h1>
-<p class="muted">${trip.starts_on ? `${dateLabel(trip.starts_on)} · ` : ''}${active.length}명 참여</p>
+<p class="muted">${trip.starts_on ? `${dateLabel(trip.starts_on)} · ` : ''}${active.length}명 참여 <button type="button" class="ghost inline" id="trip-edit">이름·날짜 고치기</button></p>
+<form id="trip-form" class="card" novalidate hidden>
+<label for="trip-name">이름</label><input id="trip-name" type="text" maxlength="40" value="${esc(trip.name)}">
+<label for="trip-date">날짜 <span class="muted">(선택)</span></label><input id="trip-date" type="date" value="${esc(trip.starts_on ?? '')}">
+<p class="error" id="trip-err" role="alert" hidden></p>
+<div class="row"><button type="submit">저장</button><button type="button" id="trip-cancel">취소</button></div>
+</form>
 
 <div class="admin-only notice" hidden><strong>관리 링크를 저장해 두세요.</strong> 목록 삭제·사람 내보내기는 이 링크로만 돼요. 친구에게는 아래 <a href="#invite-h">초대 링크</a>를 보내세요.
 <div class="linkbox"><label class="sr-only" for="admin-link">관리 링크</label><input id="admin-link" type="text" readonly><button type="button" data-copy="admin-link">관리 링크 복사</button></div></div>
@@ -196,6 +236,11 @@ ${expenses.length ? `<h3 class="h3">지출 기록</h3><ul class="plain">${expens
 </section>
 
 
+<section aria-labelledby="activity-h">
+<h2 id="activity-h">최근 변경</h2>
+${activity.length ? `<p class="muted">실수로 지운 준비물·낸 돈은 7일 동안 여기서 되살릴 수 있어요.</p><ul class="plain">${activity.map(activityItem).join('')}</ul>` : '<p class="muted">아직 변경이 없어요.</p>'}
+</section>
+
 <section class="admin-only" hidden aria-labelledby="manage-h">
 <h2 id="manage-h">관리</h2>
 ${active.length ? `<ul class="plain">${active.map((p) => `<li class="personal"><span>${esc(p.name)}</span><button type="button" class="ghost danger" data-hide-person="${p.id}" aria-label="${esc(p.name)} 내보내기">내보내기</button></li>`).join('')}</ul>` : ''}
@@ -204,6 +249,29 @@ ${active.length ? `<ul class="plain">${active.map((p) => `<li class="personal"><
 </section>
 <div class="card viewer-cta"><p><strong>다음 여행도 준비물 정하기 귀찮다면?</strong><br><span class="muted">가입 없이 1분이면 만들어요.</span></p><a class="btn" href="/?ref=trip">새 목록 만들기</a></div>
 <script type="application/json" id="data">${safeJson(data)}</script>`,
+  });
+}
+
+export function statsPage({ support } = {}) {
+  return layout({
+    support,
+    page: '/stats',
+    noindex: true,
+    title: `지표 — ${NAME}`,
+    body: `<h1>지표</h1>
+<form id="stats-form" class="card" novalidate>
+<label for="stats-token">지표 토큰</label>
+<input id="stats-token" type="password" autocomplete="off" aria-describedby="stats-help">
+<p class="muted" id="stats-help">토큰은 이 브라우저에만 기억돼요. 주소 끝에 <code>#t=토큰</code> 을 붙여 즐겨찾기해도 돼요.</p>
+<p class="error" id="stats-err" role="alert" hidden></p>
+<button class="primary" type="submit">보기</button>
+</form>
+<div id="stats-out" hidden>
+<h2>이번 주</h2><dl class="kpis" id="stats-kpis"></dl>
+<h2>최근 14일 <span class="count">만든 목록 · 2명 이상 · 정산까지</span></h2>
+<table><thead><tr><th>날짜</th><th class="num">만든 목록</th><th class="num">2명 이상</th><th class="num">정산까지</th><th>함께 쓴 비율</th></tr></thead><tbody id="stats-days"></tbody></table>
+<p class="muted" id="stats-at"></p>
+</div>`,
   });
 }
 

@@ -5,7 +5,7 @@ import { bodyLimit } from 'hono/body-limit';
 import { createRepo, RepoError } from './repo.js';
 import { validateTrip, validatePersonName, validateItem, validateExpense, validateFeedback } from './validate.js';
 import { keyMatches, rateLimiter, hashIp, safeEqual } from './security.js';
-import { homePage, tripPage, notFoundPage, docPage, feedbackPage } from './views.js';
+import { homePage, tripPage, notFoundPage, docPage, feedbackPage, statsPage } from './views.js';
 import { LEGAL } from './legal.gen.js';
 
 const DOCS = { privacy: ['개인정보처리방침', 'privacy'], terms: ['이용약관', 'terms'] };
@@ -101,6 +101,13 @@ export function createApp({ log = (o) => console.log(JSON.stringify(o)), limits 
     if (!t || !safeEqual(c.req.header('authorization')?.replace(/^Bearer /, '') ?? '', t)) return c.json({ error: 'unauthorized' }, 401);
     return c.json(await c.get('repo').stats());
   });
+  app.get('/api/stats/daily', async (c) => {
+    const t = c.env.STATS_TOKEN;
+    if (!t || !safeEqual(c.req.header('authorization')?.replace(/^Bearer /, '') ?? '', t)) return c.json({ error: 'unauthorized' }, 401);
+    return c.json({ days: await c.get('repo').daily(14) });
+  });
+  // 지표 화면 — 토큰은 주소의 #t= 조각(서버로 안 감)이나 입력칸으로 받아 브라우저가 헤더로 보낸다
+  app.get('/stats', (c) => c.html(statsPage(pageOpts(c))));
 
   // --- API
   const readJson = async (c) => {
@@ -148,12 +155,30 @@ export function createApp({ log = (o) => console.log(JSON.stringify(o)), limits 
     await next();
   };
   const tid = (c) => c.get('trip').id;
+  // 누가 했는지 (브라우저가 기억하는 "나"). 이 목록의 참여자가 아니면 기록에 이름이 남지 않는다
+  const byOf = (body) => {
+    const v = Number(body?.by);
+    return Number.isSafeInteger(v) && v > 0 ? v : null;
+  };
 
   app.get('/api/trips/:id', member, async (c) => {
     const t = c.get('trip');
     return c.json({ trip: { id: t.id, name: t.name, starts_on: t.starts_on }, ...(await c.get('repo').load(t.id)) });
   });
   app.post('/api/trips/:id/auth', member, admin, (c) => c.body(null, 204));
+  // 자동 새로고침용: 마지막으로 바뀐 시각만 (D1 읽기 1번)
+  app.get('/api/trips/:id/version', member, (c) => {
+    const t = c.get('trip');
+    return c.json({ v: t.updated_at ?? t.created_at });
+  });
+  app.patch('/api/trips/:id', member, async (c) => {
+    const body = await readJson(c);
+    const { errors, value } = validateTrip(body);
+    if (Object.keys(errors).length) return c.json({ error: Object.values(errors)[0], fields: errors }, 400);
+    await c.get('repo').updateTrip(tid(c), value, byOf(body));
+    event(c, 'trip_edited');
+    return c.body(null, 204);
+  });
 
   app.post('/api/trips/:id/people', member, async (c) => {
     const { name, error } = validatePersonName((await readJson(c)).name);
@@ -168,14 +193,22 @@ export function createApp({ log = (o) => console.log(JSON.stringify(o)), limits 
   });
 
   app.post('/api/trips/:id/items', member, async (c) => {
-    const { value, error } = validateItem(await readJson(c));
+    const body = await readJson(c);
+    const { value, error } = validateItem(body);
     if (error) return c.json({ error }, 400);
-    const item = await c.get('repo').addItem(tid(c), value);
+    const item = await c.get('repo').addItem(tid(c), value, byOf(body));
     event(c, 'item_added', { kind: value.kind });
     return c.json(item, 201);
   });
   app.patch('/api/trips/:id/items/:iid', member, async (c) => {
     const body = await readJson(c);
+    if (body.action === 'edit') {
+      const { value, error } = validateItem(body);
+      if (error) return c.json({ error }, 400);
+      await c.get('repo').editItem(tid(c), intParam(c, 'iid'), value, byOf(body));
+      event(c, 'item_edit');
+      return c.body(null, 204);
+    }
     const person_id = Number(body.person_id);
     if (!Number.isSafeInteger(person_id) || person_id <= 0) return c.json({ error: '내 이름을 먼저 골라 주세요' }, 400);
     const item = await c.get('repo').updateItem(tid(c), intParam(c, 'iid'), { action: body.action, person_id, packed: body.packed === true });
@@ -183,19 +216,31 @@ export function createApp({ log = (o) => console.log(JSON.stringify(o)), limits 
     return c.json(item);
   });
   app.delete('/api/trips/:id/items/:iid', member, async (c) => {
-    await c.get('repo').deleteItem(tid(c), intParam(c, 'iid'));
+    await c.get('repo').deleteItem(tid(c), intParam(c, 'iid'), byOf(await readJson(c)));
+    event(c, 'item_delete');
+    return c.body(null, 204);
+  });
+  app.post('/api/trips/:id/items/:iid/restore', member, async (c) => {
+    await c.get('repo').restoreItem(tid(c), intParam(c, 'iid'), byOf(await readJson(c)));
+    event(c, 'item_restore');
     return c.body(null, 204);
   });
 
   app.post('/api/trips/:id/expenses', member, async (c) => {
-    const { value, error } = validateExpense(await readJson(c));
+    const body = await readJson(c);
+    const { value, error } = validateExpense(body);
     if (error) return c.json({ error }, 400);
-    const e = await c.get('repo').addExpense(tid(c), value);
+    const e = await c.get('repo').addExpense(tid(c), value, byOf(body) ?? value.paid_by);
     event(c, 'expense_added', { people: value.shares.length });
     return c.json(e, 201);
   });
   app.delete('/api/trips/:id/expenses/:eid', member, async (c) => {
-    await c.get('repo').deleteExpense(tid(c), intParam(c, 'eid'));
+    await c.get('repo').deleteExpense(tid(c), intParam(c, 'eid'), byOf(await readJson(c)));
+    return c.body(null, 204);
+  });
+  app.post('/api/trips/:id/expenses/:eid/restore', member, async (c) => {
+    await c.get('repo').restoreExpense(tid(c), intParam(c, 'eid'), byOf(await readJson(c)));
+    event(c, 'expense_restore');
     return c.body(null, 204);
   });
 
@@ -243,12 +288,13 @@ export function createApp({ log = (o) => console.log(JSON.stringify(o)), limits 
   return app;
 }
 
-// 매일 한 번 (wrangler.toml crons): 삭제 30일 지난 목록·오래 방치된 목록 영구 삭제, 속도 제한 기록 정리
+// 매일 한 번 (wrangler.toml crons): 삭제 30일 지난 목록·오래 방치된 목록, 되살리기 7일 지난 준비물·지출 영구 삭제, 속도 제한 기록 정리
 export async function scheduled(env, log = (o) => console.log(JSON.stringify(o))) {
   const repo = createRepo(env.DB);
   const deleted = await repo.purgeDeleted(30);
   const stale = await repo.purgeStale(180);
+  const softDeleted = await repo.purgeSoftDeleted(7);
   await repo.cleanupRateLimits();
   await repo.purgeFeedback(365);
-  log({ t: new Date().toISOString(), level: 'info', event: 'daily_cleanup', purged: deleted, stale });
+  log({ t: new Date().toISOString(), level: 'info', event: 'daily_cleanup', purged: deleted, stale, softDeleted });
 }

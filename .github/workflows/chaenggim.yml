@@ -44,6 +44,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       STATS: ${{ secrets.CHAENGGIM_STATS_TOKEN }}
       SUPPORT_URL: ${{ vars.CHAENGGIM_SUPPORT_URL }}   # 후원 링크 (선택, 저장소 Variables)
+      NTFY: ${{ secrets.CHAENGGIM_NTFY_TOPIC }}   # 서비스 지킴이 알림 주제 (선택)
     steps:
       - name: 준비 확인
         id: pre
@@ -121,3 +122,13 @@ jobs:
           echo "핵심 흐름 확인 완료"
           echo "### 챙김표 주소: $URL" >> "$GITHUB_STEP_SUMMARY"
           echo "배포 확인: 상태·첫 화면·정적 파일·목록 생성→참여→맡기→조회→삭제 모두 정상" >> "$GITHUB_STEP_SUMMARY"
+      - name: 서비스 지킴이 (5분마다 확인 → 휴대폰 알림, 선택)
+        # 알림 주제(CHAENGGIM_NTFY_TOPIC)가 있을 때만. 실패해도 배포는 성공으로 둔다 (Cloudflare 토큰에 KV 권한이 없을 수 있음)
+        if: steps.pre.outputs.go == 'true' && env.NTFY != ''
+        continue-on-error: true
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          echo "::add-mask::$NTFY"
+          mkdir -p .atelier && printf '{"NTFY_TOPIC":"%s"}\n' "$NTFY" > .atelier/secrets.json
+          node ops/watchdog/setup.mjs chaenggim --url "$URL"

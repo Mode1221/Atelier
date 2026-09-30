@@ -82,3 +82,14 @@ label.choice input{width:22px;height:22px;accent-color:var(--color-primary)}
 .invite .linkbox{margin-top:0}
 .share{margin-top:var(--space-2)}
 .share>*{flex:1}
+button.inline{min-height:var(--tap);padding:0 var(--space-1);text-decoration:underline;font-weight:500}
+.update-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);margin:0 0 var(--space-2)}
+.item.editing{display:block}
+.item.editing .row{align-items:flex-end}
+.edit label{margin-top:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--space-2);margin:0}
+.kpis div{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3)}
+.kpis dt{font-size:var(--text-sm);color:var(--color-text-muted)}
+.kpis dd{margin:0;font-size:var(--text-xl);font-weight:800;font-variant-numeric:tabular-nums}
+meter{width:80px;vertical-align:middle}
+input[type=password]{width:100%;min-height:var(--tap);padding:0 var(--space-3);border:1px solid var(--color-border-strong);border-radius:var(--radius-md);background:var(--color-bg);color:var(--color-text);font:inherit}

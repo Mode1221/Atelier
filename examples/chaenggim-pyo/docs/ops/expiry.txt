@@ -1,0 +1,2 @@
+# 만료일 목록 — "YYYY-MM-DD 설명" (Atelier checkup 이 30일 전부터 경고)
+# 자체 도메인을 사면 갱신일을 적는다 (지금은 workers.dev 임시 주소라 없음)
