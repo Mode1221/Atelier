@@ -21,7 +21,7 @@ export function render(spec) {
     const open = ch.intent ? `<a class="btn primary" href="${esc(ch.intent(p.text, url))}" target="_blank" rel="noopener">${esc(ch.name)}에 올리기</a>` : '';
     return `<article class="card"><h2>${i + 1}. ${esc(ch.name)}${p.when ? ` <small>${esc(p.when)}</small>` : ''}</h2>
 <pre id="t${i}">${esc(full)}</pre>
-<p class="meta">${length(p.text, p.channel) + 24} / ${ch.limit}자${ch.note ? ` · ${esc(ch.note)}` : ''}</p>
+<p class="meta">${length(p.text, p.channel) + 24} / ${ch.limit}자${(p.note ?? ch.note) ? ` · ${esc(p.note ?? ch.note)}` : ''}</p>
 <div class="row"><button type="button" data-copy="t${i}">글 복사</button>${open}<label><input type="checkbox" data-done="${i}"> 올렸어요</label></div></article>`;
   });
   return `<!doctype html>

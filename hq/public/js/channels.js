@@ -15,6 +15,9 @@ export const CHANNELS = {
   everytime: { name: '에브리타임', limit: 2000, note: '복사 → 게시판에 붙여넣기. 홍보 게시판에만' },
   discord: { name: 'Discord', limit: 2000, note: '복사 → 홍보 허용 채널에 붙여넣기' },
   instagram: { name: 'Instagram', limit: 2200, note: '링크는 프로필 링크에. 이미지와 함께 올리기' },
+  naver_cafe: { name: '네이버 카페', limit: 5000, note: '복사 → 카페 홍보 게시판에. 카페 규칙 양식 확인' },
+  daangn: { name: '당근 동네생활', limit: 2000, note: '복사 → 동네생활에. 노골적 광고는 신고돼요' },
+  disquiet: { name: '디스콰이엇', limit: 5000, note: '복사 → 메이커 로그에. 제작기 형식' },
 };
 
 export function withUtm(url, source, campaign) {

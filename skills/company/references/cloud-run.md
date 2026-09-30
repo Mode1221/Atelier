@@ -16,7 +16,7 @@ Claude 클라우드 예약 실행(Routine)이 새 세션을 열고 이 절차로
 |---|---|---|
 | `companies/<SERVICE>` (서비스 문서 자체) | name, summary(한 줄 설명), audience(대상 사용자), kind(웹/앱/게임), url, stage, repo, project, routines{부서: trigger_id} | 설치 시, 단계는 승인 후 대표실 |
 | `plan/roadmap` | stage, focus, goals[], items[], updatedAt, reviewAt, history[] — 형식은 `playbook/planning` | 대표실이 자동 생성·갱신 |
-| `playbook/<이름>` (**본부 공통**, 앞에 companies 안 붙임) | text — 이 절차(`cloud-run`), 부서 역할(`dept-<부서>`), 계획(`planning`), 8단계·게이트(`stages`) | 설치 시 (스킬 문서 복사) |
+| `playbook/<이름>` (**본부 공통**, 앞에 companies 안 붙임) | text — 이 절차(`cloud-run`), 부서 역할(`dept-<부서>`), 계획(`planning`), 8단계·게이트(`stages`), 채널 가이드(`channels`) | 설치 시 (스킬 문서 복사) |
 | `approvals/<id>` | dept, title, kind(배포/외부 게시/지출/약관/데이터 삭제), cost, detail, ifApprove, ifReject, status(pending/approved/rejected), reason, createdAt, decidedAt, done, result | 부서가 만들고 대표가 결정 |
 | `tasks/<id>` | dept, title, detail, status(todo/doing/review/done), by(ceo 또는 부서), note, createdAt, updatedAt | 대표·부서 |
 | `human/<id>` | text, why, link, done, createdAt | 부서가 만들고 대표가 체크 |
@@ -46,7 +46,7 @@ id 규칙: `approvals`·`tasks`·`human` 은 `<DEPT>-<YYYYMMDD>-<짧은이름>` 
 ## 4. 부서별 추가 규칙
 - **대표실(ceo)**: **`playbook/planning` 을 매일 따른다** — 목표·로드맵(`plan/roadmap`)을 서비스에 맞게 만들거나 갱신하고, 오늘 할 일을 부서별 `tasks` 로 나눠 준다(하루 5개까지). 모든 `reports` 를 모아 `reports/ceo` 에 브리핑. 서비스 주소가 응답하지 않으면 level critical.
 - **고객지원(support)**: 새 `feedback/<날짜>`(status new)를 분류해 각 항목에 action 을 달고 summary·status triaged 로 바꾼다(개인정보는 옮기지 않음). 버그는 `tasks`(qa), 반복 불편·제안은 `tasks`(plan) — 대표실이 다음 계획 때 로드맵에 반영한다. 피드백을 가져올 길(저장소 `feedback` 이슈 등)에 접근할 수 없으면 그 사실을 보고한다.
-- **마케팅(marketing)**: `share/posts` 가 홍보 글의 원본이다. 채널 규칙에 맞게 다듬거나 새 글(채널당 1개, 글자 수 한도 지키기)을 쓰고, 올리지 않은 채널이 있으면 `human` 에 "○○ 올리기"를 남긴다. `shared` 기록으로 채널별 상태를 `reports/marketing` 에.
+- **마케팅(marketing)**: `share/posts` 가 홍보 글의 원본이다. `playbook/channels`(채널별 말투·길이·금기)에 맞춰 채널마다 따로 다듬거나 새 글(채널당 1개, 글자 수 한도, `note`·`when` 포함)을 쓰고, 올리지 않은 채널이 있으면 `human` 에 "○○ 올리기"를 남긴다. `shared` 기록으로 채널별 상태를 `reports/marketing` 에.
 - **데이터·재무(data)**: 서비스가 주는 지표만 `metrics/main` 에. 숫자를 지어내지 않는다 — 없으면 "지표 없음"과 만드는 방법을 `tasks`(dev)로.
 - **QA**: 바뀐 화면이 있으면 `atelier:usertest`(프로젝트의 `npm run usertest`) 결과를 확인한다.
 

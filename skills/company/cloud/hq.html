@@ -164,6 +164,9 @@ const CHANNELS = {
   everytime: { name: '에브리타임', note: '복사해서 홍보 게시판에 붙여 넣어요' },
   discord: { name: 'Discord', note: '복사해서 홍보 허용 채널에' },
   instagram: { name: 'Instagram', note: '링크는 프로필에, 이미지와 함께' },
+  naver_cafe: { name: '네이버 카페', note: '복사해서 카페 홍보 게시판에 (카페 규칙 양식 확인)' },
+  daangn: { name: '당근 동네생활', note: '복사해서 동네생활에 (노골적 광고는 신고돼요)' },
+  disquiet: { name: '디스콰이엇', note: '복사해서 메이커 로그에' },
 };
 const withUtm = (url, source, campaign) => {
   try {
@@ -384,7 +387,7 @@ function share() {
       return `<article class="card"><div class="sec-head"><h3>${esc(ch.name)}</h3>${posted ? pill('good', '올림') : pill('idle', '안 올림')}</div>
         ${x.when ? `<p class="small muted">${esc(x.when)}</p>` : ''}
         <pre class="post" id="post-${i}">${esc(x.text + '\n' + url)}</pre>
-        ${ch.note ? `<p class="small muted">${esc(ch.note)}</p>` : ''}
+        ${(x.note ?? ch.note) ? `<p class="small muted">${esc(x.note ?? ch.note)}</p>` : ''}
         <div class="row"><button data-act="copy" data-target="post-${i}">글 복사</button>
         ${ch.intent ? `<a class="btn primary" href="${esc(ch.intent(x.text, url))}" target="_blank" rel="noopener">${esc(ch.name)}에 올리기</a>` : ''}
         ${!posted && canWrite ? `<button data-act="posted" data-key="${esc(x.channel)}__${i}" data-channel="${esc(x.channel)}">올렸어요</button>` : ''}</div></article>`;
