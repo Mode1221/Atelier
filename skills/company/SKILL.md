@@ -1,34 +1,69 @@
 ---
 name: company
-description: AI 회사 운영. 부서(대표실·기획·디자인·개발·QA·보안법무·마케팅·고객지원·운영·데이터재무)가 Claude 클라우드 예약 실행으로 스스로 일하고, 사람은 claude.ai 안의 본부 페이지에서 결재만 한다 (GitHub 을 몰라도 됨). "/atelier:company setup" 으로 회사를 세우고, "/atelier:company run <부서>" 로 부서 하루 업무를 실행한다.
+description: AI 회사 운영. 부서(대표실·기획·디자인·개발·QA·보안법무·마케팅·고객지원·운영·데이터재무)가 서비스 운영 일을 하고, 사람(대표)은 결재만 한다. 기본은 로컬 모드 — 내 컴퓨터의 Claude Code 만으로, 프로젝트 폴더 파일이 본부. "/atelier:company" 로 브리핑·결재("1번 승인"), "/atelier:company setup" 으로 회사 세우기, "/atelier:company run <부서|all>" 로 부서 실행, "/atelier:company schedule" 로 매일 자동 실행. 고급: "setup cloud"(claude.ai 본부 페이지·폰 결재), "setup github".
 ---
 
 # Company — AI 회사
 
-사람(대표)은 **결재**만 한다. 두 가지 방식이 있고, **클라우드 방식이 기본**이다.
-| | 클라우드 (기본) | GitHub 방식 (선택) |
-|---|---|---|
-| 대표 화면 | claude.ai 안의 본부 페이지 (Artifact) | Atelier HQ 웹 (GitHub 토큰 로그인) |
-| 부서 실행 | Claude 예약 실행(Routine) — Claude 요금제 사용량 | GitHub Actions — Anthropic API 키 |
-| 업무 기록 | 본부 페이지 데이터 (`references/cloud-run.md`) | GitHub Issues (`references/board.md`) |
-| 대표가 알아야 할 것 | 없음 (claude.ai 로그인만) | GitHub 토큰·Secrets |
-부서별 역할: `references/departments/<부서>.md` (두 방식 공통).
+사람(대표)은 **결재**만 한다. **로컬 모드가 기본**이고, 클라우드·GitHub 방식은 고급 옵션이다.
+| | **로컬 (기본)** | 클라우드 (고급) | GitHub 방식 (고급) |
+|---|---|---|---|
+| 필요한 것 | 내 컴퓨터의 Claude Code 만 | claude.ai/code 클라우드 세션 | GitHub 저장소·토큰·API 키 |
+| 대표 화면 | 대화창 `/atelier:company` (브리핑·"1번 승인") | claude.ai 본부 페이지 (폰에서도 결재) | Atelier HQ 웹 |
+| 부서 실행 | `/atelier:company run all` — 직접 또는 OS 예약(컴퓨터 켜져 있을 때) | Claude 예약 실행(Routine), 컴퓨터 꺼져도 | GitHub Actions |
+| 업무 기록 | 프로젝트 폴더 `company/<서비스>/` 파일 (`references/local-run.md`) | 본부 페이지 데이터 (`references/cloud-run.md`) | GitHub Issues (`references/board.md`) |
+부서별 역할: `references/departments/<부서>.md` (모든 방식 공통). 부서 실행은 Claude 사용량이 든다 — 켤 때마다 알린다.
 
-인자: `$ARGUMENTS` 의 첫 단어 = `setup` 또는 `run`. `run` 다음 단어 = 부서 ID (`ceo` `plan` `design` `dev` `qa` `security` `marketing` `support` `ops` `data`).
+인자(`$ARGUMENTS`):
+| 인자 | 하는 일 | 절 |
+|---|---|---|
+| (없음) | 대화형 본부: 브리핑·결재 대기·대표 할 일·부서 상태, "1번 승인"/"2번 반려: 이유" 반영 | B |
+| `setup` | 회사 세우기 — **로컬 (기본)** | A |
+| `run <부서\|all>` | 부서 실행. 부서 ID `ceo` `plan` `design` `dev` `qa` `security` `marketing` `support` `ops` `data` | C |
+| `schedule` | 매일 자동 실행을 OS 예약 작업으로 (선택) | D |
+| `setup cloud` | 클라우드 본부 (고급) | E |
+| `setup github` | GitHub 방식 (고급) | F |
+
+## 0. 환경 판단 (모든 명령 전에)
+- 이 세션의 도구로 판단한다: `Artifact` 도구와 `create_trigger`(Claude Code Remote)가 **둘 다 있으면** 클라우드 세션, 아니면 로컬.
+- **로컬이면 클라우드 절차(E)를 시도하지 않는다.** `setup cloud` 를 요청받았으면 E 맨 앞의 안내만 하고 멈춘다.
+- 프롬프트에 `HQ=` 가 있으면 클라우드 예약 실행이다 → `references/cloud-run.md`.
+- 프로젝트에 `company/` 가 있으면 로컬 모드 회사, PROJECT.md "AI 회사" 절에 본부 링크가 있으면 클라우드 회사다. 둘 다 없으면 아직 없음.
 
 ---
 
-## A. `setup` — 회사 세우기 (클라우드, 기본)
-**claude.ai/code 클라우드 세션에서 실행한다.**
+## A. `setup` — 회사 세우기 (로컬, 기본)
+도우미: `L` = `node <이 스킬 폴더>/scripts/local.mjs` (프로젝트 폴더에서 실행). 규칙 전체는 `references/local-run.md`.
+1. 서비스 ID(영문 소문자·숫자·`-`, 예 `beolgeum`)를 정하고 `L init <ID> --name "이름" --url <주소> --summary "한 줄" --audience "대상" --kind 웹 --stage "<PROJECT.md 현재 단계>"`. 여러 서비스면 ID 만 다르게 한 번 더 — `company/<ID>/` 폴더가 따로 생긴다.
+2. `service.json` 을 채운다(`cloud-run.md` 1절·`planning.md` 의 필드): `done`(이미 해 둔 것), `cautions`(지켜야 할 제약), `existing`(이미 도는 자동 점검) — PROJECT.md·STATUS 문서에서. `docs/share/posts.json` 이 있으면 `company/<ID>/share/posts.json` 으로 옮기고, PROJECT.md "사람 할 일" 미완료 항목은 `human/*.json` 으로.
+3. 켜진 부서는 기본 **대표실·고객지원·마케팅**(`service.json` 의 `enabled`). "실행할 때마다 Claude 사용량이 들어요"라고 알린다.
+4. 대표실을 한 번 실행한다(C, `run ceo`) — 첫 실행에서 목표·로드맵(`plan/roadmap.json`)을 만들고 첫 할 일을 나눈다.
+5. `L check` 후 B 의 브리핑을 보여 준다. PROJECT.md 에 "AI 회사" 절(방식: 로컬, 서비스 ID, 폴더, 명령 `/atelier:company`)을 남긴다.
+6. 끝으로 한 줄: "매일 자동으로 일하게 하려면 `/atelier:company schedule`, 폰으로 결재하고 싶으면 `setup cloud`(고급)."
+
+## B. (인자 없음) — 대화형 본부
+`references/local-run.md` 2절. 짧게: `L brief` 를 보여 주고, 대표의 "1번 승인" / "2번 반려: 이유" / "할 일 1 완료" / "○○ 부서 켜 줘"를 `L decide` / `L human-done` / `L enable` 로 반영하고 결과를 쉬운 말로 전한다.
+클라우드 회사면 본부 링크를 알려 준다.
+
+## C. `run <부서|all>` — 부서 실행
+로컬이면 `references/local-run.md` 3절 (`cloud-run.md` 2~5절과 같은 순서, 파일 경로만 다름, 저장소 파일 직접 수정 가능, **배포·외부 게시·지출은 결재 대상**). `all` = 켜 둔 부서, 대표실 먼저.
+클라우드 예약 실행(`HQ=`)이면 `references/cloud-run.md`, GitHub 방식이면 G.
+
+## D. `schedule` — 매일 자동 실행 (선택)
+`references/local-run.md` 4절. 윈도우 작업 스케줄러 / 맥·리눅스 cron 으로 매일 `claude -p "/atelier:company run all"`. **등록 명령을 보여 주고 사용자가 확인한 뒤에만 등록한다.** "컴퓨터가 켜져 있어야 돌아요"를 꼭 알린다.
+
+---
+
+## E. `setup cloud` — 클라우드 본부 (고급)
+**claude.ai/code 클라우드 세션에서 실행한다.** 로컬 모드에 없는 것: 컴퓨터가 꺼져도 부서가 돌고, 폰에서 본부 페이지로 결재.
 먼저 확인: 이 세션에 `Artifact` 도구와 `create_trigger` 도구(Claude Code Remote)가 **둘 다** 있는가? 하나라도 없으면(내 PC 의 로컬 세션 등) 아무것도 만들지 말고 멈춘 뒤 이렇게 안내한다:
-> 본부는 Claude 클라우드에서만 만들 수 있어요. 이렇게 해 주세요:
+> 클라우드 본부는 Claude 클라우드에서만 만들 수 있어요. 지금은 로컬 모드(`/atelier:company setup`)로도 충분해요. 클라우드로 옮기려면:
 > 1. 이 프로젝트를 GitHub 에 올려 두세요 (이미 있으면 건너뛰기).
 > 2. 브라우저에서 **claude.ai/code** 를 열고, 이 저장소를 골라 새 세션을 시작하세요.
-> 3. 그 세션 입력창에 `/atelier:company setup` 을 입력하세요.
-> 로컬 세션에서 하던 일은 그대로 두면 돼요. 본부가 생기면 링크를 여기에도 적어 둘게요.
-PROJECT.md "사람 할 일"에 "claude.ai/code 에서 `/atelier:company setup` 실행" 을 한 줄 남긴다.
+> 3. 그 세션 입력창에 `/atelier:company setup cloud` 를 입력하세요.
 
-Claude 클라우드 세션(claude.ai/code)에서 실행한다. 대표에게 GitHub·토큰을 묻지 않는다.
+로컬 회사(`company/`)가 이미 있으면 그 파일을 본부 데이터 첫 값으로 옮긴다(2번).
+대표에게 GitHub·토큰을 묻지 않는다.
 본부는 **사람당 하나**다. 서비스가 여럿이면 같은 본부에 `companies/<서비스ID>` 로 추가하고, 본부 위쪽 목록에서 바꿔 가며 본다.
 0. 이미 본부가 있으면(PROJECT.md "AI 회사" 절, 또는 `Artifact list` 에서 "Atelier 본부") 1번을 건너뛰고 그 주소를 쓴다.
 1. **본부 페이지**: `cloud/hq.html` 을 그대로 Artifact 로 게시한다 (제목 "Atelier 본부").
@@ -42,7 +77,7 @@ Claude 클라우드 세션(claude.ai/code)에서 실행한다. 대표에게 GitH
 
 예약 실행 세션에는 저장소가 붙지 않고 GitHub 접근도 막힐 수 있다 — 그래서 절차는 본부 `playbook` 에서 읽는다. 스킬 문서를 고치면 `playbook` 도 다시 써 준다. **코드를 바꾸는 부서(개발 등)** 를 켜려면 claude.ai → 루틴에서 그 부서에 저장소를 추가하거나, 저장소를 붙인 세션에서 예약을 만든다.
 
-## A-2. `setup github` — GitHub 방식 (선택)
+## F. `setup github` — GitHub 방식 (고급)
 **Atelier HQ 대시보드의 "회사 세우기" 버튼이 같은 일을 자동으로 한다.** 대시보드가 없을 때만 이 절차를 쓴다.
 1. 라벨 만들기: `references/board.md` 의 라벨 전부 (`gh label create ... --force`).
 2. `templates/company.yml` → `.github/workflows/atelier-company.yml` 복사.
@@ -52,8 +87,8 @@ Claude 클라우드 세션(claude.ai/code)에서 실행한다. 대표에게 GitH
    - Actions 권한: Settings → Actions → General → Workflow permissions → Read and write
 5. 대표실을 한 번 실행해 첫 브리핑을 만든다: Actions → Atelier company → Run workflow → `ceo`.
 
-## B. `run <부서>` — 부서 하루 업무
-클라우드 방식이면(프롬프트에 `HQ=` 가 있으면) `references/cloud-run.md` 를 따른다. 아래는 GitHub 방식.
+## G. GitHub 방식의 `run <부서>`
+클라우드 방식이면(프롬프트에 `HQ=` 가 있으면) `references/cloud-run.md`, 로컬이면 C. 아래는 GitHub 방식.
 1. `references/departments/<부서>.md` 를 읽고 그 **루틴**을 따른다. 참고 스킬이 있으면 그 스킬의 절차·체크리스트를 쓴다.
 2. `references/board.md` 규칙을 지킨다: 라벨로 상태를 바꾸고, 진행 상황은 이슈 댓글로 남긴다.
 3. **결재가 필요한 일은 하지 말고 요청만** 한다 (형식은 board.md). `approved` 라벨이 붙은 이슈는 승인된 것이므로 그 일을 진행하고 `approved` 를 떼고 결과를 댓글로 남긴다. `rejected` 는 반려 사유를 읽고 수정하거나 닫는다.

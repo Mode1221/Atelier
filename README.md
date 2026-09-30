@@ -38,11 +38,10 @@
 프로필(웹/앱/게임, 과금, 계정 유무)에 따라 해당 없는 세부 단계는 `N/A` 로 표시됩니다.
 
 ## AI 회사 모드 + 본부
-> **claude.ai/code 클라우드 세션에서 실행하세요.** 본부 페이지와 부서 예약 실행은 클라우드 세션에만 있는 도구로 만듭니다. 내 PC(터미널)의 Claude Code 에서 `setup` 을 실행하면 멈추고 클라우드 세션을 여는 방법을 알려 줍니다.
-
 출시 후에는 부서 10개(대표실·기획·디자인·개발·QA·보안법무·마케팅·고객지원·운영·데이터재무)가 **스스로 일하고**, 사람은 **대표로서 결재만** 합니다.
-- **클라우드 방식(기본)**: 본부는 **claude.ai 안의 페이지** — 결재·할 일·부서 켜기/끄기·홍보·사용자 의견. 부서는 **Claude 예약 실행**으로 돕니다. GitHub·토큰·API 키를 몰라도 됩니다. 설치: 클라우드 세션에서 `/atelier:company setup` (`skills/company/cloud/`).
-- GitHub 방식(선택): 아래 `hq/` 대시보드 + GitHub Actions.
+- **기본 = 로컬 모드**: 내 컴퓨터의 Claude Code 만 있으면 됩니다(클라우드·GitHub·토큰 없음). 본부는 프로젝트 폴더 `company/<서비스>/` 파일, 결재는 대화창에서 `/atelier:company` → "1번 승인". 부서 실행은 `run all`(직접) 또는 `schedule`(매일, **컴퓨터가 켜져 있을 때만**). 설치: `/atelier:company setup`.
+- **고급 = 클라우드** (`setup cloud`, **claude.ai/code 클라우드 세션에서**): claude.ai 본부 페이지 — 컴퓨터가 꺼져도 부서가 돌고 **폰에서 결재**. **GitHub 방식** (`setup github`): 아래 `hq/` 대시보드 + GitHub Actions(API 키 필요).
+- 차이 한 줄: 로컬은 설치가 가장 쉽지만 내 컴퓨터가 켜져 있어야 하고, 클라우드는 항상 돌지만 claude.ai/code 세션이 필요합니다.
 - `skills/company` — 부서 역할(`references/departments/`), 업무 규칙(`references/board.md`), 부서별 예약 실행 워크플로
 - `hq/` — 개발 경험이 없어도 쓰는 대시보드 (**서버 없음·무료**: 정적 페이지 + GitHub 저장소가 데이터 저장소): 오늘 회사 상태, 결재함(승인·반려), 업무 보드, 부서별 비용·예산, 홍보(한 번 눌러 올리기)·베타 의견, 외부 서비스 연결(GitHub·Claude·Sentry·Fly.io·Vercel·Stripe·상태 확인·지표), **회사 세우기** 버튼 하나로 GitHub 에 자동 설치. 사용법은 `hq/README.md`
 - 하지 않는 것: 애니메이션·영상 제작, API 없는 커뮤니티 자동 게시, 결재 없는 지출·배포·게시

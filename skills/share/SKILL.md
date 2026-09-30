@@ -24,7 +24,7 @@ description: SNS 공유·홍보 도우미. 서비스 안에 공유 기능(공유
 `docs/idea.md` 의 "첫 사용자 100명이 모인 곳"에서 3~5개. 채널 목록·한도·주의점: `scripts/channels.mjs` (`CHANNELS`).
 한국 기본 조합: 대학 커뮤니티(에브리타임) · 오픈채팅 · Threads · X · 밴드/블로그. 개발자 대상이면 디스콰이엇·GeekNews·Reddit.
 
-### S3. 채널별 글 → `docs/share/posts.json`
+### S3. 채널별 글 → `docs/share/posts.json` (AI 회사 로컬 모드면 `company/<서비스>/share/posts.json`)
 ```json
 { "product": "…", "url": "https://…/", "campaign": "open-beta",
   "posts": [ { "channel": "threads", "when": "D-day", "text": "…" } ] }
@@ -33,8 +33,9 @@ description: SNS 공유·홍보 도우미. 서비스 안에 공유 기능(공유
 - 검사: `node <atelier>/skills/share/scripts/kit.mjs --check docs/share/posts.json` (글자 수 초과·빈 글).
 
 ### S4. 올리기 킷
-- **Atelier HQ → 홍보** 화면: 글마다 "복사"·"○○에 올리기"(공식 공유 창)·"올렸어요"(데이터 브랜치에 기록). 베타 의견도 같은 화면에.
+- 클라우드·GitHub 방식(고급): **Atelier HQ → 홍보** 화면: 글마다 "복사"·"○○에 올리기"(공식 공유 창)·"올렸어요"(데이터 브랜치에 기록). 베타 의견도 같은 화면에.
 - HQ 를 안 쓰면: `node kit.mjs docs/share/posts.json` → `docs/share/kit.html` 을 브라우저로 열기.
+- **AI 회사 로컬 모드**(기본): 홍보 글은 `company/<서비스>/share/posts.json`. 올리기는 **대화창에 채널별 공유 링크를 출력**한다: `node <이 스킬 폴더>/scripts/kit.mjs --links company/<서비스>/share/posts.json` — 채널마다 글, "올리기" 링크(공식 공유 창), 공유 창이 없는 곳은 "복사해서 붙여넣기", Threads 는 첫 댓글 링크. 올린 뒤 "○○ 올렸어" 라고 하면 `company/<서비스>/shared/<채널>__<번호>.json` 에 `{channel, at}` 를 쓴다.
 - 사람이 하는 일 = 버튼 누르고 확인. 마케팅 부서는 글 준비·일정·결재 요청까지.
 - 완전 자동(선택): Bluesky 는 `scripts/post-bluesky.mjs` 로 공식 API 게시(같은 글은 한 번만). 저장소 Secrets `BLUESKY_HANDLE`·`BLUESKY_APP_PASSWORD` 만 넣으면 워크플로가 올린다 (예: `.github/workflows/beolgeum-share.yml`). 키 등록 자체가 게시 승인이다.
 

@@ -5,6 +5,7 @@
 //
 // 사용: node kit.mjs [posts.json=docs/share/posts.json] [kit.html=같은 폴더/kit.html]
 //       node kit.mjs --check [posts.json]   글자 수 초과·빈 글만 검사 (CI 용, 실패 시 종료 코드 1)
+//       node kit.mjs --links [posts.json]   대화창에 붙일 채널별 글·올리기 링크 (company 로컬 모드: company/<서비스>/share/posts.json)
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
@@ -12,6 +13,21 @@ import { CHANNELS, withUtm, length, postLength, check } from './channels.mjs';
 export { CHANNELS, withUtm, length, postLength, check };
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+// 대화창용: 채널마다 글, 공식 공유 창 링크(있으면), 없으면 "복사해서 붙여넣기", Threads 는 첫 댓글 링크
+export function links(spec) {
+  return spec.posts.map((p, i) => {
+    const ch = CHANNELS[p.channel];
+    if (!ch) return `${i + 1}. (모르는 채널 "${p.channel}")`;
+    const url = withUtm(p.url ?? spec.url, p.channel, spec.campaign);
+    const body = ch.linkInComment ? p.text : `${p.text}\n${url}`;
+    const out = [`${i + 1}. ${ch.name}${p.when ? ` — ${p.when}` : ''}`, ...body.split('\n').map((l) => `   │ ${l}`)];
+    out.push(ch.intent ? `   → 올리기: ${ch.intent(p.text, url)}` : '   → 공유 창이 없어요: 위 글을 복사해 붙여넣기');
+    if (ch.linkInComment) out.push(`   → 첫 댓글에 넣을 링크: ${url}`);
+    if (p.note ?? ch.note) out.push(`   · ${p.note ?? ch.note}`);
+    return out.join('\n');
+  }).join('\n\n');
+}
 
 export function render(spec) {
   const items = spec.posts.map((p, i) => {
@@ -63,13 +79,15 @@ document.querySelectorAll('[data-done]').forEach(function(c){var k='kit-done-'+c
 if (import.meta.url === `file://${process.argv[1]}`) {
   const args = process.argv.slice(2);
   const onlyCheck = args[0] === '--check';
-  if (onlyCheck) args.shift();
+  const onlyLinks = args[0] === '--links';
+  if (onlyCheck || onlyLinks) args.shift();
   const src = args[0] ?? 'docs/share/posts.json';
   const spec = JSON.parse(readFileSync(src, 'utf8'));
   const problems = check(spec);
   for (const p of problems) console.error(`✗ ${p}`);
   if (problems.length) process.exit(1);
-  if (!onlyCheck) {
+  if (onlyLinks) console.log(links(spec));
+  else if (!onlyCheck) {
     const out = args[1] ?? join(dirname(src), 'kit.html');
     writeFileSync(out, render(spec));
     console.log(`홍보 킷: ${out} (글 ${spec.posts.length}개)`);

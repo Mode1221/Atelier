@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CHANNELS, withUtm, length, check } from '../skills/share/scripts/channels.mjs';
-import { render } from '../skills/share/scripts/kit.mjs';
+import { render, links } from '../skills/share/scripts/kit.mjs';
 import { missingWords, describe } from '../skills/usertest/scripts/walk.mjs';
 import { freePort, assertPortFree, testPort } from '../skills/build/templates/free-port.mjs';
 import { createServer } from 'node:net';
@@ -180,4 +180,12 @@ test('free-port: 빈 포트를 고르고, 쓰이는 포트는 이유와 함께 �
     await assert.rejects(assertPortFree(port), /이미 다른 프로그램이 쓰고/);
     await assert.rejects(testPort(String(port)), /포트 \d+ 를/);
   } finally { busy.close(); }
+});
+
+test('share: 로컬 모드 대화창용 링크 — 공유 창, 복사 안내, Threads 첫 댓글', () => {
+  const t = links({ url: 'https://a.dev/', campaign: 'beta', posts: [{ channel: 'x', text: '짧게' }, { channel: 'everytime', text: '음슴체' }, { channel: 'threads', text: '제작기' }] });
+  assert.match(t, /1\. X \(트위터\)[\s\S]*→ 올리기: https:\/\/x\.com\/intent\/post\?/);
+  assert.match(t, /2\. 에브리타임[\s\S]*공유 창이 없어요/);
+  assert.match(t, /3\. Threads[\s\S]*첫 댓글에 넣을 링크: https:\/\/a\.dev\/\?utm_source=threads/);
+  assert.ok(!/│ https:\/\/a\.dev\/\?utm_source=threads/.test(t), 'Threads 본문에는 링크 없음');
 });
