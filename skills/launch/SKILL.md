@@ -15,6 +15,7 @@ description: 출시 단계. 사용성 테스트(usertest), 공개 베타(beta), 
 
 ### L1. 사용성 테스트 → `atelier:usertest`
 AI 페르소나가 실제 브라우저로 과제를 수행하는 **AI 대리 테스트**를 먼저 돌린다(사람 없이). 치명·높음 0 이 될 때까지 고치고 CI 에 넣는다.
+**배포 전에 로컬에서 먼저 한다**: `wrangler dev --local` + 빈 로컬 DB 로 띄워 실행한다(예: `npm run usertest`). build 게이트에서 이미 돌렸으면 여기서는 운영 주소로 한 번 더 확인만 한다. 로컬로 되는 테스트를 "사람 대기"나 "배포 후"로 미루지 않는다.
 사람 5명 테스트(`references/user-testing.md` 1절)는 선택 — 베타 피드백 20건이 보완 근거가 된다.
 
 ### L2. 공개 베타 → `atelier:beta`
