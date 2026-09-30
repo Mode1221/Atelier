@@ -14,7 +14,7 @@ Claude 클라우드 예약 실행(Routine)이 새 세션을 열고 이 절차로
 ## 1. 본부 데이터 (서비스별 경로 = `companies/<SERVICE>/` + 아래)
 | 경로 | 내용 | 누가 쓰나 |
 |---|---|---|
-| `companies/<SERVICE>` (서비스 문서 자체) | name, summary(한 줄 설명), audience(대상 사용자), kind(웹/앱/게임), url, stage, repo, project, routines{부서: trigger_id} | 설치 시, 단계는 승인 후 대표실 |
+| `companies/<SERVICE>` (서비스 문서 자체) | name, summary(한 줄 설명), audience(대상 사용자), kind(웹/앱/게임), url, stage, repo, project, routines{부서: trigger_id}, metrics{url, header, env} (지표 주소·인증 헤더 이름·토큰이 든 환경변수 이름 — 토큰 값은 절대 적지 않음) | 설치 시, 단계는 승인 후 대표실 |
 | `plan/roadmap` | stage, focus, goals[], items[], updatedAt, reviewAt, history[] — 형식은 `playbook/planning` | 대표실이 자동 생성·갱신 |
 | `playbook/<이름>` (**본부 공통**, 앞에 companies 안 붙임) | text — 이 절차(`cloud-run`), 부서 역할(`dept-<부서>`), 계획(`planning`), 8단계·게이트(`stages`), 채널 가이드(`channels`) | 설치 시 (스킬 문서 복사) |
 | `approvals/<id>` | dept, title, kind(배포/외부 게시/지출/약관/데이터 삭제), cost, detail, ifApprove, ifReject, status(pending/approved/rejected), reason, createdAt, decidedAt, done, result | 부서가 만들고 대표가 결정 |
@@ -53,6 +53,9 @@ id 규칙: `approvals`·`tasks`·`human` 은 `<DEPT>-<YYYYMMDD>-<짧은이름>` 
 - **고객지원(support)**: 새 `feedback/<날짜>`(status new)를 분류해 각 항목에 action 을 달고 summary·status triaged 로 바꾼다(개인정보는 옮기지 않음). 버그는 `tasks`(qa), 반복 불편·제안은 `tasks`(plan) — 대표실이 다음 계획 때 로드맵에 반영한다. 피드백을 가져올 길(저장소 `feedback` 이슈 등)에 접근할 수 없으면 그 사실을 보고한다.
 - **마케팅(marketing)**: `share/posts` 가 홍보 글의 원본이다. `playbook/channels`(채널별 말투·길이·금기)에 맞춰 채널마다 따로 다듬거나 새 글(채널당 1개, 글자 수 한도, `note`·`when` 포함)을 쓰고, 올리지 않은 채널이 있으면 `human` 에 "○○ 올리기"를 남긴다. `shared` 기록으로 채널별 상태를 `reports/marketing` 에.
 - **데이터·재무(data)**: 서비스가 주는 지표만 `metrics/main` 에. 숫자를 지어내지 않는다 — 없으면 "지표 없음"과 만드는 방법을 `tasks`(dev)로.
+  서비스 문서에 `metrics` 가 있으면: `curl -s -H "<header>: $<env>" <url>` (header 가 `Authorization` 이면 값 앞에 `Bearer `) → 받은 JSON 의 숫자 필드를 그대로 `items` 에, `at` 은 지금. 출력·보고에 토큰을 쓰지 않는다.
+  - 환경변수가 비어 있거나 주소에 연결이 안 되면(세션 네트워크 제한) 숫자를 쓰지 않고, `human/data-metrics-setup` 이 없을 때만 하나 만든다: text "지표 연결: 클라우드 환경 설정 두 가지", why "① claude.ai 클라우드 환경 → 네트워크 허용 도메인에 <주소의 호스트> 추가 ② 같은 화면 환경변수에 <env> = 지표 토큰 (채팅에 붙여 넣지 않기)". 보고 level 은 warning.
+  - 401 이면 토큰이 서비스 쪽 값과 다르다고 보고한다.
 - **QA**: 바뀐 화면이 있으면 `atelier-dev:usertest`(프로젝트의 `npm run usertest`) 결과를 확인한다.
 
 ## 5. 원칙
