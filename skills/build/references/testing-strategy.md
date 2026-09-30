@@ -29,7 +29,8 @@
 
 ## 화면 텍스트 검사 예시 (vitest + jsdom)
 ```js
-const BAD_TEXT = /\b(null|undefined|NaN)\b|\[object Object\]/;
+// 반복(nullnull)과 한글에 붙은 경우(제목null)도 잡고, annulled 같은 영단어는 거른다
+const BAD_TEXT = /(?<![A-Za-z])(?:null|undefined|NaN)+(?![A-Za-z])|\[object Object\]/;
 const noLeakedValues = () => {
   const t = document.body.textContent; const m = t.match(BAD_TEXT);
   expect(m ? `화면에 '${m[0]}' 가 보여요: …${t.slice(Math.max(0, m.index - 30), m.index + 30)}…` : 'ok').toBe('ok');
