@@ -18,7 +18,7 @@
 - `dept`: 부서 ID, 사람만 할 수 있으면 `human`.
 - `current` 는 **측정값만**. 없으면 `null` + `source: "측정 없음"` — 숫자를 지어내지 않는다.
 
-서비스 문서 `companies/<SERVICE>` 에서 쓰는 값: `name`, `summary`(한 줄 설명), `audience`(대상 사용자), `kind`(웹/앱/게임), `stage`, `url`.
+서비스 문서 `companies/<SERVICE>` 에서 쓰는 값: `name`, `summary`(한 줄 설명), `audience`(대상 사용자), `kind`(웹/앱/게임), `stage`, `url`, `done`(**이미 해 둔 것** — 로드맵·할 일로 다시 만들지 않는다), `cautions`(지켜야 할 제약 — 예: 특정 브랜치 push 가 곧 운영 배포), `existing`(이미 따로 도는 자동 점검 — 겹치는 일을 만들지 않는다).
 
 ## 2. 언제 새로 짜나 (전체 재작성)
 - `plan/roadmap` 이 없다 (첫 실행)
