@@ -91,6 +91,28 @@ function pageAudit() {
     if (['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName) && !(el.labels?.length || el.getAttribute('aria-label') || el.getAttribute('aria-labelledby') || el.closest('label')))
       out.push({ kind: '이름 없는 입력칸', severity: '높음', detail: `${el.tagName.toLowerCase()}#${el.id || '?'} — 무엇을 넣는 칸인지 알 수 없음` });
   }
+  // 한 줄에 버튼이 뭉쳐 줄바꿈 (좁은 화면에서 목록 줄마다 버튼이 많을 때 — 자주 안 쓰는 건 "⋯" 로 접는다)
+  const groups = new Map();
+  for (const el of document.querySelectorAll('button, [role=button]')) {
+    if (!vis(el) || el.closest('[aria-hidden=true]')) continue;
+    const g = groups.get(el.parentElement) ?? [];
+    g.push(el);
+    groups.set(el.parentElement, g);
+  }
+  for (const g of groups.values()) {
+    if (g.length < 2) continue;
+    const tops = [];
+    for (const el of g) {
+      const t = el.getBoundingClientRect().top;
+      if (!tops.some((x) => Math.abs(x - t) < 6)) tops.push(t);
+    }
+    if (tops.length > 1)
+    {
+      const p = g[0].parentElement;
+      const where = `${p.tagName.toLowerCase()}${p.className && typeof p.className === 'string' ? `.${p.className.trim().split(/\s+/).join('.')}` : ''}`;
+      out.push({ kind: '버튼 줄바꿈', severity: g.length >= 3 ? '높음' : '낮음', detail: `${where} 안 버튼 ${g.length}개가 ${tops.length}줄로 밀림 — 화면 폭 ${window.innerWidth}px (예: ${name(g[0])})` });
+    }
+  }
   return { findings: out, text: document.body.innerText };
 }
 
