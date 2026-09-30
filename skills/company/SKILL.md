@@ -19,6 +19,15 @@ description: AI 회사 운영. 부서(대표실·기획·디자인·개발·QA·
 ---
 
 ## A. `setup` — 회사 세우기 (클라우드, 기본)
+**claude.ai/code 클라우드 세션에서 실행한다.**
+먼저 확인: 이 세션에 `Artifact` 도구와 `create_trigger` 도구(Claude Code Remote)가 **둘 다** 있는가? 하나라도 없으면(내 PC 의 로컬 세션 등) 아무것도 만들지 말고 멈춘 뒤 이렇게 안내한다:
+> 본부는 Claude 클라우드에서만 만들 수 있어요. 이렇게 해 주세요:
+> 1. 이 프로젝트를 GitHub 에 올려 두세요 (이미 있으면 건너뛰기).
+> 2. 브라우저에서 **claude.ai/code** 를 열고, 이 저장소를 골라 새 세션을 시작하세요.
+> 3. 그 세션 입력창에 `/atelier:company setup` 을 입력하세요.
+> 로컬 세션에서 하던 일은 그대로 두면 돼요. 본부가 생기면 링크를 여기에도 적어 둘게요.
+PROJECT.md "사람 할 일"에 "claude.ai/code 에서 `/atelier:company setup` 실행" 을 한 줄 남긴다.
+
 Claude 클라우드 세션(claude.ai/code)에서 실행한다. 대표에게 GitHub·토큰을 묻지 않는다.
 본부는 **사람당 하나**다. 서비스가 여럿이면 같은 본부에 `companies/<서비스ID>` 로 추가하고, 본부 위쪽 목록에서 바꿔 가며 본다.
 0. 이미 본부가 있으면(PROJECT.md "AI 회사" 절, 또는 `Artifact list` 에서 "Atelier 본부") 1번을 건너뛰고 그 주소를 쓴다.
