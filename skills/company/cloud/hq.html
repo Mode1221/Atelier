@@ -330,6 +330,11 @@ function approvals() {
     ${done.length ? `<section class="sec"><h2>최근 처리한 결재</h2><div class="grid two">${done.map(approvalCard).join('')}</div></section>` : ''}`;
 }
 
+// 부서 일(tasks) + 대표님 할 일(human) 을 한 목록으로
+function allTasks() {
+  const human = S.human.map((h) => ({ id: h.id, title: h.text, note: h.done ? '' : h.why, dept: 'human', status: h.done ? 'done' : 'todo', createdAt: h.createdAt, updatedAt: h.doneAt ?? h.createdAt }));
+  return [...S.tasks, ...human].sort(sortDesc('updatedAt'));
+}
 function tasks() {
   const opts = DEPTS.filter((d) => d.id !== 'ceo').map((d) => `<option value="${d.id}">${esc(d.name)} — ${esc(d.role)}</option>`).join('');
   return `${canWrite ? `<section class="sec"><h2>일 맡기기</h2><form class="card" data-act="task">
@@ -338,10 +343,10 @@ function tasks() {
       <label for="t-detail">자세히 (선택)</label><textarea id="t-detail" name="detail" maxlength="2000" placeholder="왜 필요한지, 참고할 것"></textarea>
       <label class="check"><input type="checkbox" name="now" id="t-now"> 지금 바로 일하게 하기 (기다리지 않고 부서를 깨워요)</label>
       <button class="primary">맡기기</button></form></section>` : ''}
-    <section class="sec"><h2>업무 현황</h2><div class="grid two">${TASK_COLS.map(([id, name]) => {
-      const list = S.tasks.filter((t) => (t.status ?? 'todo') === id).slice(0, id === 'done' ? 10 : 50);
+    <section class="sec"><h2>업무 현황</h2><p class="note">부서 일과 대표님 할 일을 함께 보여 줘요. 대표님 할 일은 오늘 탭에서 체크하면 완료로 옮겨져요.</p><div class="grid two">${TASK_COLS.map(([id, name]) => {
+      const list = allTasks().filter((t) => (t.status ?? 'todo') === id).slice(0, id === 'done' ? 10 : 50);
       return `<article class="card"><div class="sec-head"><h3>${name}</h3><span class="pill">${list.length}</span></div>
-        ${list.length ? `<ul class="plain">${list.map((t) => `<li class="item"><div><b>${esc(t.title)}</b><br><span class="small muted">${esc(DEPT[t.dept]?.name ?? t.dept)} · ${ago(t.updatedAt ?? t.createdAt)}</span>${t.note ? `<br><span class="small">${esc(t.note)}</span>` : ''}</div></li>`).join('')}</ul>` : '<p class="small muted">없음</p>'}</article>`;
+        ${list.length ? `<ul class="plain">${list.map((t) => `<li class="item"><div><b>${esc(t.title)}</b><br><span class="small muted">${esc(t.dept === 'human' ? '대표님' : DEPT[t.dept]?.name ?? t.dept)} · ${ago(t.updatedAt ?? t.createdAt)}</span>${t.note ? `<br><span class="small">${esc(t.note)}</span>` : ''}</div></li>`).join('')}</ul>` : '<p class="small muted">없음</p>'}</article>`;
     }).join('')}</div></section>`;
 }
 
