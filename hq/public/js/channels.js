@@ -2,9 +2,10 @@
 // Atelier HQ 가 public/js/channels.js 로 복사해 쓴다 (hq: npm run sync-template).
 const enc = encodeURIComponent;
 // limit: 글자 수 한도 (X 는 한글을 2자로 센다 → weight 2). intent: 공식 공유 주소 (없으면 복사 후 직접 붙여넣기)
+// linkInComment: 본문에 링크를 넣지 않고 올린 뒤 첫 댓글에 붙인다 (본문 링크는 노출이 줄어드는 채널)
 export const CHANNELS = {
   x: { name: 'X (트위터)', limit: 280, weight: 2, intent: (t, u) => `https://x.com/intent/post?text=${enc(t)}&url=${enc(u)}` },
-  threads: { name: 'Threads', limit: 500, intent: (t, u) => `https://www.threads.net/intent/post?text=${enc(`${t}\n${u}`)}` },
+  threads: { name: 'Threads', limit: 500, linkInComment: true, intent: (t) => `https://www.threads.net/intent/post?text=${enc(t)}` },
   bluesky: { name: 'Bluesky', limit: 300, intent: (t, u) => `https://bsky.app/intent/compose?text=${enc(`${t}\n${u}`)}` },
   facebook: { name: 'Facebook', limit: 5000, intent: (_t, u) => `https://www.facebook.com/sharer/sharer.php?u=${enc(u)}`, note: '글은 자동으로 안 채워져요 — 먼저 "글 복사" 후 붙여넣기' },
   linkedin: { name: 'LinkedIn', limit: 3000, intent: (_t, u) => `https://www.linkedin.com/sharing/share-offsite/?url=${enc(u)}`, note: '글은 복사해서 붙여넣기' },
@@ -34,6 +35,9 @@ export function length(text, ch) {
   return n;
 }
 
+// 링크가 본문에 같이 들어가는 채널은 링크 길이(대략 23자)까지 센다
+export const postLength = (text, ch) => length(text, ch) + (CHANNELS[ch]?.linkInComment ? 0 : 24);
+
 export function check(spec) {
   const problems = [];
   for (const [i, p] of (spec.posts ?? []).entries()) {
@@ -41,8 +45,7 @@ export function check(spec) {
     if (!ch) problems.push(`${i + 1}번 글: 모르는 채널 "${p.channel}" (가능: ${Object.keys(CHANNELS).join(', ')})`);
     else if (!p.text?.trim()) problems.push(`${i + 1}번 글(${ch.name}): 내용이 비었어요`);
     else {
-      // 링크가 본문에 같이 들어가는 채널은 링크 길이(대략 23자)까지 센다
-      const n = length(p.text, p.channel) + 24;
+      const n = postLength(p.text, p.channel);
       if (n > ch.limit) problems.push(`${i + 1}번 글(${ch.name}): ${n}자 > 한도 ${ch.limit}자`);
     }
   }

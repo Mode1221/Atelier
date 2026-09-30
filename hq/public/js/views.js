@@ -2,7 +2,7 @@
 // 폼은 data-action 으로 main.js 의 처리기와 연결된다. 링크는 #/경로.
 import { DEPTS, COLUMNS } from './company.js';
 import { SERVICES } from './services.js';
-import { CHANNELS, withUtm, length } from './channels.js';
+import { CHANNELS, withUtm, postLength } from './channels.js';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const deptName = (id) => DEPTS.find((d) => d.id === id)?.name ?? '미지정';
@@ -229,11 +229,12 @@ export function sharePage({ spec, specErr, sharePath, shared, feedback }) {
         if (!ch) return '';
         const url = withUtm(p.url ?? spec.url, p.channel, spec.campaign);
         const posted = shared.has(`${p.channel}#${i}`);
-        const n = length(p.text, p.channel) + 24;
+        const n = postLength(p.text, p.channel);
         return `<article class="card"><div class="sec-head"><h2>${esc(ch.name)}</h2>${posted ? badge('good', '올림') : badge('idle', '안 올림')}</div>
-${p.when ? `<p class="tiny muted">${esc(p.when)}</p>` : ''}<pre class="post" id="post-${i}">${esc(`${p.text}\n${url}`)}</pre>
-<p class="tiny ${n > ch.limit ? 'err' : 'muted'}">${n} / ${ch.limit}자${ch.note ? ` · ${esc(ch.note)}` : ''}</p>
+${p.when ? `<p class="tiny muted">${esc(p.when)}</p>` : ''}<pre class="post" id="post-${i}">${esc(ch.linkInComment ? p.text : `${p.text}\n${url}`)}</pre>
+${ch.linkInComment ? `<p class="tiny">첫 댓글에 넣을 링크: <code id="link-${i}">${esc(url)}</code></p>` : ''}<p class="tiny ${n > ch.limit ? 'err' : 'muted'}">${n} / ${ch.limit}자${ch.note ? ` · ${esc(ch.note)}` : ''}</p>
 <div class="row"><button type="button" data-click="copy" data-target="post-${i}">글 복사</button>
+${ch.linkInComment ? `<button type="button" data-click="copy" data-target="link-${i}">링크 복사</button>` : ''}
 ${ch.intent ? `<a class="btn primary" href="${esc(ch.intent(p.text, url))}" target="_blank" rel="noopener">${esc(ch.name)}에 올리기</a>` : ''}
 ${posted ? '' : `<form data-action="markShared" data-channel="${esc(p.channel)}" data-i="${i}"><button>올렸어요</button></form>`}</div></article>`;
       })

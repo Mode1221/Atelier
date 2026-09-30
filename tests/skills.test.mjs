@@ -43,6 +43,18 @@ test('share: 킷 HTML 은 글을 이스케이프하고 외부 스크립트가 �
   assert.ok(!/<script src=/.test(html));
 });
 
+test('share: Threads 는 본문에 링크를 넣지 않고 첫 댓글용 링크를 따로 복사한다', () => {
+  const intent = CHANNELS.threads.intent('글', 'https://a.dev/');
+  assert.equal(decodeURIComponent(new URL(intent).searchParams.get('text')), '글');
+  const html = render({ product: 'P', url: 'https://a.dev/', posts: [{ channel: 'threads', text: '본문' }, { channel: 'x', text: '짧게' }] });
+  assert.ok(!html.includes('text=%EB%B3%B8%EB%AC%B8%0A'));
+  assert.match(html, /<pre id="t0">본문<\/pre>/);
+  assert.match(html, /첫 댓글에 넣을 링크: <code id="l0">https:\/\/a\.dev\/\?utm_source=threads/);
+  assert.ok(html.includes('data-copy="l0">링크 복사'));
+  assert.ok(!html.includes('data-copy="l1"'));
+  assert.equal(check({ posts: [{ channel: 'threads', text: 'a'.repeat(500) }] }).length, 0);
+});
+
 test('share: 예시 프로젝트 홍보 글이 검사를 통과한다', () => {
   const spec = JSON.parse(readFileSync(new URL('../examples/beolgeum-jangbu/docs/share/posts.json', import.meta.url), 'utf8'));
   assert.deepEqual(check(spec), []);

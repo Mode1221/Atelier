@@ -118,7 +118,11 @@ test('로그인 → 연결 → 회사 세우기 → 결재 → 할 일 → 업�
   const threads = page.locator('article', { hasText: 'Threads' });
   const href = await threads.getByRole('link', { name: 'Threads에 올리기' }).getAttribute('href');
   expect(href).toContain('https://www.threads.net/intent/post?text=');
-  expect(decodeURIComponent(href)).toContain('utm_source=threads');
+  // Threads 는 본문에 링크를 넣지 않고, 첫 댓글용 링크(utm 포함)를 따로 보여 주고 복사하게 한다
+  expect(decodeURIComponent(href)).not.toContain('utm_source=threads');
+  await expect(threads.getByText('첫 댓글에 넣을 링크')).toContainText('utm_source=threads');
+  await expect(threads.getByRole('button', { name: '링크 복사' })).toBeVisible();
+  await expect(page.locator('article', { hasText: '카카오톡' }).getByRole('button', { name: '링크 복사' })).toHaveCount(0);
   await expect(page.locator('article', { hasText: '카카오톡' }).getByRole('link')).toHaveCount(0);
   await threads.getByRole('button', { name: '올렸어요' }).click();
   await expect(page.getByText('올린 것으로 기록했어요')).toBeVisible();
