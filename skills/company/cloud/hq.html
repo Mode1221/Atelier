@@ -73,6 +73,11 @@ textarea{min-height:88px}
 .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .kv div{background:var(--sunk);border-radius:8px;padding:10px 12px}
 .kv b{display:block;font-family:var(--mono);font-size:20px;font-variant-numeric:tabular-nums}
+.goal{display:grid;gap:6px}
+.bar{height:8px;border-radius:4px;background:var(--sunk);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.lane{display:grid;gap:8px}
+.focus{font-size:17px;font-weight:700;margin:0}
 pre.post{white-space:pre-wrap;word-break:break-all;margin:0;font:inherit;background:var(--sunk);border-radius:8px;padding:12px}
 ul.plain{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .item{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
@@ -112,6 +117,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px}
     <div class="state" id="state" data-level="idle" role="status"><strong id="state-title">불러오는 중</strong><span id="state-text" class="muted"></span></div>
     <nav class="tabs" role="tablist" aria-label="본부 메뉴">
       <button role="tab" data-tab="home" aria-selected="true">오늘</button>
+      <button role="tab" data-tab="roadmap">목표</button>
       <button role="tab" data-tab="approvals">결재<span class="count" id="n-approvals" hidden></span></button>
       <button role="tab" data-tab="tasks">할 일</button>
       <button role="tab" data-tab="depts">부서</button>
@@ -176,7 +182,7 @@ let db = null, mcp = null, canWrite = true;
 let cid = null;
 try { cid = localStorage.getItem('hq.service'); } catch {}
 const P = (path) => `companies/${cid}/${path}`;
-let tab = ['home', 'approvals', 'tasks', 'depts', 'share', 'voice'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'home';
+let tab = ['home', 'roadmap', 'approvals', 'tasks', 'depts', 'share', 'voice'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'home';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -242,7 +248,7 @@ function render() {
   $('#n-voice').hidden = !newVoice;
   $('#n-voice').textContent = newVoice;
   document.querySelectorAll('nav.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
-  $('#view').innerHTML = ({ home, approvals, tasks, depts, share, voice })[tab]();
+  $('#view').innerHTML = ({ home, roadmap, approvals, tasks, depts, share, voice })[tab]();
 }
 
 function renderServices() {
@@ -278,7 +284,10 @@ function home() {
   const human = S.human.filter((h) => !h.done);
   const m = S.metrics?.items ?? {};
   const reps = DEPTS.filter((d) => S.reports[d.id]);
+  const goals = (S.plan?.goals ?? []).slice(0, 3);
   return `
+  ${goals.length ? `<section class="sec" aria-labelledby="h-goal"><div class="sec-head"><h2 id="h-goal">이번 목표</h2><button data-go="roadmap">로드맵 보기</button></div>
+    ${S.plan.focus ? `<p class="focus">${esc(S.plan.focus)}</p>` : ''}<div class="grid two">${goals.map((g) => `<article class="card">${goalCard(g)}</article>`).join('')}</div></section>` : ''}
   <section class="sec" aria-labelledby="h-ap"><div class="sec-head"><h2 id="h-ap">결재 대기</h2>${pend.length > 2 ? `<button data-go="approvals">전체 ${pend.length}건</button>` : ''}</div>
     ${pend.length ? `<div class="grid two">${pend.slice(0, 2).map(approvalCard).join('')}</div>` : '<p class="empty">결재할 것이 없어요.</p>'}</section>
   <section class="sec" aria-labelledby="h-human"><h2 id="h-human">대표님이 직접 할 일</h2>
@@ -287,6 +296,29 @@ function home() {
     ${Object.keys(m).length ? `<div class="kv">${Object.entries(m).map(([k, v]) => `<div><span class="small muted">${esc(k)}</span><b>${esc(v)}</b></div>`).join('')}</div>` : '<p class="empty">데이터·재무 부서가 처음 보고하면 사용자 수 같은 숫자가 나와요.</p>'}</section>
   <section class="sec" aria-labelledby="h-r"><h2 id="h-r">부서 보고</h2>
     ${reps.length ? `<div class="grid two">${reps.map((d) => { const r = S.reports[d.id]; return `<article class="card"><div class="sec-head"><h3>${esc(d.name)}</h3>${pill(r.level ?? 'idle')}</div><p>${esc(r.summary)}</p><p class="small muted">${ago(r.at)}</p></article>`; }).join('')}</div>` : '<p class="empty">아직 보고가 없어요. 부서 탭에서 부서를 켜면 정해진 시간에 일하고 여기에 보고해요.</p>'}</section>`;
+}
+
+const STATUS = { now: ['accent', '이번 주'], next: ['', '다음'], later: ['', '나중'], done: ['good', '끝남'] };
+function goalCard(g) {
+  const has = typeof g.current === 'number' && typeof g.target === 'number' && g.target > 0;
+  const pct = has ? Math.min(100, Math.round((g.current / g.target) * 100)) : 0;
+  return `<div class="goal"><div class="sec-head"><b>${esc(g.text)}</b>${g.due ? `<span class="small muted">${esc(g.due)}까지</span>` : ''}</div>
+    ${has ? `<div class="bar" role="img" aria-label="${pct}%"><i style="width:${pct}%"></i></div><span class="small muted">${esc(g.metric ?? '')} ${esc(g.current)} / ${esc(g.target)}${esc(g.unit ?? '')}</span>`
+      : `<span class="small muted">${esc(g.metric ?? '')} 목표 ${esc(g.target ?? '')}${esc(g.unit ?? '')} · 아직 측정 안 됨</span>`}</div>`;
+}
+function roadmap() {
+  const p = S.plan;
+  if (!p) return '<p class="empty">아직 로드맵이 없어요. 대표실이 다음 출근 때 이 서비스에 맞는 목표와 로드맵을 자동으로 만들어요. 부서 탭에서 대표실 "지금 일하기"를 누르면 바로 만들어요.</p>';
+  const items = p.items ?? [];
+  return `<section class="sec"><div class="card"><p class="small muted">${esc(p.stage ?? '')} · ${ago(p.updatedAt)} 갱신${p.reviewAt ? ` · 다음 전체 재검토 ${esc(p.reviewAt)}` : ''}</p><p class="focus">${esc(p.focus ?? '')}</p></div></section>
+  <section class="sec"><h2>목표</h2><div class="grid two">${(p.goals ?? []).map((g) => `<article class="card">${goalCard(g)}</article>`).join('') || '<p class="empty">목표가 없어요.</p>'}</div></section>
+  <section class="sec"><h2>로드맵</h2><div class="grid two">${['now', 'next', 'later', 'done'].map((st) => {
+    const list = items.filter((i) => (i.status ?? 'later') === st);
+    if (!list.length && st === 'done') return '';
+    return `<article class="card"><div class="sec-head"><h3>${STATUS[st][1]}</h3><span class="pill">${list.length}</span></div>
+      ${list.length ? `<ul class="plain">${list.map((i) => `<li class="item"><div><b>${esc(i.title)}</b><br><span class="small muted">${esc(i.dept === 'human' ? '대표님' : DEPT[i.dept]?.name ?? i.dept ?? '')}${i.stage ? ` · ${esc(i.stage)}` : ''}</span></div></li>`).join('')}</ul>` : '<p class="small muted">없음</p>'}</article>`;
+  }).join('')}</div></section>
+  ${(p.history ?? []).length ? `<section class="sec"><details><summary>변경 기록</summary><ul>${p.history.slice(-10).reverse().map((h) => `<li class="small">${esc(h)}</li>`).join('')}</ul></details></section>` : ''}`;
 }
 
 function approvals() {
@@ -483,7 +515,7 @@ function select(id) {
   cid = id;
   attached = id;
   try { if (id) localStorage.setItem('hq.service', id); } catch {}
-  Object.assign(S, { company: S.services.find((v) => v.id === id) ?? null, approvals: [], tasks: [], human: [], reports: {}, metrics: null, posts: null, shared: new Set(), feedback: [], routines: null, routinesErr: null });
+  Object.assign(S, { company: S.services.find((v) => v.id === id) ?? null, plan: null, approvals: [], tasks: [], human: [], reports: {}, metrics: null, posts: null, shared: new Set(), feedback: [], routines: null, routinesErr: null });
   render();
   if (!id || !db) return;
   const on = (ref, fn) => unsubs.push(ref.onSnapshot((x) => { fn(x); render(); }, S.onErr));
@@ -492,6 +524,7 @@ function select(id) {
   on(db.collection(P('human')), (x) => (S.human = docs(x).sort(sortDesc('createdAt'))));
   on(db.collection(P('reports')), (x) => (S.reports = Object.fromEntries(docs(x).map((r) => [r.id, r]))));
   on(db.doc(P('metrics/main')), (d) => (S.metrics = d.exists ? d.data() : null));
+  on(db.doc(P('plan/roadmap')), (d) => (S.plan = d.exists ? d.data() : null));
   on(db.doc(P('share/posts')), (d) => (S.posts = d.exists ? d.data() : null));
   on(db.collection(P('shared')), (x) => (S.shared = new Set(x.docs.map((d) => d.id))));
   on(db.collection(P('feedback')).orderBy('date', 'desc').limit(30), (x) => (S.feedback = docs(x)));
