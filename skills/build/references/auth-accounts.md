@@ -2,6 +2,13 @@
 
 인증은 검증된 서비스(Supabase Auth, Firebase Auth, Clerk, Auth.js 등)나 공식 SDK 로 구현한다.
 
+## 기본 조합: Cloudflare Workers + Supabase Auth (무료) — `../templates/auth/`
+- `supabase-auth.js` → 프로젝트 `src/auth/`: 서버는 로그인 토큰을 Supabase 공개키(JWKS)로 **검증만** 한다(`requireUser`). 탈퇴는 `deleteUser`(내 DB 데이터를 먼저 지운 뒤).
+- `login.html`: 이메일로 받은 링크로 로그인(비밀번호 없음), 로그인 뒤 요청은 `authFetch` 로. 서버에 `GET /api/auth-config` → `{url, anonKey}`.
+- `.dev.vars.example` 에 `SUPABASE_URL=` `SUPABASE_ANON_KEY=` `SUPABASE_SERVICE_ROLE_KEY=` (빈 값) → `npm run deploy:first` 가 배포 때 붙여 넣으라고 묻는다.
+- **사람 할 일 (한 번, 5분)**: supabase.com 무료 가입 → New project → Project Settings → API 에서 주소·anon 키·service_role 키 복사(deploy:first 가 물을 때 붙여 넣기) → Authentication → URL Configuration 의 Site URL 에 서비스 주소. 무료 프로젝트는 오래 안 쓰면 잠든다(free-tier.md).
+- 테스트: 단위 테스트는 가짜 공개키로 서명한 토큰(`tests/build.test.mjs` 참고), E2E 는 로그인 없는 경로 + 서버 검증 거절 확인.
+
 ## 가입·로그인
 - [ ] 로그인 방식 결정: 소셜(카카오·네이버·Google·Apple), 이메일 매직 링크, 이메일+비밀번호
 - [ ] 소셜 로그인 앱 등록·리디렉션 URL 을 환경별(개발·스테이징·운영)로 등록

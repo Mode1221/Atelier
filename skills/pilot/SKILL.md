@@ -95,7 +95,7 @@ PROJECT.md "기능 사이클" 표에 한 줄씩 기록한다.
 ## 7. 사람 할 일
 - 여러 단계에 흩어진 사람 몫(인터뷰, 계정 생성, 결제, 신고, 운영자 정보 입력, 테스터 모집)을 PROJECT.md **"사람 할 일"** 절에 한곳으로 모은다.
 - 항목마다 어느 세부 단계를 막고 있는지 적는다. 사용자에게는 이 목록을 한 번에 전달한다.
-- 첫 배포(Cloudflare 스택)는 한 줄만 적는다: `Cloudflare 가입(무료) 후 터미널에서 npm run deploy:first` — DB·마이그레이션·설정은 스크립트가 한다(build B1). 토큰·Secrets 설정을 사람 할 일로 적지 않는다.
+- 첫 배포는 한 줄만 적는다: 웹·웹 게임은 `Cloudflare 가입(무료) 후 npm run deploy:first`, 로그인이 있으면 Supabase 가입·키 복사를 한 줄 더, 모바일 앱은 `expo.dev 가입 후 npm run app:first` — 나머지 설정은 스크립트가 한다(build `references/stack-templates.md` 첫 표). 토큰·Secrets 설정을 사람 할 일로 적지 않는다. Claude 가 대신 실행할 수 있으면(로그인 창만 사람이 누름) 사람 할 일로 넘기지 않고 실행한다.
 
 ## 8. 기록
 - 세부 단계가 끝날 때마다 PROJECT.md 체크박스, "현재 단계", "결정 기록"을 갱신한다.

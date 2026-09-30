@@ -27,7 +27,7 @@ description: 구현 단계. 스택 선택, 프로젝트 생성, 환경 분리(�
 - **환경 분리**: 개발(local) / 스테이징(미리보기) / 운영. 환경마다 DB·키 분리. 운영 데이터로 개발하지 않는다.
 - 시크릿: `.env.example`(이름만), 실제 값은 플랫폼 시크릿. `.gitignore` 확인.
 - CI: 푸시마다 린트·타입체크·테스트·빌드 (`references/ci-deploy.md`).
-- **첫 배포 스크립트**(Cloudflare 스택): `templates/deploy-first.mjs` → 프로젝트 `scripts/deploy-first.mjs`, package.json `"deploy:first": "node scripts/deploy-first.mjs"`. 로그인 확인 → D1 생성(있으면 재사용) → `wrangler.toml` 에 database_id 기록 → 원격 마이그레이션 → 배포 → 비밀값 → 주소 출력까지 한 번에, 다시 실행해도 안전. 비밀값은 `.dev.vars.example` 에 이름만(`FEEDBACK_TOKEN=auto` 처럼 `auto` 면 자동 생성, 빈 값이면 배포 때 붙여 넣기) — 사람에게 `wrangler secret` 을 가르치지 않는다.
+- **종류별 첫 실행**: `references/stack-templates.md` 첫 표 (웹·로그인 웹·웹 게임·모바일 앱). **첫 배포 스크립트**(Cloudflare 스택): `templates/deploy-first.mjs` → 프로젝트 `scripts/deploy-first.mjs`, package.json `"deploy:first": "node scripts/deploy-first.mjs"`. 로그인 확인 → D1 생성(있으면 재사용) → `wrangler.toml` 에 database_id 기록 → 원격 마이그레이션 → 배포 → 비밀값 → 주소 출력까지 한 번에, 다시 실행해도 안전. 비밀값은 `.dev.vars.example` 에 이름만(`FEEDBACK_TOKEN=auto` 처럼 `auto` 면 자동 생성, 빈 값이면 배포 때 붙여 넣기) — 사람에게 `wrangler secret` 을 가르치지 않는다.
 - 프로젝트 `CLAUDE.md`: 스택, 명령, 폴더 구조, 규칙(어댑터 경유 등).
 
 ### B2. 데이터 계층

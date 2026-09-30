@@ -1,0 +1,40 @@
+<!doctype html>
+<!-- Atelier build — 로그인 화면 예 (Supabase Auth, 이메일로 받은 링크를 누르면 로그인 · 비밀번호 없음).
+     서버는 GET /api/auth-config → { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } 를 준다 (둘 다 공개값).
+     로그인 뒤 API 요청은 authFetch(...) 로 — Authorization: Bearer <토큰> 이 붙고, 서버는 supabase-auth.js 로 검증한다.
+     디자인은 프로젝트 토큰으로 바꾼다. 상태별 화면(보내는 중·보냄·오류)을 유지한다. -->
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>로그인</title></head>
+<body>
+<main>
+  <h1>로그인</h1>
+  <form id="f">
+    <label>이메일 <input id="email" type="email" autocomplete="email" required></label>
+    <button>로그인 링크 받기</button>
+  </form>
+  <p id="msg" role="status" aria-live="polite"></p>
+  <button id="out" hidden>로그아웃</button>
+</main>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const cfg = await (await fetch('/api/auth-config')).json();
+const sb = createClient(cfg.url, cfg.anonKey);
+const msg = document.getElementById('msg');
+const show = (session) => { document.getElementById('f').hidden = !!session; document.getElementById('out').hidden = !session; msg.textContent = session ? `${session.user.email} 로 로그인했어요` : ''; };
+show((await sb.auth.getSession()).data.session);
+sb.auth.onAuthStateChange((_e, s) => show(s));
+document.getElementById('f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  msg.textContent = '보내는 중…';
+  const { error } = await sb.auth.signInWithOtp({ email: document.getElementById('email').value, options: { emailRedirectTo: location.origin + location.pathname } });
+  msg.textContent = error ? `보내지 못했어요: ${error.message}` : '메일함을 확인해 주세요. 링크를 누르면 로그인돼요.';
+});
+document.getElementById('out').addEventListener('click', () => sb.auth.signOut());
+// 다른 화면에서: import 해서 쓰거나 복사
+window.authFetch = async (input, init = {}) => {
+  const t = (await sb.auth.getSession()).data.session?.access_token;
+  return fetch(input, { ...init, headers: { ...(init.headers ?? {}), ...(t ? { authorization: `Bearer ${t}` } : {}) } });
+};
+</script>
+</body>
+</html>

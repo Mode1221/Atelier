@@ -5,6 +5,15 @@
 1인 개발 기준으로 **운영 부담이 적은 조합**을 우선했다. 사용자가 익숙한 스택이 있으면 그걸 우선한다.
 버전·요금·무료 한도는 자주 바뀐다. 추천 전에 공식 사이트에서 최신 정보를 확인한다.
 
+## 종류별 첫 실행 — 사람 몫은 "가입 + 명령 한 줄"
+| 종류 | 템플릿 (`../templates/`) | 명령 | 사람 몫 |
+|---|---|---|---|
+| 웹 (로그인 없음, DB) | `deploy-first.mjs` | `npm run deploy:first` | Cloudflare 가입 |
+| 웹 (로그인 있음) | `deploy-first.mjs` + `auth/` (Supabase) | `npm run deploy:first` (키 3개 붙여 넣기) | Cloudflare·Supabase 가입, 키 복사 (auth-accounts.md 첫 절) |
+| 정적 웹·웹 게임 (Phaser 등) | `deploy-first.mjs` (DB 없으면 DB 단계 생략) | `npm run deploy:first` | Cloudflare 가입. itch.io 도 올리려면 itch 가입 후 zip 업로드(선택) |
+| 모바일 앱 (Expo) | `app-first.mjs` | `npm run app:first` → 안드로이드 설치 파일(APK) | expo.dev 가입. 스토어 출시는 계정 비용(Play $25, Apple 연 $99) — 결정 후 |
+| 공통 운영 | `../../operate/templates/` `watchdog/` · `backup.mjs` | `npm run watch:setup` · `npm run backup` | 휴대폰 ntfy 앱, 백업 폴더 선택 |
+
 ## 웹 서비스 / SaaS
 | 층 | 기본 추천 | 대안 |
 |---|---|---|
