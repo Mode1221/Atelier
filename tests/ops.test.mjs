@@ -76,3 +76,37 @@ test('watchdog setup: 주소가 없으면 쉬운 말로 멈춘다', async () => 
   const root = mkdtempSync(join(tmpdir(), 'wd-'));
   await assert.rejects(setupWatchdog({ root, dir: root, run: async () => ({ code: 0, out: '' }), fetchImpl: async () => new Response(''), log: () => {} }), /서비스 주소/);
 });
+
+import { backup, prune } from '../skills/operate/templates/backup.mjs';
+import { execFileSync } from 'node:child_process';
+import { readdirSync } from 'node:fs';
+
+test('backup: git 이 없던 폴더도 기록을 시작하고, 묶음 파일로 복구되며, 비밀값은 빠진다', () => {
+  const root = mkdtempSync(join(tmpdir(), 'bk-'));
+  const dest = mkdtempSync(join(tmpdir(), 'bk-dest-'));
+  writeFileSync(join(root, 'index.js'), 'console.log(1)\n');
+  mkdirSync(join(root, '.atelier'));
+  writeFileSync(join(root, '.atelier/secrets.json'), '{"FEEDBACK_TOKEN":"secret"}');
+  writeFileSync(join(root, '.dev.vars'), 'X=1');
+  const r = backup({ root, to: dest, now: new Date('2026-09-30T01:02:00Z'), exportDb: () => null, log: () => {} });
+  assert.equal(r.committed, true);
+  assert.match(r.bundle, /-20260930-0102\.bundle$/);
+  const restored = join(mkdtempSync(join(tmpdir(), 'bk-r-')), 'app');
+  execFileSync('git', ['clone', '-q', r.bundle, restored]);
+  assert.equal(readFileSync(join(restored, 'index.js'), 'utf8'), 'console.log(1)\n');
+  assert.ok(!readdirSync(restored).includes('.atelier') && !readdirSync(restored).includes('.dev.vars'));
+  // 두 번째부터는 저장한 폴더를 쓰고, 바뀐 게 없으면 기록하지 않는다
+  const again = backup({ root, now: new Date('2026-09-30T02:00:00Z'), exportDb: () => null, log: () => {} });
+  assert.equal(again.committed, false);
+  assert.ok(again.bundle.startsWith(dest));
+});
+
+test('backup: 폴더를 안 정했으면 멈추고 안내, 오래된 백업은 최근 N개만 남긴다', () => {
+  const root = mkdtempSync(join(tmpdir(), 'bk-'));
+  assert.throws(() => backup({ root, exportDb: () => null, log: () => {} }), /백업할 폴더/);
+  const dest = mkdtempSync(join(tmpdir(), 'bk-dest-'));
+  for (let i = 10; i < 20; i++) writeFileSync(join(dest, `app-202609${i}-0000.bundle`), '');
+  writeFileSync(join(dest, 'other-20260901-0000.bundle'), '');
+  assert.equal(prune(dest, 'app', 3).length, 7);
+  assert.deepEqual(readdirSync(dest).sort(), ['app-20260917-0000.bundle', 'app-20260918-0000.bundle', 'app-20260919-0000.bundle', 'other-20260901-0000.bundle']);
+});

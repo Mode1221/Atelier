@@ -45,7 +45,7 @@
 - TypeScript + npm 배포, 또는 Go / Rust 단일 바이너리
 
 ## 공통 기본 세트
-- Git + GitHub, Conventional Commits
+- Git(버전 기록) — 처음부터. GitHub 은 선택(없으면 `scripts/backup.mjs` 로 동기화 폴더에 백업), Conventional Commits
 - 린터·포매터: ESLint + Prettier (JS/TS), Ruff (Python), dart format, gdlint 등
 - `.env.example` 에 키 이름만, 값은 비움
 - `CLAUDE.md` 에 실행·테스트·배포 명령

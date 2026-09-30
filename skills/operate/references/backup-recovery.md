@@ -1,5 +1,12 @@
 # 백업·복구
 
+## 기본: `npm run backup` (GitHub 없이, 명령 한 줄)
+`../templates/backup.mjs` 를 프로젝트 `scripts/backup.mjs` 에, package.json `"backup": "node scripts/backup.mjs"`.
+- 바뀐 파일을 git 에 기록(처음이면 git 을 시작하고 `.gitignore` 에 비밀값 제외) → 코드 전체를 `.bundle` 파일 하나로 → 운영 DB(D1)는 `.sql` 로 → 백업 폴더에 복사, 최근 14개 보관.
+- 백업 폴더는 처음 한 번 `npm run backup -- --to <폴더>` — **구글 드라이브·OneDrive·iCloud·Dropbox 동기화 폴더**를 권한다(스크립트가 찾아서 추천). 이후엔 기억한다(`.atelier/backup.json`).
+- 복구: `git clone <백업.bundle> 새폴더`, DB 는 `wrangler d1 execute <DB> --remote --file <백업.sql>`(결재 대상 — 데이터 덮어씀).
+- AI 회사 로컬 모드: 운영 부서가 실행 때마다 돌린다. GitHub 을 쓰면 원격 저장소도 백업이 되지만, 이 백업과 함께 쓴다.
+
 ## 백업 대상
 | 대상 | 방법 | 주기 | 보관 |
 |---|---|---|---|
