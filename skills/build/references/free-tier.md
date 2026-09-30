@@ -41,6 +41,7 @@ Atelier 의 기본값은 **운영비 0원으로 시작**하는 것이다. 무료
 - 인스턴스가 여러 개: 메모리 카운터·캐시는 공유되지 않는다 → 중요한 속도 제한은 DB/KV 로.
 - DB 는 비동기(D1): 여러 문장을 함께 바꿀 때는 `batch()`(트랜잭션). 중간 결과에 따라 달라지는 로직은 조건부 SQL 로.
 - 테스트: 단위·API 테스트는 D1 흉내(node:sqlite) 로 빠르게, E2E 는 `wrangler dev --local`(실제 런타임 workerd)로.
+  - 테스트 서버 포트는 **고정하지 않는다**(8787 등 → 다른 서버·이전 실행과 충돌). `../templates/free-port.mjs` 를 `scripts/` 에 복사해 빈 포트를 받는다: 셸은 `PORT=$(node scripts/free-port.mjs)`, playwright.config.js 는 `await testPort(process.env.E2E_PORT)`(워커도 설정을 다시 읽으니 고른 번호를 환경변수로 넘김). 사용자가 포트를 지정했는데 쓰이는 중이면 `--check` 가 이유를 말하고 멈춘다. `--inspector-port` 도 같은 방법으로(기본 9229 충돌 방지). 예: `examples/beolgeum-jangbu/playwright.config.js`.
 - 백업: D1 Time Travel(무료 등급 7일) + 필요하면 주기적 export 를 R2 로.
 - 첫 배포: `npm run deploy:first` (`../templates/deploy-first.mjs`) — 로그인·D1 생성·ID 기록·원격 마이그레이션·배포·주소 출력을 한 번에. 사람 몫은 Cloudflare 가입(카드 없이)과 이 명령 한 줄.
 - 롤백: `wrangler rollback`.

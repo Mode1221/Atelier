@@ -49,4 +49,5 @@
 - 린터·포매터: ESLint + Prettier (JS/TS), Ruff (Python), dart format, gdlint 등
 - `.env.example` 에 키 이름만, 값은 비움
 - `CLAUDE.md` 에 실행·테스트·배포 명령
+- 테스트 서버 포트는 고정하지 않는다: `scripts/free-port.mjs` (`../templates/free-port.mjs` 복사)로 빈 포트를 받는다
 - Cloudflare 스택이면 `scripts/deploy-first.mjs` + `npm run deploy:first` (`../templates/deploy-first.mjs` 복사) — 첫 배포를 명령 한 줄로

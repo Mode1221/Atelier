@@ -24,7 +24,7 @@
 
 | 키 | 뜻 |
 |---|---|
-| `baseUrl` | 테스트할 주소. 환경변수 `BASE_URL` 이 있으면 그걸 쓴다 |
+| `baseUrl` | 테스트할 주소. 환경변수 `BASE_URL` 이 있으면 그걸 쓴다 — 실행 스크립트가 빈 포트로 띄운 로컬 서버 주소를 넘긴다(`npm run usertest`, 포트 고정 금지) |
 | `ipHeader` | 서버가 IP 를 읽는 헤더. 실행마다 다른 가짜 IP → 속도 제한에 안 걸림 (로컬 전용) |
 | `persona.device` | `mobile`(iPhone 13) / `desktop`(1280×800). `dark: true` 다크 모드 |
 | `persona.tasks` | 이 페르소나가 할 과제 (없으면 전부) |

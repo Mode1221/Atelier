@@ -9,7 +9,7 @@
 ## 실행
 ```
 npm ci
-npm run dev        # http://localhost:8787 (실제 Cloudflare 런타임을 로컬에서)
+npm run dev        # 실제 Cloudflare 런타임을 로컬에서 (주소는 실행 화면에 표시)
 ```
 
 ## 테스트

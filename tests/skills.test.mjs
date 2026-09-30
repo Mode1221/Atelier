@@ -5,6 +5,8 @@ import { readFileSync } from 'node:fs';
 import { CHANNELS, withUtm, length, check } from '../skills/share/scripts/channels.mjs';
 import { render } from '../skills/share/scripts/kit.mjs';
 import { missingWords, describe } from '../skills/usertest/scripts/walk.mjs';
+import { freePort, assertPortFree, testPort } from '../skills/build/templates/free-port.mjs';
+import { createServer } from 'node:net';
 import { d1Blocks, setDatabaseId, findUrl, deployFirst } from '../skills/build/templates/deploy-first.mjs';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -152,5 +154,18 @@ test('deploy-first: 실패하면 멈추고 배포하지 않는다', async () => 
 });
 
 test('build 템플릿: 예시 프로젝트 사본이 원본과 같다', () => {
-  for (const f of ['deploy-first.mjs']) assert.equal(readFileSync(`examples/beolgeum-jangbu/scripts/${f}`, 'utf8'), readFileSync(`skills/build/templates/${f}`, 'utf8'), f);
+  for (const f of ['deploy-first.mjs', 'free-port.mjs']) assert.equal(readFileSync(`examples/beolgeum-jangbu/scripts/${f}`, 'utf8'), readFileSync(`skills/build/templates/${f}`, 'utf8'), f);
+});
+
+test('free-port: 빈 포트를 고르고, 쓰이는 포트는 이유와 함께 거절한다', async () => {
+  const p = await freePort();
+  assert.ok(p > 0 && p < 65536);
+  assert.equal(await testPort(undefined) > 0, true);
+  const busy = createServer();
+  await new Promise((r) => busy.listen(0, '127.0.0.1', r));
+  const { port } = busy.address();
+  try {
+    await assert.rejects(assertPortFree(port), /이미 다른 프로그램이 쓰고/);
+    await assert.rejects(testPort(String(port)), /포트 \d+ 를/);
+  } finally { busy.close(); }
 });
