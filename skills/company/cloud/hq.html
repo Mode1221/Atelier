@@ -19,15 +19,26 @@
   --accent:#7ab3dd;--on-accent:#0c1a24;
   --good:#7fd08f;--warn:#f0bf5a;--crit:#ff8a80;--good-bg:#1d3324;--warn-bg:#3a2f16;--crit-bg:#3d1f1c;color-scheme:dark}
 *,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--font);margin:0}
-.wrap{max-width:960px;margin:0 auto;padding-inline:16px;padding-block:12px 48px}
+.shell{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+.side{background:var(--surface);border-right:1px solid var(--line);padding-block:16px;padding-inline:12px;position:sticky;top:env(safe-area-inset-top,0px);height:100vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.side-head{margin:0;padding-inline:4px;font-weight:700;font-size:13px;letter-spacing:.04em;color:var(--muted)}
+.side-note{margin:auto 4px 0}
+.wrap{min-width:0;max-width:1000px;width:100%;padding-inline:24px;padding-block:12px 48px}
+@media (max-width:759px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding-block:10px}
+  .side-note{display:none}
+  .wrap{padding-inline:16px}
+}
 h1,h2,h3{text-wrap:balance;margin:0}
 h1{font-size:22px}h2{font-size:17px}h3{font-size:15px}
 a{color:var(--accent)}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-block:8px}
 .brand small{display:block;color:var(--muted);font-size:13px}
-.state{display:flex;gap:10px;align-items:center;padding:14px 16px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);margin-block:8px 12px}
+.state{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;padding:14px 16px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);margin-block:8px 12px}
 .state[data-level="good"]{background:var(--good-bg);border-color:transparent}
 .state[data-level="warning"]{background:var(--warn-bg);border-color:transparent}
 .state[data-level="critical"]{background:var(--crit-bg);border-color:transparent}
@@ -66,9 +77,11 @@ ul.plain{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .empty{color:var(--muted);padding:12px;border:1px dashed var(--line);border-radius:8px}
 .note{font-size:13px;color:var(--muted)}
 .flash{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;max-width:calc(100% - 32px);z-index:5}
-nav.svc{display:flex;gap:8px;overflow-x:auto;padding-block:4px 8px}
-nav.svc button{flex:none;display:grid;justify-items:start;gap:0;min-height:52px;padding:6px 14px;text-align:left;border-radius:10px}
-nav.svc button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+nav.svc{display:flex;flex-direction:column;gap:6px}
+nav.svc button{display:grid;justify-items:start;justify-content:start;gap:0;min-height:56px;padding:8px 12px;text-align:left;border-radius:10px;border-color:transparent;background:transparent;width:100%}
+nav.svc button:hover{background:var(--sunk)}
+nav.svc button[aria-pressed="true"]{background:var(--sunk);border-color:var(--line);box-shadow:inset 3px 0 0 var(--accent)}
+@media (max-width:759px){nav.svc{flex-direction:row;overflow-x:auto}nav.svc button{flex:none;width:auto;border-color:var(--line)}nav.svc button[aria-pressed="true"]{box-shadow:inset 0 -3px 0 var(--accent)}}
 nav.svc .nm{font-weight:700}
 nav.svc .meta{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted);font-weight:400}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
@@ -77,22 +90,28 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px}
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}}
 </style>
 
-<div class="wrap">
-  <header class="top">
-    <div class="brand"><h1 id="co-name">본부</h1><small id="co-sub">AI 직원들이 일하고, 대표님은 결재만 해요</small></div>
-    <a id="co-url" class="small" href="#" target="_blank" rel="noopener" hidden>서비스 열기 ↗</a>
-  </header>
-  <nav class="svc" id="svc-bar" aria-label="내 서비스"></nav>
-  <div class="state" id="state" data-level="idle" role="status"><strong id="state-title">불러오는 중</strong><span id="state-text" class="muted"></span></div>
-  <nav class="tabs" role="tablist" aria-label="본부 메뉴">
-    <button role="tab" data-tab="home" aria-selected="true">오늘</button>
-    <button role="tab" data-tab="approvals">결재<span class="count" id="n-approvals" hidden></span></button>
-    <button role="tab" data-tab="tasks">할 일</button>
-    <button role="tab" data-tab="depts">부서</button>
-    <button role="tab" data-tab="share">홍보</button>
-    <button role="tab" data-tab="voice">사용자 의견<span class="count" id="n-voice" hidden></span></button>
-  </nav>
-  <main id="view"></main>
+<div class="shell">
+  <aside class="side" aria-label="내 서비스">
+    <p class="side-head">Atelier 본부</p>
+    <nav class="svc" id="svc-bar"></nav>
+    <p class="note side-note">새 서비스는 Claude 에게 "새 서비스를 본부에 추가해 줘"라고 말하면 여기에 생겨요.</p>
+  </aside>
+  <div class="wrap">
+    <header class="top">
+      <div class="brand"><h1 id="co-name">본부</h1><small id="co-sub">AI 직원들이 일하고, 대표님은 결재만 해요</small></div>
+      <a id="co-url" class="small" href="#" target="_blank" rel="noopener" hidden>서비스 열기 ↗</a>
+    </header>
+    <div class="state" id="state" data-level="idle" role="status"><strong id="state-title">불러오는 중</strong><span id="state-text" class="muted"></span></div>
+    <nav class="tabs" role="tablist" aria-label="본부 메뉴">
+      <button role="tab" data-tab="home" aria-selected="true">오늘</button>
+      <button role="tab" data-tab="approvals">결재<span class="count" id="n-approvals" hidden></span></button>
+      <button role="tab" data-tab="tasks">할 일</button>
+      <button role="tab" data-tab="depts">부서</button>
+      <button role="tab" data-tab="share">홍보</button>
+      <button role="tab" data-tab="voice">사용자 의견<span class="count" id="n-voice" hidden></span></button>
+    </nav>
+    <main id="view"></main>
+  </div>
 </div>
 <div class="flash" id="flash" role="status" hidden></div>
 
@@ -220,8 +239,7 @@ function render() {
 
 function renderServices() {
   const bar = $('#svc-bar');
-  if (S.services.length < 2) { bar.hidden = true; return; }
-  bar.hidden = false;
+  if (!S.services.length) { bar.innerHTML = '<p class="note">아직 서비스가 없어요.</p>'; return; }
   bar.innerHTML = S.services.map((v) => {
     const m = S.sums[v.id] ?? {};
     const n = (m.pending ?? 0) + (m.todo ?? 0);
