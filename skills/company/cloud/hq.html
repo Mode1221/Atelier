@@ -96,7 +96,7 @@ textarea{min-height:80px}
 .inbox{list-style:none;margin:0;padding:0;display:grid;gap:10px}
 .inbox>li{background:var(--surface);border:1px solid var(--line);border-left-width:4px;border-radius:var(--r);padding:12px 14px;display:grid;gap:8px}
 .inbox>li[data-kind="report"]{border-left-color:var(--crit)}
-.inbox>li[data-kind="approval"]{border-left-color:var(--warn)}
+.inbox>li[data-kind="approval"],.inbox>li[data-kind="stale"]{border-left-color:var(--warn)}
 .inbox>li[data-kind="human"]{border-left-color:var(--accent)}
 .inbox>li[data-kind="voice"]{border-left-color:var(--line)}
 .inbox .what{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
@@ -244,6 +244,12 @@ function inboxOf(id) {
     const r = d.reports[dep.id];
     if (r?.level === 'critical') out.push({ kind: 'report', svc: id, key: `r-${id}-${dep.id}`, title: `${dep.name} 부서가 문제를 보고했어요`, text: r.summary, at: r.at });
   }
+  // 부서가 켜져 있는데 보고가 이틀 넘게 없으면 예약이 멈췄거나 실패한 것 — 조용한 고장을 드러낸다
+  const lastAt = Object.values(d.reports).map((r) => r.at).filter(Boolean).sort().pop();
+  const svc = S.services.find((v) => v.id === id);
+  if (d.reportsIn && Object.keys(svc?.routines ?? {}).length && (!lastAt || Date.now() - new Date(lastAt).getTime() > STALE_MS)) {
+    out.push({ kind: 'stale', svc: id, key: `s-${id}`, title: lastAt ? `부서 보고가 ${ago(lastAt).replace(' 전', '')}째 없어요` : '부서가 아직 한 번도 보고하지 않았어요', text: '부서 예약이 꺼졌거나 실행이 실패했을 수 있어요. 부서 켜기·끄기에서 마지막 실행을 확인하세요.', at: lastAt });
+  }
   for (const a of d.approvals.filter((x) => x.status === 'pending')) out.push({ kind: 'approval', svc: id, key: `a-${id}-${a.id}`, a, title: a.title, at: a.createdAt });
   for (const h of d.human.filter((x) => !x.done)) out.push({ kind: 'human', svc: id, key: `h-${id}-${h.id}`, h, title: h.text, at: h.createdAt });
   const fresh = d.feedback.filter((f) => f.status !== 'triaged');
@@ -251,7 +257,8 @@ function inboxOf(id) {
   if (fresh.length) out.push({ kind: 'voice', svc: id, key: `v-${id}`, title: `정리 전 사용자 의견 ${n}건`, text: '고객지원 부서가 다음 실행 때 분류해요. 급하면 내용을 먼저 보세요.', at: fresh[0].date });
   return out;
 }
-const ORDER = { report: 0, approval: 1, human: 2, voice: 3 };
+const ORDER = { report: 0, stale: 1, approval: 2, human: 3, voice: 4 };
+const STALE_MS = 48 * 3600e3;
 const inboxAll = () => S.services.flatMap((v) => inboxOf(v.id)).sort((x, y) => ORDER[x.kind] - ORDER[y.kind] || String(y.at ?? '').localeCompare(String(x.at ?? '')));
 
 // 서비스 상태: 문제 보고 > 결재·할 일 > 경고 보고 > 정상
@@ -260,14 +267,14 @@ function levelOf(id) {
   if (!d) return 'idle';
   const lv = Object.values(d.reports).map((r) => r.level);
   if (lv.includes('critical')) return 'critical';
-  if (lv.includes('warning') || inboxOf(id).some((x) => x.kind === 'approval' || x.kind === 'human')) return 'warning';
+  if (lv.includes('warning') || inboxOf(id).some((x) => x.kind !== 'voice')) return 'warning';
   return lv.length ? 'good' : 'idle';
 }
 const countOf = (id) => inboxOf(id).filter((x) => x.kind !== 'voice').length;
 
 function inboxItem(it, showSvc) {
   const tag = showSvc ? `<button class="svc-tag link" data-go="${esc(it.svc)}" aria-label="${esc(nameOf(it.svc))} 상세 보기">${esc(nameOf(it.svc))}</button>` : '';
-  const label = { report: pill('critical', '문제'), approval: pill('warning', '결재'), human: pill('', '대표 할 일'), voice: pill('', '새 의견') }[it.kind];
+  const label = { report: pill('critical', '문제'), approval: pill('warning', '결재'), human: pill('', '대표 할 일'), stale: pill('warning', '멈춤?'), voice: pill('', '새 의견') }[it.kind];
   let body = '';
   if (it.kind === 'approval') {
     const a = it.a;
@@ -284,6 +291,8 @@ function inboxItem(it, showSvc) {
     body = `${h.why ? `<p class="small muted">${esc(h.why)}</p>` : ''}
       <div class="row">${h.link && /^https?:/.test(h.link) ? `<a class="btn" href="${esc(h.link)}" target="_blank" rel="noopener">열기 ↗</a>` : h.link ? `<span class="small muted">${esc(h.link)}</span>` : ''}
       ${canWrite ? `<button data-act="human" data-svc="${esc(it.svc)}" data-id="${esc(h.id)}" aria-label="했어요: ${esc(h.text)}">했어요</button>` : ''}</div>`;
+  } else if (it.kind === 'stale') {
+    body = `<p class="small muted">${esc(it.text)}</p><div class="row"><button data-go="${esc(it.svc)}" data-anchor="more">부서 확인</button></div>`;
   } else if (it.kind === 'voice') {
     body = `<p class="small muted">${esc(it.text)}</p><div class="row"><button data-go="${esc(it.svc)}" data-anchor="voice">의견 보기</button></div>`;
   } else {
@@ -401,7 +410,7 @@ function detail(id) {
   ${posts.length ? `<section class="sec" aria-labelledby="h-share"><div class="sec-head"><h2 id="h-share">홍보 글</h2><span class="small muted">${posts.length - unposted.length}/${posts.length} 올림</span></div>
     <p class="note">"○○에 올리기"를 누르면 글이 채워진 창이 열려요. 올린 뒤 "올렸어요"를 눌러 주세요. 자동 게시는 하지 않아요.</p>
     ${unposted.length ? `<div class="grid two">${unposted.map(({ x, i }) => postCard(d, x, i, id)).join('')}</div>` : '<p class="empty">준비된 글을 모두 올렸어요.</p>'}</section>` : ''}
-  <details class="more" data-k="more-${esc(id)}"><summary>더 보기 — 일 맡기기 · 진행 중인 부서 일 · 부서 켜기·끄기</summary><div>
+  <details class="more" id="more" data-k="more-${esc(id)}"><summary>더 보기 — 일 맡기기 · 진행 중인 부서 일 · 부서 켜기·끄기</summary><div>
     ${canWrite ? `<form class="grid" data-act="task" data-k="task-${esc(id)}" data-svc="${esc(id)}"><h3>부서에 일 맡기기</h3>
       <label>무엇을 해야 하나요?<input name="title" required maxlength="200" placeholder="예: 첫 화면에 사용 후기 넣기"></label>
       <label>누구에게<select name="dept">${DEPTS.filter((x) => x.id !== 'ceo').map((x) => `<option value="${x.id}">${esc(x.name)} — ${esc(x.role)}</option>`).join('')}</select></label>
@@ -574,7 +583,7 @@ document.addEventListener('click', (ev) => {
   const g = ev.target.closest('[data-go]');
   if (g && !ev.target.closest('a, input, textarea, select')) {
     go(g.dataset.go || null);
-    if (g.dataset.anchor) requestAnimationFrame(() => document.getElementById(g.dataset.anchor)?.scrollIntoView());
+    if (g.dataset.anchor) requestAnimationFrame(() => { const t = document.getElementById(g.dataset.anchor); if (t?.tagName === 'DETAILS') t.open = true; t?.scrollIntoView(); });
   }
 });
 document.addEventListener('submit', (ev) => { const f = ev.target.closest('form[data-act]'); if (f) { ev.preventDefault(); act(f, ev); } });
@@ -591,7 +600,7 @@ function watch(id) {
   const on = (ref, fn) => list.push(ref.onSnapshot((x) => { fn(x); render(); }, onErr));
   on(db.collection(P(id, 'approvals')).orderBy('createdAt', 'desc').limit(40), (x) => (d.approvals = docs(x)));
   on(db.collection(P(id, 'human')), (x) => (d.human = docs(x).sort(sortDesc('createdAt'))));
-  on(db.collection(P(id, 'reports')), (x) => (d.reports = Object.fromEntries(docs(x).map((r) => [r.id, r]))));
+  on(db.collection(P(id, 'reports')), (x) => { d.reports = Object.fromEntries(docs(x).map((r) => [r.id, r])); d.reportsIn = true; });
   on(db.doc(P(id, 'metrics/main')), (x) => (d.metrics = x.exists ? x.data() : null));
   on(db.collection(P(id, 'feedback')).orderBy('date', 'desc').limit(14), (x) => (d.feedback = docs(x)));
 }

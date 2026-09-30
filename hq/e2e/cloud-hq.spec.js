@@ -76,10 +76,10 @@ function fakeRuntime({ seed, triggers, canWrite }) {
   window.claude = { use: async (c) => ({ db, mcp, user: { can: async () => canWrite } })[c] };
 }
 
-async function open(page, { canWrite = true, hash = '' } = {}) {
+async function open(page, { canWrite = true, hash = '', seed = SEED } = {}) {
   await page.route('https://fonts.googleapis.com/**', (r) => r.abort());
   await page.route('**/cloud-hq', (r) => r.fulfill({ contentType: 'text/html', body: PAGE }));
-  await page.addInitScript(fakeRuntime, { seed: SEED, triggers: structuredClone(TRIGGERS), canWrite });
+  await page.addInitScript(fakeRuntime, { seed, triggers: structuredClone(TRIGGERS), canWrite });
   await page.goto('/cloud-hq' + hash);
 }
 const calls = (page) => page.evaluate(() => window.__calls);
@@ -191,6 +191,18 @@ test('서비스 상세: 목표·숫자·보고·홍보·일 맡기기·부서 �
   await expect(main.locator('details.more li.item').filter({ hasText: '고객지원' })).toContainText('꺼짐');
   await main.getByRole('button', { name: '← 전체 서비스' }).click();
   await expect(page.getByRole('heading', { level: 1, name: '전체 서비스' })).toBeVisible();
+});
+
+test('부서가 켜져 있는데 보고가 이틀 넘게 없으면 할 일함에 멈춤을 알린다', async ({ page }) => {
+  await open(page, { seed: { ...SEED, 'companies/timer': { name: '스터디 타이머', routines: { ceo: 'trig_c_ceo' } }, 'companies/timer/reports/ceo': { level: 'good', summary: '계획 세움', at: H(80) } } });
+  const main = page.getByRole('main');
+  const item = main.locator('.inbox > li[data-kind="stale"]');
+  await expect(item).toContainText('부서 보고가 3일째 없어요');
+  await expect(item).toContainText('스터디 타이머');
+  await expect(main.locator('.inbox > li').nth(1)).toHaveAttribute('data-kind', 'stale'); // 문제 보고 바로 다음
+  await item.getByRole('button', { name: '부서 확인' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: '스터디 타이머' })).toBeVisible();
+  await expect(main.getByText('매일 08:00')).toBeVisible(); // 더 보기가 펼쳐져 부서 일정이 보인다
 });
 
 test('보기 전용 계정은 버튼 없이 상태만 본다', async ({ page }) => {
