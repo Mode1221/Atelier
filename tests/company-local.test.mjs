@@ -122,3 +122,38 @@ test('local: 서비스가 여럿이면 ID 를 묻고, 명령줄은 서비스 ID 
   assert.match(cli(['brief', 'b'], root), /■ B/);
   assert.equal(cli(['order', 'a', 'all'], root), 'ceo marketing support');
 });
+
+// 클라우드 본부 절차 동기화 (skills/company/scripts/playbook.mjs)
+import { build as pbBuild, diff as pbDiff, sources as pbSources, hash as pbHash, cli as pbCli } from '../skills/company/scripts/playbook.mjs';
+
+test('playbook: 공통 절차 4개 + 부서 10개, 문서마다 원본·지문·버전', () => {
+  const docs = pbBuild();
+  const names = docs.map((d) => d.name);
+  for (const n of ['cloud-run', 'planning', 'stages', 'channels', 'dept-ceo', 'dept-ops', 'dept-support']) assert.ok(names.includes(n), n);
+  assert.equal(names.filter((n) => n.startsWith('dept-')).length, 10);
+  const run = docs.find((d) => d.name === 'cloud-run').doc;
+  assert.match(run.source, /skills\/company\/references\/cloud-run\.md$/);
+  assert.equal(run.hash, pbHash(run.text));
+  assert.match(run.atelier, /^\d+\.\d+\.\d+$/);
+  assert.equal(Object.keys(pbSources()).length, docs.length);
+});
+
+test('playbook: check 는 없음·다름만 알리고 hash 없는 옛 문서는 본문으로 비교', () => {
+  const docs = pbBuild();
+  const remote = Object.fromEntries(docs.map(({ name, doc }) => [name, { text: doc.text }]));
+  assert.deepEqual(pbDiff(docs, remote), []);
+  remote.planning = { text: '옛 절차' };
+  delete remote['dept-qa'];
+  assert.deepEqual(pbDiff(docs, remote), [{ name: 'planning', why: '스킬 문서와 다름' }, { name: 'dept-qa', why: '본부에 없음' }]);
+});
+
+test('playbook: build 는 파일과 batch writes 를 만들고 check 는 그 결과를 최신으로 본다', () => {
+  const dir = fresh();
+  const lines = [];
+  assert.equal(pbCli(['build', dir], (x) => lines.push(x)), 0);
+  const writes = JSON.parse(readFileSync(join(dir, 'writes.json'), 'utf8'));
+  assert.ok(writes.every((w) => w.op === 'set' && w.collection === 'playbook' && existsSync(w.file_path)));
+  assert.equal(pbCli(['check', dir], (x) => lines.push(x)), 0);
+  assert.equal(pbCli(['check', fresh()], () => {}), 1);
+  assert.equal(pbCli([], () => {}), 2);
+});
