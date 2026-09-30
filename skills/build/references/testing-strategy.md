@@ -43,3 +43,7 @@ const noLeakedValues = () => {
 - [ ] 브라우저: Chrome·Safari (모바일 Safari 포함)
 - [ ] 느린 네트워크(3G 시뮬레이션), 오프라인
 - [ ] 다크 모드, 큰 글씨
+
+## 흔들리는 테스트(flaky)는 코드 문제로 본다
+- 저장 뒤 `setTimeout(() => location.reload(), …)` 처럼 **늦게 화면을 바꾸면** 그 사이에 누른 버튼·접근성 검사가 사라진 화면을 만난다. 바로 새로고침하고 안내 문구는 새 화면에서 보여 준다(sessionStorage) — 예: `examples/chaenggim-pyo/public/static/app.js` `reload()`.
+- 테스트에 `waitForTimeout` 을 늘려 넘기지 않는다. 화면이 끝난 상태를 알리는 글자·요소를 기다리고, 흔들리면 `--repeat-each=4` 로 재현한 뒤 원인을 고친다.

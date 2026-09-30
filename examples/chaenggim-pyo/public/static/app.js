@@ -222,10 +222,24 @@
 
   // 쓰기 요청에는 "누가"(by)를 붙인다 — 최근 변경 기록에 이름이 남는다
   const call = (method, path, body) => api(method, `/api/trips/${tid}${path}`, method === 'GET' ? undefined : { ...(body ?? {}), by: me ?? undefined }, key);
+  // 바로 새로고침하고 안내 문구는 새 화면에서 보여 준다 (지연 새로고침은 그 사이 누른 버튼·검사가 사라지는 틈을 만든다)
   const reload = (msg) => {
-    toast(msg);
-    setTimeout(() => location.reload(), 400);
+    try {
+      sessionStorage.setItem('chaenggim:toast', msg);
+    } catch {
+      /* 저장 못 하면 문구만 생략 */
+    }
+    location.reload();
   };
+  try {
+    const pending = sessionStorage.getItem('chaenggim:toast');
+    if (pending) {
+      sessionStorage.removeItem('chaenggim:toast');
+      toast(pending);
+    }
+  } catch {
+    /* 무시 */
+  }
   const inviteUrl = `${location.origin}/t/${tid}`;
   $('#invite-link').value = inviteUrl;
   $$('[data-copy]').forEach((b) => b.addEventListener('click', () => copyText($(`#${b.dataset.copy}`).value)));
