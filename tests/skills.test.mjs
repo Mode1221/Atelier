@@ -194,6 +194,7 @@ test('build 템플릿: 예시 프로젝트 사본이 원본과 같다', () => {
     const name = f.split('/').pop();
     assert.equal(readFileSync(`examples/beolgeum-jangbu/scripts/${name}`, 'utf8'), readFileSync(`skills/${f}`, 'utf8'), name);
   }
+  for (const f of ['worker.js', 'setup.mjs']) assert.equal(readFileSync(`examples/beolgeum-jangbu/ops/watchdog/${f}`, 'utf8'), readFileSync(`skills/operate/templates/watchdog/${f}`, 'utf8'), f);
 });
 
 test('free-port: 빈 포트를 고르고, 쓰이는 포트는 이유와 함께 거절한다', async () => {

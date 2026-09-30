@@ -14,7 +14,8 @@
     "check": "./scripts/check.sh",
     "usertest": "./scripts/usertest.sh",
     "deploy:first": "node scripts/deploy-first.mjs",
-    "feedback:pull": "node scripts/feedback-pull.mjs"
+    "feedback:pull": "node scripts/feedback-pull.mjs",
+    "watch:setup": "node ops/watchdog/setup.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

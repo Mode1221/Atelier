@@ -92,7 +92,7 @@ export async function deployFirst({ run = wrangler, file = 'wrangler.toml', log 
     log(`2/6 데이터베이스 "${db.name}" 준비`);
     let found = findDb((await must(['d1', 'list', '--json'], { quiet: true }, 'DB 목록 조회')).out, db.name);
     if (!found) {
-      await must(['d1', 'create', db.name], {}, 'DB 만들기');
+      await must(['d1', 'create', db.name], { input: '' }, 'DB 만들기'); // input: wrangler.toml 에 넣을지 묻지 않게 (ID 는 아래에서 직접 기록)
       found = findDb((await must(['d1', 'list', '--json'], { quiet: true }, 'DB 목록 조회')).out, db.name);
     } else log('   이미 있어요 — 그대로 씁니다');
     if (!isUuid(found?.uuid)) throw new Error(`DB "${db.name}" 의 ID 를 찾지 못했어요`);

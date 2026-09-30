@@ -12,6 +12,7 @@ description: 운영 단계. 업타임·에러·비용 모니터링과 알림, �
 
 ### O1. 모니터링·알림
 `references/monitoring-alerts.md`. 업타임·에러율·응답 시간·비용·핵심 지표에 알림. 알림은 **휴대폰**으로 온다.
+기본은 **서비스 지킴이**: `npm run watch:setup` 한 줄 → 5분마다 확인, 죽으면 휴대폰(ntfy 앱) 알림. 컴퓨터가 꺼져 있어도, GitHub 없이도 동작 (`references/monitoring-alerts.md` 첫 절).
 원칙: 알림은 적고 확실하게. 매일 울리는 알림은 무시하게 된다.
 
 ### O2. 장애 대응 런북

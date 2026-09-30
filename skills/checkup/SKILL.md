@@ -41,7 +41,9 @@ description: 출시 후 정기 운영 점검. "/atelier:checkup setup" 으로 �
    - 공개 저장소는 60일간 활동이 없으면 예약 워크플로가 멈출 수 있다 — 알림 메일이 오면 다시 켠다
 6. `docs/operations.md` 에 점검 구성(무엇을·언제·어디로 알림)을 기록하고, PROJECT.md 의 O8 을 체크한다.
 
-### CI 가 없거나 GitHub Actions 를 안 쓸 때
+### CI 가 없거나 GitHub Actions 를 안 쓸 때 (AI 회사 로컬 모드 기본)
+- **죽었을 때 알림**은 서비스 지킴이(`atelier:operate` O1, `npm run watch:setup`)가 한다 — 컴퓨터가 꺼져 있어도 휴대폰으로 온다.
+- 결정적 검사(인증서·의존성·백업 등)는 AI 회사 운영 부서가 `/atelier:company run ops` 때 `scripts/ops-check.sh daily` 를 돌려 `company/<서비스>/reports/ops.json` 에 남긴다(매일 자동이면 `/atelier:company schedule`).
 - Claude Code 예약 작업(클라우드 Routines)이나 `/loop 1d /atelier:checkup daily` (세션이 켜져 있는 동안만) 로 대체한다.
 - 서버가 있으면 크론으로 `scripts/ops-check.sh` 를 돌리고 실패 시 웹훅을 호출한다.
 

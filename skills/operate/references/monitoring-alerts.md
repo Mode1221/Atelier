@@ -1,5 +1,12 @@
 # 모니터링·알림
 
+## 기본: 서비스 지킴이 (무료, GitHub·가입 없음, 컴퓨터 꺼져도 동작)
+`../templates/watchdog/` 를 프로젝트 `ops/watchdog/` 에 복사하고 package.json `"watch:setup": "node ops/watchdog/setup.mjs"`. 사람 몫은 **`npm run watch:setup` 한 줄 + 휴대폰에 ntfy 앱 설치·주제 구독**.
+- 별도 Cloudflare Worker 가 5분마다 `/health`(없으면 첫 화면)를 확인 → 2번 연속 실패하면 휴대폰 알림, 복구되면 "복구" 알림. 상태가 바뀔 때만 KV 에 쓴다(무료 한도 안).
+- 알림 주제 이름은 무작위로 만들어 `.atelier/secrets.json`(커밋 안 됨)과 Worker 비밀값에만 둔다 — 주제를 아는 사람만 알림을 본다. 알림에 개인정보를 넣지 않는다.
+- 다시 실행해도 안전(같은 주제·저장소 재사용). 확인: 지킴이 주소를 열면 `{watching, down, fails}`.
+- 에러 알림(Sentry 등)·비용 알림은 아래 표대로 추가한다.
+
 ## 알림 대상 (최소 세트)
 | 대상 | 도구 예 | 알림 조건 (예) | 긴급도 |
 |---|---|---|---|
