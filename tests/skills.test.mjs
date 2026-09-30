@@ -5,6 +5,10 @@ import { readFileSync } from 'node:fs';
 import { CHANNELS, withUtm, length, check } from '../skills/share/scripts/channels.mjs';
 import { render } from '../skills/share/scripts/kit.mjs';
 import { missingWords, describe } from '../skills/usertest/scripts/walk.mjs';
+import { d1Blocks, setDatabaseId, findUrl, deployFirst } from '../skills/build/templates/deploy-first.mjs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 test('share: utm 을 붙이고 기존 쿼리는 유지', () => {
   assert.equal(withUtm('https://a.dev/?ref=x', 'threads', 'beta'), 'https://a.dev/?ref=x&utm_source=threads&utm_medium=social&utm_campaign=beta');
@@ -87,4 +91,66 @@ test('bluesky: 키 없으면 건너뛰고, 이미 올린 글은 다시 안 올�
   const r = await postAll(spec, { env: { BLUESKY_HANDLE: 'me', BLUESKY_APP_PASSWORD: 'pw' }, fetchImpl, log: () => {} });
   assert.equal(r.posted, 1);
   assert.match(created[0], /^둘째 글\nhttps:\/\/a\.dev\/\?utm_source=bluesky&utm_medium=social&utm_campaign=b$/);
+});
+
+const TOML = `name = "app"
+[[d1_databases]]
+binding = "DB"
+database_name = "app"
+database_id = "LOCAL_PLACEHOLDER"   # 배포 때 바뀜
+migrations_dir = "migrations"
+
+[triggers]
+crons = ["0 0 * * *"]
+`;
+const UUID = '0b6c7e2e-1f7a-4a8e-9a57-2c1d3e4f5a6b';
+
+test('deploy-first: wrangler.toml 의 D1 ID 를 바꾸고 다른 줄은 그대로', () => {
+  assert.deepEqual(d1Blocks(TOML), [{ binding: 'DB', name: 'app', id: 'LOCAL_PLACEHOLDER' }]);
+  const out = setDatabaseId(TOML, 'app', UUID);
+  assert.equal(d1Blocks(out)[0].id, UUID);
+  assert.ok(out.includes('[triggers]') && out.includes('migrations_dir = "migrations"'));
+  assert.equal(setDatabaseId(TOML, 'other', UUID), TOML);
+  assert.equal(findUrl('Uploaded app\n  https://app.me.workers.dev\nCurrent Version ID: x'), 'https://app.me.workers.dev');
+});
+
+function fakeWrangler({ loggedIn, dbExists }) {
+  const calls = [];
+  let exists = dbExists;
+  const run = async (args) => {
+    calls.push(args.join(' '));
+    if (args[0] === 'whoami') return { code: 0, out: loggedIn ? 'You are logged in' : 'You are not authenticated. Please run `wrangler login`.' };
+    if (args[0] === 'login') { loggedIn = true; return { code: 0, out: '' }; }
+    if (args[1] === 'list') return { code: 0, out: JSON.stringify(exists ? [{ name: 'app', uuid: UUID }] : []) };
+    if (args[1] === 'create') { exists = true; return { code: 0, out: '' }; }
+    if (args[0] === 'deploy') return { code: 0, out: 'Deployed app triggers\n  https://app.me.workers.dev\n' };
+    return { code: 0, out: '' };
+  };
+  return { run, calls };
+}
+
+test('deploy-first: 처음이면 로그인·DB 생성·ID 기록·원격 마이그레이션·배포, 다시 돌려도 안전', async () => {
+  const file = join(mkdtempSync(join(tmpdir(), 'df-')), 'wrangler.toml');
+  writeFileSync(file, TOML);
+  const first = fakeWrangler({ loggedIn: false, dbExists: false });
+  assert.equal(await deployFirst({ run: first.run, file, log: () => {} }), 'https://app.me.workers.dev');
+  assert.deepEqual(first.calls, ['whoami', 'login', 'd1 list --json', 'd1 create app', 'd1 list --json', 'd1 migrations apply DB --remote', 'deploy']);
+  assert.equal(d1Blocks(readFileSync(file, 'utf8'))[0].id, UUID);
+
+  const again = fakeWrangler({ loggedIn: true, dbExists: true });
+  await deployFirst({ run: again.run, file, log: () => {} });
+  assert.deepEqual(again.calls, ['whoami', 'd1 list --json', 'd1 migrations apply DB --remote', 'deploy']);
+});
+
+test('deploy-first: 실패하면 멈추고 배포하지 않는다', async () => {
+  const file = join(mkdtempSync(join(tmpdir(), 'df-')), 'wrangler.toml');
+  writeFileSync(file, TOML);
+  const calls = [];
+  const run = async (args) => { calls.push(args[0]); return args[1] === 'migrations' ? { code: 1, out: '' } : { code: 0, out: args[1] === 'list' ? JSON.stringify([{ name: 'app', uuid: UUID }]) : 'logged in' }; };
+  await assert.rejects(deployFirst({ run, file, log: () => {} }), /마이그레이션 실패/);
+  assert.ok(!calls.includes('deploy'));
+});
+
+test('build 템플릿: 예시 프로젝트 사본이 원본과 같다', () => {
+  for (const f of ['deploy-first.mjs']) assert.equal(readFileSync(`examples/beolgeum-jangbu/scripts/${f}`, 'utf8'), readFileSync(`skills/build/templates/${f}`, 'utf8'), f);
 });

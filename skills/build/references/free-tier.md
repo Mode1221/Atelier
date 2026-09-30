@@ -42,6 +42,7 @@ Atelier 의 기본값은 **운영비 0원으로 시작**하는 것이다. 무료
 - DB 는 비동기(D1): 여러 문장을 함께 바꿀 때는 `batch()`(트랜잭션). 중간 결과에 따라 달라지는 로직은 조건부 SQL 로.
 - 테스트: 단위·API 테스트는 D1 흉내(node:sqlite) 로 빠르게, E2E 는 `wrangler dev --local`(실제 런타임 workerd)로.
 - 백업: D1 Time Travel(무료 등급 7일) + 필요하면 주기적 export 를 R2 로.
+- 첫 배포: `npm run deploy:first` (`../templates/deploy-first.mjs`) — 로그인·D1 생성·ID 기록·원격 마이그레이션·배포·주소 출력을 한 번에. 사람 몫은 Cloudflare 가입(카드 없이)과 이 명령 한 줄.
 - 롤백: `wrangler rollback`.
 - 클라이언트 IP: `cf-connecting-ip` 헤더만 믿는다.
 

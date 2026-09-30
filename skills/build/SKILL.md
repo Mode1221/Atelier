@@ -27,6 +27,7 @@ description: 구현 단계. 스택 선택, 프로젝트 생성, 환경 분리(�
 - **환경 분리**: 개발(local) / 스테이징(미리보기) / 운영. 환경마다 DB·키 분리. 운영 데이터로 개발하지 않는다.
 - 시크릿: `.env.example`(이름만), 실제 값은 플랫폼 시크릿. `.gitignore` 확인.
 - CI: 푸시마다 린트·타입체크·테스트·빌드 (`references/ci-deploy.md`).
+- **첫 배포 스크립트**(Cloudflare 스택): `templates/deploy-first.mjs` → 프로젝트 `scripts/deploy-first.mjs`, package.json `"deploy:first": "node scripts/deploy-first.mjs"`. 로그인 확인 → D1 생성(있으면 재사용) → `wrangler.toml` 에 database_id 기록 → 원격 마이그레이션 → 배포 → 주소 출력까지 한 번에, 다시 실행해도 안전.
 - 프로젝트 `CLAUDE.md`: 스택, 명령, 폴더 구조, 규칙(어댑터 경유 등).
 
 ### B2. 데이터 계층
@@ -76,7 +77,7 @@ spec 의 신원 모델을 구현한다.
 
 ### B12. 배포 파이프라인
 - 스테이징(미리보기) 배포 → 확인 → 운영 배포. 운영 배포 후 스모크 테스트 자동 실행.
-- 무료 스택 기본: Cloudflare Workers 는 GitHub Actions + `wrangler deploy` (토큰 1개로 DB 생성·마이그레이션·배포까지 자동, `references/ci-deploy.md`).
+- 무료 스택 기본: **첫 배포는 `npm run deploy:first` 한 줄**(B1). 사람 몫은 "Cloudflare 가입 + 이 명령 한 줄"뿐이고, PROJECT.md "사람 할 일"에도 그 한 줄만 적는다. 이후 자동 배포는 GitHub Actions + `wrangler deploy` (`references/ci-deploy.md`, 선택).
 - **롤백 방법**을 실제로 한 번 해 본다. DB 마이그레이션은 되돌릴 수 있게 쓰거나 전진 수정 절차를 둔다.
 - 모바일: 스토어 빌드·서명 키 백업, 내부 테스트 트랙. 앱 버전·빌드 번호 규칙.
 - 기능 플래그로 "배포"와 "공개"를 분리하면 위험이 줄어든다.

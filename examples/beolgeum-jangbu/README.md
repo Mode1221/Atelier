@@ -18,5 +18,7 @@ npm run dev        # http://localhost:8787 (실제 Cloudflare 런타임을 로�
 ```
 
 ## 배포
+처음 한 번(내 Cloudflare 계정으로): `npm run deploy:first` — 로그인 확인 → DB 만들기 → 마이그레이션 → 배포 → 주소 출력. 다시 실행해도 안전.
+
 Atelier 저장소 Secrets 에 `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` 를 넣으면 main 푸시 때 자동 배포.
 처음 한 번 D1 데이터베이스도 자동으로 만든다. 롤백·장애 대응은 `docs/runbook.md`.

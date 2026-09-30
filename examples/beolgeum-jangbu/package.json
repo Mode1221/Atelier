@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "legal": "node scripts/gen-legal.mjs",
     "check": "./scripts/check.sh",
-    "usertest": "./scripts/usertest.sh"
+    "usertest": "./scripts/usertest.sh",
+    "deploy:first": "node scripts/deploy-first.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
