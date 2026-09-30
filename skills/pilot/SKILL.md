@@ -8,6 +8,14 @@ description: 1인 개발 프로젝트의 전체 진행을 관리한다. 새 프�
 목표: 아이디어에서 **실제로 운영 가능한 서비스**까지, 빠뜨리는 단계 없이 한 걸음씩 안내한다.
 
 ## 1. 상태 확인
+0. **준비물 확인 (처음 한 번, 사용자에게 묻기 전에)** — Bash 로 `node --version`, `git --version` 을 돌려 본다. 사용자는 개발을 모른다고 가정하고, 설치 명령은 **보여 주고 확인받은 뒤 Claude 가 실행**한다.
+   | 없음 | Windows | Mac |
+   |---|---|---|
+   | Node.js 22 이상 (서비스 실행·배포 도구) | `winget install -e --id OpenJS.NodeJS.LTS` | Homebrew 가 있으면 `brew install node`, 없으면 https://nodejs.org 에서 "LTS" 설치 파일을 받아 더블클릭 (사람 할 일) |
+   | Git (버전 기록·백업) | `winget install -e --id Git.Git` (Claude Code 가 이미 쓰고 있으면 있음) | `xcode-select --install` → 뜨는 창에서 "설치" (사람 할 일) |
+   - 설치 뒤에는 **Claude Code 를 껐다 켜야** 새 프로그램이 보인다고 알리고, 다시 열면 이어서 한다(PROJECT.md 가 없으면 인터뷰부터).
+   - winget 이 없거나 회사 PC 라 막히면 https://nodejs.org · https://git-scm.com 설치 파일 링크를 주고 PROJECT.md "사람 할 일"에 적는다.
+   - Cloudflare·스토어 계정처럼 **나중 단계에서만 필요한 것은 지금 요구하지 않는다** — 그 단계에 가서 한 줄로 안내한다.
 - 프로젝트 루트의 `PROJECT.md` 를 읽는다.
 - 없으면 **인터뷰**(2절) 후 `templates/PROJECT.md` 로 만든다.
 - 있으면 "현재 단계"와 첫 번째 미완료 세부 단계를 찾아 안내한다.

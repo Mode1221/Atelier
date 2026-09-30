@@ -6,6 +6,11 @@
 ## 무료 우선
 기본값은 **운영비 0원**입니다. 서버·DB·배포는 무료 등급(Cloudflare Workers + D1 등)으로 추천하고, 스토어 등록비처럼 피할 수 없는 비용은 해당 단계에 들어가기 전에 금액·시점·무료 대안과 함께 먼저 안내합니다. 기준표: `skills/build/references/free-tier.md`.
 
+## 준비물
+- Claude Pro 이상 요금제, 내 컴퓨터(Windows·Mac)의 [Claude Code](https://docs.claude.com/en/docs/claude-code/overview), 빈 폴더 하나. **GitHub 계정은 없어도 됩니다.**
+- Node.js·Git 은 처음 `/atelier:pilot` 을 실행하면 Claude 가 확인하고, 없으면 설치를 도와줍니다.
+- 나중 단계에서만: 무료 Cloudflare 계정(배포 때, `npm run deploy:first` 한 줄), 휴대폰 ntfy 앱(장애 알림, 선택).
+
 ## 설치
 ```
 /plugin marketplace add Mode1221/Atelier
