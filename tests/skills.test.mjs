@@ -7,7 +7,7 @@ import { render, links } from '../skills/share/scripts/kit.mjs';
 import { missingWords, describe } from '../skills/usertest/scripts/walk.mjs';
 import { freePort, assertPortFree, testPort } from '../skills/build/templates/free-port.mjs';
 import { createServer } from 'node:net';
-import { d1Blocks, setDatabaseId, findUrl, deployFirst } from '../skills/build/templates/deploy-first.mjs';
+import { d1Blocks, setDatabaseId, findUrl, deployFirst, secretSpecs } from '../skills/build/templates/deploy-first.mjs';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -165,8 +165,35 @@ test('deploy-first: 실패하면 멈추고 배포하지 않는다', async () => 
   assert.ok(!calls.includes('deploy'));
 });
 
+test('deploy-first: 비밀값 — auto 는 만들어 로컬에 두고, 빈 값은 묻고, 있는 건 건너뛴다', async () => {
+  assert.deepEqual(secretSpecs('# 설명\nFEEDBACK_TOKEN=auto\nSUPABASE_KEY=\nbad-name=x\n'), [{ name: 'FEEDBACK_TOKEN', auto: true }, { name: 'SUPABASE_KEY', auto: false }]);
+  const dir = mkdtempSync(join(tmpdir(), 'df-'));
+  writeFileSync(join(dir, 'wrangler.toml'), 'name = "app"\n');
+  writeFileSync(join(dir, '.dev.vars.example'), 'FEEDBACK_TOKEN=auto\nSUPABASE_KEY=\nALREADY=\n');
+  const puts = {};
+  const run = async (args, opts = {}) => {
+    if (args[0] === 'secret' && args[1] === 'list') return { code: 0, out: JSON.stringify([{ name: 'ALREADY', type: 'secret_text' }]) };
+    if (args[0] === 'secret' && args[1] === 'put') { puts[args[2]] = opts.input; return { code: 0, out: '' }; }
+    return { code: 0, out: args[0] === 'whoami' ? 'logged in' : '' };
+  };
+  const asked = [];
+  const common = { run, file: join(dir, 'wrangler.toml'), log: () => {}, secretsFile: join(dir, '.atelier/secrets.json'), varsExample: join(dir, '.dev.vars.example') };
+  await deployFirst({ ...common, ask: async (q) => { asked.push(q); return 'pasted-key'; } });
+  assert.match(puts.FEEDBACK_TOKEN, /^[0-9a-f]{64}$/);
+  assert.equal(puts.SUPABASE_KEY, 'pasted-key');
+  assert.ok(!('ALREADY' in puts));
+  assert.equal(asked.length, 1);
+  const local = JSON.parse(readFileSync(join(dir, '.atelier/secrets.json'), 'utf8'));
+  assert.equal(local.FEEDBACK_TOKEN, puts.FEEDBACK_TOKEN);
+  assert.ok(!('SUPABASE_KEY' in local), '붙여 넣은 값은 로컬에 남기지 않음');
+  assert.match(readFileSync(join(dir, '.gitignore'), 'utf8'), /^\.atelier\/$/m);
+});
+
 test('build 템플릿: 예시 프로젝트 사본이 원본과 같다', () => {
-  for (const f of ['deploy-first.mjs', 'free-port.mjs']) assert.equal(readFileSync(`examples/beolgeum-jangbu/scripts/${f}`, 'utf8'), readFileSync(`skills/build/templates/${f}`, 'utf8'), f);
+  for (const f of ['build/templates/deploy-first.mjs', 'build/templates/free-port.mjs', 'beta/templates/feedback-pull.mjs']) {
+    const name = f.split('/').pop();
+    assert.equal(readFileSync(`examples/beolgeum-jangbu/scripts/${name}`, 'utf8'), readFileSync(`skills/${f}`, 'utf8'), name);
+  }
 });
 
 test('free-port: 빈 포트를 고르고, 쓰이는 포트는 이유와 함께 거절한다', async () => {

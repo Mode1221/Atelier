@@ -43,6 +43,7 @@
 - **로컬은 저장소 파일을 직접 고칠 수 있다** (클라우드처럼 "tasks(dev)로 남기기"를 하지 않아도 됨). 테스트·린트 통과 후 커밋.
 - 그래도 **배포(운영 push·`wrangler deploy`)·외부 게시·지출·약관 변경·데이터 삭제는 결재 대상**이다 — 승인된 결재가 있을 때만 한다.
 - 서비스 상태는 `service.json` 의 `url`(와 `/health`)로 확인한다.
+- **고객지원**은 시작할 때 `npm run feedback:pull`(없으면 `node <atelier>/skills/beta/templates/feedback-pull.mjs`)로 서비스의 새 의견을 `feedback/<날짜>.json` 에 가져온 뒤 분류한다. 열쇠가 없다고 나오면 `human` 에 "npm run deploy:first 한 번 실행"을 남긴다.
 - 부서가 끝날 때마다 `L check`. 모든 부서가 끝나면 마지막에 `L brief` 를 보여 준다.
 
 ## 4. 예약 — `/atelier:company schedule` (선택)

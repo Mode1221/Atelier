@@ -1,6 +1,6 @@
 ---
 name: beta
-description: 공개 베타 운영. 링크를 열어 두고 실제 사용자 피드백을 받는 틀을 설치한다 — 베타 표시, 서비스 안 "의견 보내기"(익명·개인정보 자동 가림), 매일 피드백을 GitHub 이슈로 모으는 워크플로, 유입 경로 측정, 주간 분류, 졸업 기준. "베타 열자", "피드백 받고 싶어", "유저 반응 모으기", launch L2 에서 사용.
+description: 공개 베타 운영. 링크를 열어 두고 실제 사용자 피드백을 받는 틀을 설치한다 — 베타 표시, 서비스 안 "의견 보내기"(익명·개인정보 자동 가림), 의견을 프로젝트 폴더(AI 회사 로컬 모드) 또는 GitHub 이슈로 모으기, 유입 경로 측정, 주간 분류, 졸업 기준. "베타 열자", "피드백 받고 싶어", "유저 반응 모으기", launch L2 에서 사용.
 ---
 
 # Beta — 공개 베타
@@ -9,7 +9,8 @@ description: 공개 베타 운영. 링크를 열어 두고 실제 사용자 피�
 
 ## 흐름
 ```
-사용자 → 서비스 "의견 보내기" → 서비스 DB(feedback) ─(매일, Actions)→ GitHub 이슈 `feedback` 1건/일
+사용자 → 서비스 "의견 보내기" → 서비스 DB(feedback) ─(고객지원 실행 때, feedback:pull)→ company/<서비스>/feedback/<날짜>.json  (로컬 모드, 기본)
+                                                   └(매일, Actions)→ GitHub 이슈 `feedback` 1건/일  (GitHub 방식)
                                                               → 고객지원 부서 분류 → dept:qa / dept:plan 이슈
 사용자 유입 ?ref= / utm_source → 서비스 로그 `landing`  → grow 지표
 ```
@@ -25,7 +26,12 @@ description: 공개 베타 운영. 링크를 열어 두고 실제 사용자 피�
 - 보관 1년, 개인정보처리방침에 항목·목적·기간 추가 (guard).
 - 수집 API 2개(토큰 필요): 안 옮긴 피드백 목록, 옮긴 것 표시(ack).
 
-### B3. 매일 이슈로 모으기 (자동)
+### B3. 의견 모으기 (자동)
+**AI 회사 로컬 모드(기본, GitHub 없음)**: `templates/feedback-pull.mjs` → 프로젝트 `scripts/feedback-pull.mjs`, package.json `"feedback:pull": "node scripts/feedback-pull.mjs"`.
+- 서비스에 쌓인 의견을 `company/<서비스>/feedback/<날짜>.json`(cloud-run.md 1절 형식, status new)에 모으고 옮긴 것까지 표시(ack). 고객지원 부서가 실행할 때마다 먼저 돌린다.
+- 열쇠(FEEDBACK_TOKEN)는 사람이 만들지 않는다: `.dev.vars.example` 에 `FEEDBACK_TOKEN=auto` 를 두면 `npm run deploy:first` 가 무작위로 만들어 서비스 비밀값과 `.atelier/secrets.json`(커밋 안 됨) 양쪽에 넣는다.
+
+**GitHub 방식(고급)**: 매일 이슈로 옮기기 —
 `templates/feedback-sync.mjs` + 워크플로(예: `.github/workflows/beolgeum-feedback.yml`).
 - 하루치를 **이슈 1건**(표)으로 — 이슈 폭주 방지. 라벨 `feedback`, `dept:support`.
 - 이슈 본문은 이스케이프(멘션·HTML·표 깨짐 방지). 이슈가 만들어진 뒤에만 ack → 실패해도 다음 날 다시 옮김.

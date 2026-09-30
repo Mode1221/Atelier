@@ -13,7 +13,8 @@
     "legal": "node scripts/gen-legal.mjs",
     "check": "./scripts/check.sh",
     "usertest": "./scripts/usertest.sh",
-    "deploy:first": "node scripts/deploy-first.mjs"
+    "deploy:first": "node scripts/deploy-first.mjs",
+    "feedback:pull": "node scripts/feedback-pull.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
