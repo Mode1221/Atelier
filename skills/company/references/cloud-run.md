@@ -22,7 +22,7 @@ Claude 클라우드 예약 실행(Routine)이 새 세션을 열고 이 절차로
 | `human/<id>` | text, why, link, done, createdAt | 부서가 만들고 대표가 체크 |
 | `reports/<DEPT>` | level(good/warning/critical), summary(한두 문장), at | 각 부서가 실행 끝에 덮어씀 |
 | `metrics/main` | items{이름: 숫자}, at | 데이터·재무 |
-| `share/posts` | product, url, campaign, posts[{channel, when, text}] | 마케팅 (`docs/share/posts.json` 과 같게) |
+| `share/posts` | product, url, campaign, posts[{channel, when, note, text}] — **channel 은 ID**(`everytime` `kakaotalk` `threads` `x` `bluesky` `facebook` `linkedin` `reddit` `band` `naver_blog` `naver_cafe` `daangn` `disquiet` `instagram` `discord`), **text 에 링크를 넣지 않는다**(올릴 때 url+utm 이 자동으로 붙음) | 마케팅 |
 | `shared/<채널__번호>` | channel, at | 대표가 "올렸어요" |
 | `feedback/<YYYY-MM-DD>` | date, count, items[{kind, message, page, action}], summary, status(new/triaged) | 고객지원 |
 

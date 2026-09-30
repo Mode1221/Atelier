@@ -168,6 +168,15 @@ const CHANNELS = {
   daangn: { name: '당근 동네생활', note: '복사해서 동네생활에 (노골적 광고는 신고돼요)' },
   disquiet: { name: '디스콰이엇', note: '복사해서 메이커 로그에' },
 };
+// 표시 이름으로 적힌 채널도 받아 준다 (예: "Threads", "X (트위터)", "인스타그램")
+const channelId = (c) => {
+  if (CHANNELS[c]) return c;
+  const k = String(c ?? '').toLowerCase().replace(/\s|\(.*\)/g, '');
+  const alias = { threads: 'threads', 스레드: 'threads', x: 'x', 트위터: 'x', twitter: 'x', 인스타그램: 'instagram', instagram: 'instagram', 에브리타임: 'everytime', 카카오톡: 'kakaotalk', 오픈채팅: 'kakaotalk', 디스콰이엇: 'disquiet', 밴드: 'band', 네이버밴드: 'band', 네이버블로그: 'naver_blog', 블로그: 'naver_blog', 네이버카페: 'naver_cafe', 당근: 'daangn', 당근동네생활: 'daangn', 페이스북: 'facebook', facebook: 'facebook', 링크드인: 'linkedin', reddit: 'reddit', 레딧: 'reddit', 블루스카이: 'bluesky', bluesky: 'bluesky', 디스코드: 'discord' };
+  return alias[k] ?? c;
+};
+// 본문 끝에 이미 링크가 있으면 떼어 낸다 (올릴 때 url+utm 이 붙으므로)
+const stripLink = (t, url) => { try { const h = new URL(url).host; return String(t).replace(new RegExp(`\\s*(https?://)?${h.replace(/\./g, '\\.')}\\S*\\s*$`), ''); } catch { return t; } };
 const withUtm = (url, source, campaign) => {
   try {
     const u = new URL(url);
@@ -381,8 +390,10 @@ function share() {
   return `<section class="sec"><h2>홍보 글</h2>
     <p class="note">"○○에 올리기"를 누르면 그 SNS 글쓰기 창이 글이 채워진 채로 열려요. 확인하고 올린 뒤 "올렸어요"를 눌러 주세요. 자동 게시는 SNS 약관 위반이라 하지 않아요.</p>
     <div class="grid two">${p.posts.map((x, i) => {
-      const ch = CHANNELS[x.channel] ?? { name: x.channel };
-      const url = withUtm(x.url ?? p.url, x.channel, p.campaign);
+      const cid = channelId(x.channel);
+      const ch = CHANNELS[cid] ?? { name: x.channel };
+      const url = withUtm(x.url ?? p.url, cid, p.campaign);
+      x = { ...x, text: stripLink(x.text, p.url) };
       const posted = S.shared.has(`${x.channel}__${i}`);
       return `<article class="card"><div class="sec-head"><h3>${esc(ch.name)}</h3>${posted ? pill('good', '올림') : pill('idle', '안 올림')}</div>
         ${x.when ? `<p class="small muted">${esc(x.when)}</p>` : ''}

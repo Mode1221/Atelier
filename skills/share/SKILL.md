@@ -29,7 +29,7 @@ description: SNS 공유·홍보 도우미. 서비스 안에 공유 기능(공유
 { "product": "…", "url": "https://…/", "campaign": "open-beta",
   "posts": [ { "channel": "threads", "when": "D-day", "text": "…" } ] }
 ```
-- **채널마다 처음부터 다시 쓴다** — 말투·길이·금기는 `references/channel-guide.md` (에브리타임 음슴체 경험담, 오픈채팅 허락+2~4줄, Threads 1인칭 제작기, 밴드 공지체, 블로그 검색 제목+정리글 …). 첫 줄은 공감되는 불편. 링크는 자동으로 붙는다(utm 포함). 글마다 `note`(그 채널 주의점)와 `when`(올릴 곳·순서).
+- **채널마다 처음부터 다시 쓴다** — 말투·길이·금기는 `references/channel-guide.md` (에브리타임 음슴체 경험담, 오픈채팅 허락+2~4줄, Threads 1인칭 제작기, 밴드 공지체, 블로그 검색 제목+정리글 …). 첫 줄은 공감되는 불편. 링크는 자동으로 붙는다(utm 포함) — **본문에 링크를 넣지 않는다**, `channel` 은 `CHANNELS` 의 ID(예 `threads`, 표시 이름 아님). 글마다 `note`(그 채널 주의점)와 `when`(올릴 곳·순서).
 - 검사: `node <atelier>/skills/share/scripts/kit.mjs --check docs/share/posts.json` (글자 수 초과·빈 글).
 
 ### S4. 올리기 킷
