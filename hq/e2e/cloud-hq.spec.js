@@ -28,7 +28,7 @@ const SEED = {
   'companies/picknus/metrics/main': { items: { '주간 사용자': 312, '코스 생성': 95 }, at: H(1) },
 };
 const TRIGGERS = [
-  { id: 'trig_b_ops', enabled: true, cron_expression: 'CRON_TZ=Asia/Seoul 0 9 * * *', last_run: { status: 'SUCCEEDED', fired_at: H(1) } },
+  { id: 'trig_b_ops', enabled: true, cron_expression: '34 */3 * * *', last_run: { status: 'ROUTINE_RUN_STATUS_SUCCEEDED', fired_at: H(1) } },
   { id: 'trig_b_sup', enabled: false, cron_expression: 'CRON_TZ=Asia/Seoul 30 18 * * 1-5' },
   { id: 'trig_c_ceo', enabled: true, cron_expression: 'CRON_TZ=Asia/Seoul 0 8 * * *' },
   { id: 'trig_c_mkt', enabled: true, cron_expression: 'CRON_TZ=Asia/Seoul 0 12 * * 1,4' },
@@ -68,7 +68,7 @@ function fakeRuntime({ seed, triggers, canWrite }) {
   const mcp = {
     async callTool(server, tool, args) {
       window.__calls.push({ server, tool, args });
-      if (tool === 'list_triggers') return { payload: { data: triggers } };
+      if (tool === 'list_triggers') { const i = args.cursor ? 2 : 0; return { payload: { data: triggers.slice(i, i + 2), has_more: !args.cursor, next_cursor: args.cursor ? '' : 'p2' } }; }
       if (tool === 'update_trigger') { const t = triggers.find((x) => x.id === args.trigger_id); t.enabled = args.enabled; }
       return { payload: {} };
     },
@@ -184,6 +184,11 @@ test('서비스 상세: 목표·숫자·보고·홍보·일 맡기기·부서 �
   expect(await main.locator('details.more').evaluate((d) => d.open)).toBe(true); // 다시 그려도 펼친 채
   await noHScroll(page);
 
+  // 다른 서비스: N시간마다 일정, 두 번째 쪽에 있던 예약도 찾는다
+  await page.getByRole('navigation', { name: '서비스 목록' }).getByRole('button', { name: /벌금장부/ }).click();
+  await main.getByText(/더 보기/).click();
+  await expect(main.getByText(/3시간마다 \(34분\) · 마지막 1시간 전 끝냄/)).toBeVisible();
+  await expect(main.locator('details.more li.item').filter({ hasText: '고객지원' })).toContainText('꺼짐');
   await main.getByRole('button', { name: '← 전체 서비스' }).click();
   await expect(page.getByRole('heading', { level: 1, name: '전체 서비스' })).toBeVisible();
 });

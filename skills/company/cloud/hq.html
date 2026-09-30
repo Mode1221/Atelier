@@ -226,6 +226,8 @@ function go(svc) {
 
 // 사람이 읽는 일정 (CRON_TZ=Asia/Seoul 분 시 * * 요일)
 function schedule(cron) {
+  const every = /^(?:CRON_TZ=\S+\s+)?(\d+)\s+\*\/(\d+)\s+\*\s+\*\s+\*$/.exec(cron ?? '');
+  if (every) return `${every[2]}시간마다 (${every[1].padStart(2, '0')}분)`;
   const m = /^(?:CRON_TZ=\S+\s+)?(\d+)\s+(\d+)\s+\*\s+\*\s+(\S+)$/.exec(cron ?? '');
   if (!m) return cron ? '정해진 일정' : '일정 없음';
   const t = `${m[2].padStart(2, '0')}:${m[1].padStart(2, '0')}`;
@@ -474,8 +476,18 @@ function remoteError(e) {
 async function loadRoutines() {
   if (!mcp) return;
   try {
-    const r = await mcp.callTool(REMOTE, 'list_triggers', { limit: 100 }, { cache: false });
-    S.routines = Array.isArray(r.payload?.data) ? r.payload.data : [];
+    // 이 본부에 적힌 부서 예약만 찾으면 되므로, 다 찾으면 다음 쪽을 읽지 않는다
+    const want = new Set(S.services.flatMap((v) => Object.values(v.routines ?? {})));
+    const all = [];
+    let cursor;
+    for (let page = 0; page < 10; page++) {
+      const r = await mcp.callTool(REMOTE, 'list_triggers', { limit: 100, ...(cursor ? { cursor } : {}) }, { cache: false });
+      const data = Array.isArray(r.payload?.data) ? r.payload.data : [];
+      all.push(...data);
+      cursor = r.payload?.next_cursor;
+      if (!r.payload?.has_more || !cursor || [...want].every((id) => all.some((t) => t.id === id))) break;
+    }
+    S.routines = all;
     S.routinesErr = null;
   } catch (e) {
     S.routinesErr = remoteError(e);
