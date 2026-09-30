@@ -121,7 +121,7 @@ export function tripPage({ trip, people, items, expenses, activity = [] }, { sup
     .map(
       (i) => `<li class="item${i.claimed_by == null ? ' open' : ''}" data-item-id="${i.id}" data-claimed-by="${i.claimed_by ?? ''}" data-packed="${i.packed ? 1 : 0}" data-name="${esc(i.name)}">
 <div class="item-main"><strong>${esc(i.name)}</strong>${i.qty > 1 ? ` <span class="muted">×${i.qty}</span>` : ''}<br>${ownerLabel(i, names)}</div>
-<div class="item-actions"></div></li>`,
+<div class="item-actions"></div><div class="item-more" hidden></div></li>`,
     )
     .join('');
   const personalRows = personal

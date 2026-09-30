@@ -95,6 +95,7 @@ test('친구 흐름: 초대 링크 → 이름 → 맡기, 먼저 맡은 건 뺏�
 test('실수로 지운 준비물 되살리기 + 누가 했는지', async ({ page }) => {
   await createTrip(page);
   await joinAs(page, '민수');
+  await page.getByRole('button', { name: '토치 더 보기' }).click();
   await page.getByRole('button', { name: '토치 삭제' }).click();
   await expect(page.getByText('지웠어요')).toBeVisible();
   await expect(item(page, '토치')).toHaveCount(0);
@@ -107,6 +108,7 @@ test('실수로 지운 준비물 되살리기 + 누가 했는지', async ({ page
 test('준비물·목록 고치기', async ({ page }) => {
   await createTrip(page);
   await joinAs(page, '민수');
+  await page.getByRole('button', { name: '캠핑 의자 더 보기' }).click();
   await page.getByRole('button', { name: '캠핑 의자 고치기' }).click();
   await expect(page.getByLabel('준비물 이름')).toBeFocused();
   await page.getByLabel('준비물 이름').fill('릴렉스 체어');

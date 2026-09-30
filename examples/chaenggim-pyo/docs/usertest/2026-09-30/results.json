@@ -1,6 +1,6 @@
 {
-  "at": "2026-09-30T09:33:38.522Z",
-  "baseUrl": "http://127.0.0.1:33413",
+  "at": "2026-09-30T12:16:18.888Z",
+  "baseUrl": "http://127.0.0.1:37971",
   "personas": [
     {
       "id": "P1",
@@ -120,7 +120,7 @@
         {
           "step": "fill \"어디 가요?\"",
           "ok": true,
-          "ms": 33
+          "ms": 35
         },
         {
           "step": "check \"캠핑\"",
@@ -130,20 +130,20 @@
         {
           "step": "click \"준비물 목록 만들기\"",
           "ok": true,
-          "ms": 36
+          "ms": 40
         },
         {
           "step": "see \"관리 링크를 저장해 두세요\"",
           "ok": true,
-          "ms": 101
+          "ms": 107
         },
         {
           "step": "see \"텐트\"",
           "ok": true,
-          "ms": 12
+          "ms": 10
         }
       ],
-      "ms": 1309,
+      "ms": 1145,
       "stuck": null,
       "endShot": "shots/P1-T1-end.jpg",
       "missingWords": [],
@@ -158,30 +158,30 @@
         {
           "step": "fill \"먼저 내 이름을 적어 주세요\"",
           "ok": true,
-          "ms": 19
+          "ms": 20
         },
         {
           "step": "click \"참여하기\"",
           "ok": true,
-          "ms": 45
+          "ms": 47
         },
         {
           "step": "see \"참여 중이에요\"",
           "ok": true,
-          "ms": 35
+          "ms": 31
         },
         {
           "step": "click \"텐트 내가 챙길게\"",
           "ok": true,
-          "ms": 26
+          "ms": 30
         },
         {
           "step": "see \"현우 맡음\"",
           "ok": true,
-          "ms": 808
+          "ms": 817
         }
       ],
-      "ms": 943,
+      "ms": 959,
       "stuck": null,
       "endShot": "shots/P1-T2-end.jpg",
       "missingWords": [],
@@ -196,35 +196,35 @@
         {
           "step": "select \"낸 사람\"",
           "ok": true,
-          "ms": 18
+          "ms": 20
         },
         {
           "step": "fill \"금액 (원)\"",
           "ok": true,
-          "ms": 9
+          "ms": 8
         },
         {
           "step": "fill \"어디에 썼어요?\"",
           "ok": true,
-          "ms": 6
+          "ms": 9
         },
         {
           "step": "click \"기록하기\"",
           "ok": true,
-          "ms": 44
+          "ms": 36
         },
         {
           "step": "see \"이렇게 보내면 끝\"",
           "ok": true,
-          "ms": 812
+          "ms": 822
         },
         {
           "step": "see \"20,000원\"",
           "ok": true,
-          "ms": 5
+          "ms": 6
         }
       ],
-      "ms": 909,
+      "ms": 919,
       "stuck": null,
       "endShot": "shots/P1-T3-end.jpg",
       "missingWords": [],
@@ -239,15 +239,15 @@
         {
           "step": "click \"카톡용 현황 복사\"",
           "ok": true,
-          "ms": 27
+          "ms": 29
         },
         {
           "step": "see \"현황을 복사했어요\"",
           "ok": true,
-          "ms": 33
+          "ms": 10
         }
       ],
-      "ms": 64,
+      "ms": 43,
       "stuck": null,
       "endShot": "shots/P1-T4-end.jpg",
       "missingWords": [],
@@ -262,30 +262,30 @@
         {
           "step": "fill \"어디 가요?\"",
           "ok": true,
-          "ms": 27
+          "ms": 29
         },
         {
           "step": "check \"캠핑\"",
           "ok": true,
-          "ms": 5
+          "ms": 8
         },
         {
           "step": "click \"준비물 목록 만들기\"",
           "ok": true,
-          "ms": 46
+          "ms": 35
         },
         {
           "step": "see \"관리 링크를 저장해 두세요\"",
           "ok": true,
-          "ms": 94
+          "ms": 100
         },
         {
           "step": "see \"텐트\"",
           "ok": true,
-          "ms": 15
+          "ms": 10
         }
       ],
-      "ms": 1143,
+      "ms": 1084,
       "stuck": null,
       "endShot": "shots/P2-T1-end.jpg",
       "missingWords": [],
@@ -300,12 +300,12 @@
         {
           "step": "fill \"먼저 내 이름을 적어 주세요\"",
           "ok": true,
-          "ms": 19
+          "ms": 18
         },
         {
           "step": "click \"참여하기\"",
           "ok": true,
-          "ms": 34
+          "ms": 50
         },
         {
           "step": "see \"참여 중이에요\"",
@@ -315,15 +315,15 @@
         {
           "step": "click \"텐트 내가 챙길게\"",
           "ok": true,
-          "ms": 30
+          "ms": 29
         },
         {
           "step": "see \"현우 맡음\"",
           "ok": true,
-          "ms": 813
+          "ms": 814
         }
       ],
-      "ms": 942,
+      "ms": 958,
       "stuck": null,
       "endShot": "shots/P2-T2-end.jpg",
       "missingWords": [
@@ -340,25 +340,25 @@
         {
           "step": "fill \"먼저 내 이름을 적어 주세요\"",
           "ok": true,
-          "ms": 17
+          "ms": 22
         },
         {
           "step": "click \"참여하기\"",
           "ok": true,
-          "ms": 33
+          "ms": 44
         },
         {
           "step": "click \"버너 내가 챙길게\"",
           "ok": true,
-          "ms": 98
+          "ms": 81
         },
         {
           "step": "see \"서준 맡음\"",
           "ok": true,
-          "ms": 808
+          "ms": 817
         }
       ],
-      "ms": 965,
+      "ms": 974,
       "stuck": null,
       "endShot": "shots/P3-T5-end.jpg",
       "missingWords": [],
@@ -378,25 +378,25 @@
         {
           "step": "check \"캠핑\"",
           "ok": true,
-          "ms": 9
+          "ms": 7
         },
         {
           "step": "click \"준비물 목록 만들기\"",
           "ok": true,
-          "ms": 37
+          "ms": 38
         },
         {
           "step": "see \"관리 링크를 저장해 두세요\"",
           "ok": true,
-          "ms": 91
+          "ms": 96
         },
         {
           "step": "see \"텐트\"",
           "ok": true,
-          "ms": 13
+          "ms": 19
         }
       ],
-      "ms": 1144,
+      "ms": 1197,
       "stuck": null,
       "endShot": "shots/P4-T1-end.jpg",
       "missingWords": [],
@@ -411,27 +411,27 @@
         {
           "step": "select \"낸 사람\"",
           "ok": true,
-          "ms": 19
+          "ms": 27
         },
         {
           "step": "fill \"금액 (원)\"",
           "ok": true,
-          "ms": 7
+          "ms": 8
         },
         {
           "step": "fill \"어디에 썼어요?\"",
           "ok": true,
-          "ms": 6
+          "ms": 8
         },
         {
           "step": "click \"기록하기\"",
           "ok": true,
-          "ms": 30
+          "ms": 50
         },
         {
           "step": "see \"이렇게 보내면 끝\"",
           "ok": true,
-          "ms": 810
+          "ms": 818
         },
         {
           "step": "see \"20,000원\"",
@@ -439,7 +439,7 @@
           "ms": 4
         }
       ],
-      "ms": 890,
+      "ms": 933,
       "stuck": null,
       "endShot": "shots/P4-T3-end.jpg",
       "missingWords": [],

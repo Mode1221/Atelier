@@ -278,7 +278,10 @@
       const owner = Number(li.dataset.claimedBy) || null;
       const name = li.dataset.name;
       const box = li.querySelector('.item-actions');
+      const more = li.querySelector('.item-more');
       box.replaceChildren();
+      more.replaceChildren();
+      more.hidden = true;
       const act = (action, extra = {}) => (b) => {
         if (!me) return needMe();
         busy(b, () =>
@@ -293,13 +296,23 @@
         const packed = li.dataset.packed === '1';
         const p = btn(packed ? '챙김 ✓' : '챙겼어요', `${name} 챙겼어요`, packed ? 'packed' : '', act('pack', { packed: !packed }));
         p.setAttribute('aria-pressed', String(packed));
-        box.append(p, btn('취소', `${name} 맡기 취소`, 'ghost', act('unclaim')));
+        box.append(p);
+        more.append(btn('맡기 취소', `${name} 맡기 취소`, 'ghost', act('unclaim')));
       }
-      if (!owner || owner === me)
-        box.append(
+      // 자주 안 쓰는 버튼은 "⋯" 안에 (좁은 화면에서 줄이 뭉치지 않게)
+      if (!owner || owner === me) {
+        more.append(
           btn('고치기', `${name} 고치기`, 'ghost', () => openEdit(li)),
           btn('삭제', `${name} 삭제`, 'ghost', (b) => busy(b, () => call('DELETE', `/items/${id}`).then(() => reload('지웠어요 — "최근 변경"에서 되살릴 수 있어요'), (e) => toast(e.message)))),
         );
+        const toggle = btn('⋯', `${name} 더 보기`, 'ghost more', () => {
+          more.hidden = !more.hidden;
+          toggle.setAttribute('aria-expanded', String(!more.hidden));
+          if (!more.hidden) more.querySelector('button').focus();
+        });
+        toggle.setAttribute('aria-expanded', 'false');
+        box.append(toggle);
+      }
       li.classList.toggle('mine', !!owner && owner === me);
     }
     applyFilter();
