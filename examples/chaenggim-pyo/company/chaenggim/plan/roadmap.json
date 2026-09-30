@@ -1,0 +1,106 @@
+{
+  "stage": "6 출시 — 공개 베타",
+  "focus": "첫 2주: 실제 모임 20곳이 친구를 불러 준비물을 나눠 보게 한다",
+  "goals": [
+    {
+      "id": "g1",
+      "text": "참여자 2명 이상인 목록 만들기",
+      "metric": "이번 주 참여가 생긴 목록",
+      "target": 20,
+      "current": null,
+      "unit": "개",
+      "due": "2026-10-14",
+      "source": "측정 없음 — /api/stats 토큰 연결 전"
+    },
+    {
+      "id": "g2",
+      "text": "베타 의견 모으기",
+      "metric": "누적 의견",
+      "target": 10,
+      "current": null,
+      "unit": "건",
+      "due": "2026-10-14",
+      "source": "측정 없음"
+    },
+    {
+      "id": "g3",
+      "text": "치명 오류 0 유지",
+      "metric": "치명 이슈",
+      "target": 0,
+      "current": 0,
+      "unit": "건",
+      "due": "2026-10-14",
+      "source": "CI·운영 스모크 (2026-09-30 통과)"
+    }
+  ],
+  "items": [
+    {
+      "id": "r1",
+      "title": "채널별 홍보 글 다듬기 (에브리타임·오픈채팅·스레드)",
+      "why": "g1",
+      "dept": "marketing",
+      "status": "now",
+      "stage": "launch L4",
+      "done": true
+    },
+    {
+      "id": "r2",
+      "title": "홍보 글 올리기",
+      "why": "g1",
+      "dept": "human",
+      "status": "now",
+      "stage": "launch L2",
+      "done": false
+    },
+    {
+      "id": "r3",
+      "title": "운영 지표 연결 (STATS 토큰)",
+      "why": "g1",
+      "dept": "human",
+      "status": "now",
+      "stage": "grow R1",
+      "done": false
+    },
+    {
+      "id": "r4",
+      "title": "매일 의견 분류",
+      "why": "g2",
+      "dept": "support",
+      "status": "now",
+      "stage": "launch L2",
+      "done": false
+    },
+    {
+      "id": "r5",
+      "title": "카톡 인앱 브라우저에서 참여·맡기 확인",
+      "why": "g3",
+      "dept": "qa",
+      "status": "next",
+      "stage": "launch L2",
+      "done": false
+    },
+    {
+      "id": "r6",
+      "title": "템플릿 추가 (차박·글램핑·해외여행)",
+      "why": "g1",
+      "dept": "dev",
+      "status": "later",
+      "stage": "grow R5",
+      "done": false
+    },
+    {
+      "id": "r7",
+      "title": "\"아직 없음\" 준비물 빌리기·사기 클릭 측정",
+      "why": "g1",
+      "dept": "dev",
+      "status": "later",
+      "stage": "grow R4",
+      "done": false
+    }
+  ],
+  "updatedAt": "2026-09-30T08:59:12Z",
+  "reviewAt": "2026-10-14",
+  "history": [
+    "2026-09-30 처음 만듦 (공개 베타 시작)"
+  ]
+}

@@ -1,13 +1,13 @@
-# Atelier beta — 벌금장부 "의견 보내기"로 들어온 베타 피드백을 매일 GitHub 이슈(요약 1건)로 옮긴다.
+# Atelier beta — 챙김표 "의견 보내기"로 들어온 베타 피드백을 매일 GitHub 이슈(요약 1건)로 옮긴다.
 # 사람 할 일 없음: 서비스 인증 토큰은 CLOUDFLARE_API_TOKEN 에서 배포 워크플로와 같은 방법으로 만든다.
 # 옮겨진 이슈(`feedback`, `dept:support`)는 AI 회사 고객지원 부서가 분류한다.
-name: Beolgeum feedback
+name: Chaenggim feedback
 on:
   schedule:
-    - cron: "40 0 * * *"   # 매일 09:40 KST
+    - cron: "43 0 * * *"   # 매일 09:43 KST
   push:
     branches: [main]
-    paths: [".github/workflows/beolgeum-feedback.yml", "skills/beta/templates/feedback-sync.mjs"]   # 수집기를 바꾸면 한 번 바로 실행
+    paths: [".github/workflows/chaenggim-feedback.yml", "skills/beta/templates/feedback-sync.mjs"]   # 수집기를 바꾸면 한 번 바로 실행
   workflow_dispatch:
 permissions:
   contents: read
@@ -23,8 +23,9 @@ jobs:
       - name: 피드백 → 이슈
         env:
           CF: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          SERVICE_URL: ${{ vars.BEOLGEUM_URL || 'https://beolgeum-jangbu.atlier-skill.workers.dev' }}
-          SERVICE_NAME: 벌금장부
+          SERVICE_URL: ${{ vars.CHAENGGIM_URL || 'https://chaenggim-pyo.atlier-skill.workers.dev' }}
+          SERVICE_NAME: 챙김표
+          FEEDBACK_LABELS: feedback,dept:support,svc:chaenggim
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
         run: |

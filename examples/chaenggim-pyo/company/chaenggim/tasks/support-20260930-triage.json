@@ -1,0 +1,10 @@
+{
+  "dept": "support",
+  "title": "첫 의견 분류",
+  "detail": "매일 09:43 GitHub 이슈(라벨 svc:chaenggim)로 들어오는 의견을 분류 — 오류는 qa, 제안은 plan",
+  "status": "todo",
+  "by": "ceo",
+  "note": "",
+  "createdAt": "2026-09-30T08:59:12Z",
+  "updatedAt": "2026-09-30T08:59:12Z"
+}

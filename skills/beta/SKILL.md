@@ -34,6 +34,7 @@ description: 공개 베타 운영. 링크를 열어 두고 실제 사용자 피�
 **GitHub 방식(고급)**: 매일 이슈로 옮기기 —
 `templates/feedback-sync.mjs` + 워크플로(예: `.github/workflows/beolgeum-feedback.yml`).
 - 하루치를 **이슈 1건**(표)으로 — 이슈 폭주 방지. 라벨 `feedback`, `dept:support`.
+- 저장소 하나에 서비스가 여럿이면 `SERVICE_NAME`(이슈 제목 앞 `[이름]`)과 `FEEDBACK_LABELS`(예: `feedback,dept:support,svc:<id>`)로 구분 — 예: `.github/workflows/chaenggim-feedback.yml`.
 - 이슈 본문은 이스케이프(멘션·HTML·표 깨짐 방지). 이슈가 만들어진 뒤에만 ack → 실패해도 다음 날 다시 옮김.
 - 토큰은 사람이 만들 필요 없게 배포 비밀값에서 한 방향 해시로 파생해 배포·수집 양쪽이 같은 값을 쓴다 (예: `sha256("atelier-feedback:" + CLOUDFLARE_API_TOKEN)`).
 

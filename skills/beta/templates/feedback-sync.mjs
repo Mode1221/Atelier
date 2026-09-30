@@ -2,7 +2,7 @@
 // Atelier beta — 서비스에 쌓인 베타 피드백을 하루 한 번 GitHub 이슈(요약 1건)로 옮긴다.
 // 서비스 계약: GET {SERVICE_URL}/api/feedback → { items: [{id, kind, message, page, created_at}] }
 //              POST {SERVICE_URL}/api/feedback/ack {upTo} → 옮긴 것까지 표시 (Authorization: Bearer FEEDBACK_TOKEN)
-// 환경변수: SERVICE_URL, FEEDBACK_TOKEN, GH_TOKEN, REPO(owner/name). 선택: FEEDBACK_LABELS (쉼표, 기본 "feedback,dept:support")
+// 환경변수: SERVICE_URL, FEEDBACK_TOKEN, GH_TOKEN, REPO(owner/name). 선택: FEEDBACK_LABELS (쉼표, 기본 "feedback,dept:support"), SERVICE_NAME (이슈 제목 앞 [이름] — 저장소 하나에 서비스가 여럿일 때)
 // 의존성 없음 (Node 22+).
 
 export const KIND_LABEL = { good: '좋아요', hard: '불편해요', bug: '오류', idea: '제안' };
@@ -19,7 +19,7 @@ export function cell(text) {
     .replace(/\r?\n/g, '<br>');
 }
 
-export function buildIssue(items, { date = new Date().toISOString().slice(0, 10) } = {}) {
+export function buildIssue(items, { date = new Date().toISOString().slice(0, 10), product = '' } = {}) {
   const counts = {};
   for (const i of items) counts[i.kind] = (counts[i.kind] ?? 0) + 1;
   const summary = Object.entries(counts)
@@ -27,7 +27,7 @@ export function buildIssue(items, { date = new Date().toISOString().slice(0, 10)
     .join(' · ');
   const rows = items.map((i) => `| ${i.id} | ${KIND_LABEL[i.kind] ?? cell(i.kind)} | ${cell(i.page)} | ${cell(i.created_at?.slice(0, 16).replace('T', ' '))} | ${cell(i.message) || '—'} |`);
   return {
-    title: `베타 피드백 ${date} (${items.length}건)`,
+    title: `${product ? `[${product}] ` : ''}베타 피드백 ${date} (${items.length}건)`, // 저장소 하나에 서비스가 여럿이면 SERVICE_NAME 으로 구분
     body: [
       `서비스 "의견 보내기"로 들어온 익명 의견입니다. ${summary}`,
       '',
@@ -66,7 +66,7 @@ export async function sync({ env = process.env, fetchImpl = fetch, apiBase = 'ht
     });
   const labels = (env.FEEDBACK_LABELS ?? 'feedback,dept:support').split(',').map((s) => s.trim()).filter(Boolean);
   for (const name of labels) await gh('/labels', { method: 'POST', body: JSON.stringify({ name, color: name === 'feedback' ? 'fbca04' : 'ededed' }) }); // 이미 있으면 422 — 무시
-  const issue = buildIssue(items);
+  const issue = buildIssue(items, { product: env.SERVICE_NAME });
   const created = await gh('/issues', { method: 'POST', body: JSON.stringify({ ...issue, labels }) });
   if (!created.ok) throw new Error(`이슈 만들기 실패: HTTP ${created.status}`);
   const { html_url } = await created.json();

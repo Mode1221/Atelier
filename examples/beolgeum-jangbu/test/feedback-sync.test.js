@@ -64,4 +64,9 @@ describe('피드백 수집기', () => {
     expect(body).toContain('불편해요 1');
     expect(body).toContain('| 1 | 불편해요 | / | 2026-09-29 01:02 | x |');
   });
+  it('서비스 이름을 주면 제목 앞에 붙인다 (저장소 하나에 서비스 여럿)', () => {
+    const items = [{ id: 1, kind: 'good', message: '', page: '/', created_at: '2026-09-29T01:02:03Z' }];
+    expect(buildIssue(items, { date: '2026-09-29' }).title).toBe('베타 피드백 2026-09-29 (1건)');
+    expect(buildIssue(items, { date: '2026-09-29', product: '챙김표' }).title).toBe('[챙김표] 베타 피드백 2026-09-29 (1건)');
+  });
 });

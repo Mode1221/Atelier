@@ -1,0 +1,31 @@
+{
+  "name": "챙김표",
+  "summary": "캠핑·여행 준비물 분담 + 장본 돈 n빵 (가입 없음)",
+  "audience": "3~10명 여행·캠핑 모임 총무와 친구들",
+  "kind": "웹",
+  "url": "https://chaenggim-pyo.atlier-skill.workers.dev",
+  "stage": "6 출시 / L2 공개 베타",
+  "repo": "Mode1221/Atelier-dev",
+  "project": "examples/chaenggim-pyo",
+  "done": [
+    "1~5단계 완료 (PROJECT.md)",
+    "AI 대리 사용성 테스트 통과 — CI 매번 재실행",
+    "운영 배포·스모크 (chaenggim.yml)",
+    "홍보 글 초안 3채널 (docs/share/posts.json)",
+    "의견 매일 GitHub 이슈로 수집 (chaenggim-feedback.yml, 라벨 svc:chaenggim)"
+  ],
+  "cautions": [
+    "main push = 운영 배포 (chaenggim.yml) — 배포는 결재 대상",
+    "돈은 계산만 (송금·보관 금지)"
+  ],
+  "existing": [
+    "배포 때마다 테스트·E2E·usertest·스모크 (chaenggim.yml)",
+    "매일 09:43 의견 → GitHub 이슈 (chaenggim-feedback.yml)"
+  ],
+  "enabled": [
+    "ceo",
+    "support",
+    "marketing"
+  ],
+  "createdAt": "2026-09-30T08:57:43Z"
+}
