@@ -16,6 +16,9 @@
 /plugin marketplace add Mode1221/Atelier
 /plugin install atelier@atelier
 ```
+이미 설치했다면 `/plugin marketplace update atelier` 후 `/plugin update atelier@atelier` 로 최신 버전을 받습니다.
+
+> 만드는 사람용: 스킬을 바꿔 배포할 때마다 `.claude-plugin/plugin.json` 의 `version` 을 올려야 기존 설치자에게 업데이트가 전달됩니다 (작은 수정 0.7.1, 기능 추가 0.8.0).
 
 ## 사용
 프로젝트 폴더에서 `/atelier:pilot` 으로 시작합니다. 인터뷰를 거쳐 `PROJECT.md`(맞춤 로드맵)가 만들어지고, 이후 세션마다 현재 단계를 안내합니다.

@@ -17,13 +17,25 @@
 - [ ] 외부 API 실패 시 폴백
 - [ ] 탈퇴 시 데이터 처리
 - [ ] 마이그레이션이 빈 DB 와 기존 DB 모두에서 적용된다
+- [ ] **화면에 빈 값이 글자로 새지 않는다**: 화면 테스트(jsdom·E2E)의 주요 화면마다 `document.body.textContent` 에 `null`·`undefined`·`NaN`·`[object Object]` 가 없는지 확인한다. 실제 브라우저로 화면을 보지 못한 환경에서도 이 검사는 돌아간다.
 
 ## 원칙
+- DOM 을 직접 다루면 `replaceChildren`·`append` 에 `null`·`false` 를 넘기지 않는다 — 브라우저가 `"null"` 글자로 그린다. 조건부 요소는 걸러 넣는 도우미(`put(el, ...kids)` 처럼 `k != null && k !== false` 만 넣기)를 쓴다.
 - 단위 테스트 러너와 E2E 러너의 파일 경로를 분리한다 (예: `test/**/*.test.js` vs `e2e/**/*.spec.js`) — 한 러너가 다른 러너의 파일을 집어 실패하는 일이 흔하다.
 - 외부 API 는 테스트에서 호출하지 않는다 (모킹). 키 없는 환경에서 테스트가 통과해야 한다.
 - 버그를 고칠 때는 **실패하는 테스트를 먼저** 쓴다.
 - 불안정한(flaky) 테스트는 끄지 말고 원인을 고친다.
 - 게임: 로직(데미지 계산·경제·저장/불러오기)은 단위 테스트, 재미는 플레이테스트.
+
+## 화면 텍스트 검사 예시 (vitest + jsdom)
+```js
+const BAD_TEXT = /\b(null|undefined|NaN)\b|\[object Object\]/;
+const noLeakedValues = () => {
+  const t = document.body.textContent; const m = t.match(BAD_TEXT);
+  expect(m ? `화면에 '${m[0]}' 가 보여요: …${t.slice(Math.max(0, m.index - 30), m.index + 30)}…` : 'ok').toBe('ok');
+};
+// 화면이 바뀔 때마다(목록·결과·빈 상태) noLeakedValues() 를 부른다.
+```
 
 ## 수동 점검 (출시 전)
 - [ ] 실제 기기: iOS·Android 각 1대, 저사양 기기 1대
