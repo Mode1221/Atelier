@@ -17,6 +17,7 @@ description: 보안·법률 점검. 배포·출시 전 보안 점검, 비밀값�
 ### G1. 보안 점검
 1. `/security-review` 를 실행한다.
 2. `references/security-checklist.md` 를 항목별로 확인하고 결과표를 남긴다.
+2-1. 비밀값 자동 검사: `scripts/secret-scan.mjs` (키·토큰·개인키·JWT 모양, 올라간 `.env`) — build 품질 게이트에 포함돼 매 push 마다 돈다.
 3. 의존성 취약점 스캔: `npm audit` / `pip-audit` / 스택별 도구. CI 에 자동 스캔(Dependabot 등) 추가.
 4. 비밀값 스캔: 저장소 전체 이력. 노출됐으면 **키 폐기·재발급**이 먼저다(이력 삭제만으로는 부족).
 5. 권한 우회 시도: 다른 사용자 ID·관리자 경로·한도 우회를 직접 요청해 본다.

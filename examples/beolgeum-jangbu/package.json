@@ -16,7 +16,8 @@
     "deploy:first": "node scripts/deploy-first.mjs",
     "feedback:pull": "node scripts/feedback-pull.mjs",
     "watch:setup": "node ops/watchdog/setup.mjs",
-    "backup": "node scripts/backup.mjs"
+    "backup": "node scripts/backup.mjs",
+    "quality": "node ../../skills/build/scripts/quality-gate.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

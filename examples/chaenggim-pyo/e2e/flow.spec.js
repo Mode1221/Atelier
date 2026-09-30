@@ -27,7 +27,7 @@ async function friend(browser, url) {
 }
 const item = (page, name) => page.locator('li.item', { has: page.getByText(name, { exact: true }) });
 
-test('총무 흐름: 만들기 → 참여 → 맡기 → 챙김 → 추가 → 장본 돈 → 카톡 현황', async ({ page }) => {
+test('F1·F3·F4·F6 총무 흐름: 만들기 → 참여 → 맡기 → 챙김 → 추가 → 장본 돈 → 카톡 현황', async ({ page }) => {
   await createTrip(page);
   await expect(page.getByText('0/16 맡음')).toBeVisible();
   await joinAs(page, '민수');

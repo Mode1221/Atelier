@@ -138,6 +138,18 @@ describe('F3 준비물 맡기', () => {
   });
 });
 
+describe('F3-1 각자 챙길 것', () => {
+  it('각자 챙길 것을 추가하면 공용 목록이 아닌 "각자 챙길 것"에 보이고, 진행률에 들어가지 않는다', async () => {
+    const { id } = await newTrip('blank');
+    await req('POST', `/api/trips/${id}/items`, { body: { name: '슬리퍼', kind: 'personal' } });
+    await req('POST', `/api/trips/${id}/items`, { body: { name: '버너' } });
+    expect((await load(id)).items.map((i) => [i.name, i.kind])).toEqual([['슬리퍼', 'personal'], ['버너', 'shared']]);
+    const html = await (await req('GET', `/t/${id}`)).text();
+    expect(html).toContain('0/1 맡음');
+    expect(html).toContain('aria-label="슬리퍼 삭제"');
+  });
+});
+
 describe('F4 장본 돈 나누기', () => {
   it('지출 → 화면에 송금 안내', async () => {
     const { id } = await newTrip('blank');
@@ -429,7 +441,7 @@ describe('후원 링크', () => {
   });
 });
 
-describe('베타 피드백', () => {
+describe('F7 베타 피드백', () => {
   it('저장하면서 연락처·목록 링크를 가리고 경로는 패턴만 남긴다', async () => {
     const r = await req('POST', '/api/feedback', { body: { kind: 'idea', message: '좋아요 a@b.com 010-1234-5678 https://x.dev/t/abc123', page: '/t/abc123' } });
     expect(r.status).toBe(204);

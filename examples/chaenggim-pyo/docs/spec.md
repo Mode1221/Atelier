@@ -44,7 +44,23 @@
 - 보안: CSP `script-src 'self'`, 모든 출력 이스케이프, 로그에 이름·키·원본 IP 없음.
 
 ## S6. 분석 이벤트
-구조화 로그(Workers observability): `landing{src}`, `trip_created{template}`, `trip_opened`, `person_joined`, `item_added{kind}`, `item_claim|unclaim|pack`, `expense_added{people}`, `summary_copied`, `shared`, `feedback_sent`, `trip_deleted`. 집계는 `/api/stats`(토큰).
+구조화 로그(Workers observability), 집계는 `/api/stats`(토큰). 이름·금액 같은 개인정보는 넣지 않는다. 검사: `events-check.mjs`.
+| 이벤트 | 언제 | 속성 | 지표 |
+|---|---|---|---|
+| `landing{src}` | 첫 화면 (?ref·utm) | 채널 | 채널별 유입 |
+| `trip_created{template}` | 목록 만들기 | 템플릿 | 획득 |
+| `trip_opened` | 목록 화면 열림 | — | 재방문 |
+| `person_joined` | 이름 적고 참여 | — | **북극성: 2명 이상 함께 쓴 목록** |
+| `item_added{kind}` | 준비물 추가 | 공용/각자 | 활성화 |
+| `item_claim|unclaim|pack` | 맡기·취소·챙김 표시(켜기·끄기 모두 pack) | — | 핵심 행동 |
+| `item_edit`, `item_delete`, `item_restore` | 고치기·지우기·되살리기 | — | 실수·장난 빈도 (F8) |
+| `trip_edited` | 목록 이름·날짜 고침 | — | — |
+| `expense_added{people}`, `expense_restore` | 낸 돈 기록·되살리기 | 나눈 사람 수 | 정산 사용 |
+| `summary_copied`, `shared` | 카톡 현황 복사·공유 | — | 공유·바이럴 |
+| `feedback_sent{kind,page}` | 의견 보내기 | 종류·화면 | 베타 의견 |
+| `support_clicked` | 개발자 응원하기 | — | 수익화 |
+| `trip_deleted` | 목록 삭제 | — | 이탈 |
+| `request_failed`, `daily_cleanup` | 서버 오류 / 매일 정리 (운영) | — | 품질·운영 |
 
 ## S7. 마일스톤
 1) 데이터·API·정산 계산 + 단위 테스트 → 2) 화면·E2E·접근성 → 3) 법률·운영 → 4) AI 대리 사용성 테스트 → 5) 공개 베타.

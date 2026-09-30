@@ -11,7 +11,7 @@ async function createGroup(page, name = '알고리즘 스터디') {
   await expect(page.getByText('관리 링크를 꼭 저장하세요')).toBeVisible();
 }
 
-test('운영자 핵심 흐름: 만들기 → 멤버 → 회차 → 납부 → 보기 링크', async ({ page, context }) => {
+test('F1~F6 운영자 핵심 흐름: 만들기 → 멤버 → 회차 → 납부 → 보기 링크', async ({ page, context }) => {
   await createGroup(page);
   for (const n of ['민수', '지영']) {
     await page.getByLabel('이름 (별명 권장)').fill(n);

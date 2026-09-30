@@ -80,6 +80,12 @@
 | `view_link_opened` | 보기 링크 열림 | — | 공유·바이럴 |
 | `summary_copied` | 카톡용 복사 | — | 공유 |
 | `request_failed` | API 오류 | 코드 | 품질 |
+| `landing` | 첫 화면 방문 (?ref·utm 있을 때) | src (채널) | 채널별 유입 |
+| `shared` | 공유 버튼 (휴대폰 공유 창·복사) | — | 공유·바이럴 |
+| `support_clicked` | "개발자 응원하기" 클릭 | — | 수익화 (R4) |
+| `feedback_sent` | 의견 보내기 | kind, page | 베타 의견 |
+| `group_deleted` | 모임 삭제 | — | 이탈 |
+| `daily_cleanup` | 매일 정리 크론 (운영) | purged | 운영 확인 |
 MVP 는 서버 로그 기반 집계(외부 분석 SDK 없음 → 쿠키 동의 불필요). 이름 등 개인정보는 이벤트에 넣지 않는다.
 
 ## S7. 마일스톤·작업

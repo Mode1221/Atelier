@@ -4,9 +4,9 @@ name: Chaenggim
 on:
   push:
     branches: [main]
-    paths: ["examples/chaenggim-pyo/**", "skills/beta/templates/**", "skills/usertest/scripts/**", ".github/workflows/chaenggim.yml"]
+    paths: ["skills/pilot/scripts/**", "skills/spec/scripts/**", "skills/build/scripts/**", "skills/guard/scripts/**", "examples/chaenggim-pyo/**", "skills/beta/templates/**", "skills/usertest/scripts/**", ".github/workflows/chaenggim.yml"]
   pull_request:
-    paths: ["examples/chaenggim-pyo/**", "skills/beta/templates/**", "skills/usertest/scripts/**", ".github/workflows/chaenggim.yml"]
+    paths: ["skills/pilot/scripts/**", "skills/spec/scripts/**", "skills/build/scripts/**", "skills/guard/scripts/**", "examples/chaenggim-pyo/**", "skills/beta/templates/**", "skills/usertest/scripts/**", ".github/workflows/chaenggim.yml"]
   workflow_dispatch:
 defaults:
   run:
@@ -21,6 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm, cache-dependency-path: examples/chaenggim-pyo/package-lock.json }
       - run: npm ci
+      - name: 품질 게이트 (증거·요구사항 추적·이벤트 계획·DB 변경·비밀값)
+        run: npm run quality
       - run: npm run lint
       - run: npm test
       - run: npx playwright install --with-deps chromium

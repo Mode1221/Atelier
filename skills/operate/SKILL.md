@@ -14,10 +14,12 @@ description: 운영 단계. 업타임·에러·비용 모니터링과 알림, �
 `references/monitoring-alerts.md`. 업타임·에러율·응답 시간·비용·핵심 지표에 알림. 알림은 **휴대폰**으로 온다.
 기본은 **서비스 지킴이**: `npm run watch:setup` 한 줄 → 5분마다 확인, 죽으면 휴대폰(ntfy 앱) 알림. 컴퓨터가 꺼져 있어도, GitHub 없이도 동작 (`references/monitoring-alerts.md` 첫 절).
 원칙: 알림은 적고 확실하게. 매일 울리는 알림은 무시하게 된다.
+**서비스 목표치(SLO)와 오류 예산**을 정한다 — `references/slo-incidents.md` 1~2절: 가용성·핵심 흐름 성공률·응답 속도·오류율의 목표(spec S5 와 같은 숫자), 예산을 절반 넘게 쓰면 새 기능을 멈추고 안정화.
 
 ### O2. 장애 대응 런북
 `references/incident-runbook.md` 를 프로젝트에 맞게 채워 `docs/runbook.md` 로 둔다.
 롤백·점검 모드·외부 서비스 차단·공지 방법을 **명령어 수준**으로 적는다. 새벽에 반쯤 잠든 상태로도 따라 할 수 있어야 한다.
+장애 등급(SEV1~3, 사용자 영향 기준)·대응 순서(멈추기 먼저)·**48시간 안 사후 분석**(누구 탓 아닌 구조 개선, 재발 방지는 "자동으로 잡히게") — `references/slo-incidents.md` 3~5절.
 
 ### O3. 백업·복구
 기본은 `npm run backup` 한 줄 (코드 + 운영 DB → 클라우드 동기화 폴더, GitHub 없이). 사람 몫은 처음 한 번 백업 폴더 고르기. 복구를 **한 번 실제로 해 본다**(`git clone <백업.bundle>`). 자세히 `references/backup-recovery.md` 첫 절.
