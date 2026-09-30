@@ -31,6 +31,10 @@
 - [ ] (선택) Bluesky 자동 게시: 계정 만들고 저장소 Secrets `BLUESKY_HANDLE`·`BLUESKY_APP_PASSWORD` 등록 → 1시간 안에 자동 게시
 - [ ] 후원 링크 켜기: 토스아이디 만들고 저장소 Variables `BEOLGEUM_SUPPORT_URL` 등록 (5분, docs/monetization.md)
 
+## AI 회사
+- 본부: https://claude.ai/artifact/SUoKckBbSSWrVbjEF1h3dp (서비스 ID `beolgeum`, 본부 하나에 여러 서비스)
+- 켜진 부서: 대표실(매일 07:52) · 고객지원(매일 09:53) · 마케팅(월·수·금 10:47). 나머지는 본부 부서 탭에서 켜기
+
 ## 로드맵
 해당 없는 항목은 `N/A (이유)`, 건너뛴 항목은 `건너뜀 (이유)` 로 표시한다.
 

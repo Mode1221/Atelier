@@ -66,6 +66,13 @@ ul.plain{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .empty{color:var(--muted);padding:12px;border:1px dashed var(--line);border-radius:8px}
 .note{font-size:13px;color:var(--muted)}
 .flash{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;max-width:calc(100% - 32px);z-index:5}
+nav.svc{display:flex;gap:8px;overflow-x:auto;padding-block:4px 8px}
+nav.svc button{flex:none;display:grid;justify-items:start;gap:0;min-height:52px;padding:6px 14px;text-align:left;border-radius:10px}
+nav.svc button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+nav.svc .nm{font-weight:700}
+nav.svc .meta{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted);font-weight:400}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
+.dot.good{background:var(--good)}.dot.warning{background:var(--warn)}.dot.critical{background:var(--crit)}
 details summary{cursor:pointer;color:var(--muted);font-size:13px}
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}}
 </style>
@@ -75,6 +82,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px}
     <div class="brand"><h1 id="co-name">본부</h1><small id="co-sub">AI 직원들이 일하고, 대표님은 결재만 해요</small></div>
     <a id="co-url" class="small" href="#" target="_blank" rel="noopener" hidden>서비스 열기 ↗</a>
   </header>
+  <nav class="svc" id="svc-bar" aria-label="내 서비스"></nav>
   <div class="state" id="state" data-level="idle" role="status"><strong id="state-title">불러오는 중</strong><span id="state-text" class="muted"></span></div>
   <nav class="tabs" role="tablist" aria-label="본부 메뉴">
     <button role="tab" data-tab="home" aria-selected="true">오늘</button>
@@ -135,8 +143,12 @@ const withUtm = (url, source, campaign) => {
 };
 
 // ---- 상태
-const S = { company: null, approvals: [], tasks: [], human: [], reports: {}, metrics: null, posts: null, shared: new Set(), feedback: [], routines: null, routinesErr: null, loaded: false };
+const S = { services: [], sums: {}, company: null, approvals: [], tasks: [], human: [], reports: {}, metrics: null, posts: null, shared: new Set(), feedback: [], routines: null, routinesErr: null, loaded: false };
 let db = null, mcp = null, canWrite = true;
+// 여러 서비스: 본부 하나에 companies/<서비스ID>/… 로 나눠 담는다. 고른 서비스는 이 브라우저에 기억.
+let cid = null;
+try { cid = localStorage.getItem('hq.service'); } catch {}
+const P = (path) => `companies/${cid}/${path}`;
 let tab = ['home', 'approvals', 'tasks', 'depts', 'share', 'voice'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'home';
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -177,6 +189,7 @@ function overall() {
   if (todo) return ['warning', `대표님 할 일 ${todo}개`, '오늘 탭 아래 목록에서 처리하고 체크해 주세요.'];
   if (levels.includes('warning')) return ['warning', '살펴볼 것이 있어요', '부서 보고의 노란 표시를 확인해 주세요.'];
   if (!S.loaded) return ['idle', '불러오는 중', ''];
+  if (!S.services.length) return ['idle', '아직 등록된 서비스가 없어요', 'Claude 에게 "Atelier 로 새 서비스 본부에 추가해 줘"라고 말하면 여기에 생겨요.'];
   if (!levels.length) return ['idle', '아직 부서 보고가 없어요', '부서가 처음 일하면 여기에 오늘 상태가 나와요.'];
   return ['good', '오늘은 할 일이 없어요', 'AI 부서들이 알아서 일하고 있어요.'];
 }
@@ -184,9 +197,10 @@ function overall() {
 // ---- 화면
 function render() {
   const c = S.company ?? {};
-  document.title = c.name ? `${c.name} 본부` : 'Atelier 본부';
-  $('#co-name').textContent = c.name ? `${c.name} 본부` : '본부';
-  if (c.stage) $('#co-sub').textContent = `지금 단계: ${c.stage}`;
+  document.title = 'Atelier 본부';
+  $('#co-name').textContent = c.name ?? '본부';
+  $('#co-sub').textContent = c.stage ? `지금 단계: ${c.stage}` : 'AI 직원들이 일하고, 대표님은 결재만 해요';
+  renderServices();
   const link = $('#co-url');
   link.hidden = !c.url;
   if (c.url) link.href = c.url;
@@ -202,6 +216,18 @@ function render() {
   $('#n-voice').textContent = newVoice;
   document.querySelectorAll('nav.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
   $('#view').innerHTML = ({ home, approvals, tasks, depts, share, voice })[tab]();
+}
+
+function renderServices() {
+  const bar = $('#svc-bar');
+  if (S.services.length < 2) { bar.hidden = true; return; }
+  bar.hidden = false;
+  bar.innerHTML = S.services.map((v) => {
+    const m = S.sums[v.id] ?? {};
+    const n = (m.pending ?? 0) + (m.todo ?? 0);
+    return `<button data-svc="${esc(v.id)}" aria-pressed="${v.id === cid}"><span class="nm">${esc(v.name ?? v.id)}</span>
+      <span class="meta"><span class="dot ${esc(m.level ?? '')}"></span>${n ? `대표 확인 ${n}건` : '확인할 것 없음'}</span></button>`;
+  }).join('');
 }
 
 function approvalCard(a) {
@@ -360,18 +386,18 @@ async function act(el, ev) {
   try {
     if (a === 'approve') {
       const ap = S.approvals.find((x) => x.id === el.dataset.id);
-      await db.doc(`approvals/${ap.id}`).update({ status: 'approved', decidedAt: now() });
-      const woke = await wake(ap.dept, `대표 결재 승인: approvals/${ap.id} "${ap.title}". 승인된 일을 진행하세요.`);
+      await db.doc(P(`approvals/${ap.id}`)).update({ status: 'approved', decidedAt: now() });
+      const woke = await wake(ap.dept, `대표 결재 승인: ${P('approvals/' + ap.id)} "${ap.title}". 승인된 일을 진행하세요.`);
       flash(woke ? '승인했어요. 담당 부서가 지금 진행해요' : '승인했어요. 담당 부서가 다음 일할 때 진행해요');
     } else if (a === 'reject') {
       ev.preventDefault();
       const reason = new FormData(el).get('reason')?.toString().trim();
       if (!reason) { el.disabled = false; return flash('반려 이유를 한 줄 적어 주세요'); }
       const ap = S.approvals.find((x) => x.id === el.dataset.id);
-      await db.doc(`approvals/${ap.id}`).update({ status: 'rejected', reason: reason.slice(0, 500), decidedAt: now() });
+      await db.doc(P(`approvals/${ap.id}`)).update({ status: 'rejected', reason: reason.slice(0, 500), decidedAt: now() });
       flash('반려했어요. 부서가 이유를 보고 고쳐요');
     } else if (a === 'human') {
-      await db.doc(`human/${el.dataset.id}`).update({ done: true, doneAt: now() });
+      await db.doc(P(`human/${el.dataset.id}`)).update({ done: true, doneAt: now() });
       flash('완료로 표시했어요');
     } else if (a === 'task') {
       ev.preventDefault();
@@ -379,8 +405,8 @@ async function act(el, ev) {
       const title = f.get('title')?.toString().trim();
       if (!title) { el.disabled = false; return flash('무엇을 해야 하는지 적어 주세요'); }
       const dept = f.get('dept')?.toString();
-      const ref = await db.collection('tasks').add({ title: title.slice(0, 200), detail: (f.get('detail') ?? '').toString().slice(0, 2000), dept, status: 'todo', by: 'ceo', createdAt: now(), updatedAt: now() });
-      const woke = f.get('now') ? await wake(dept, `대표가 새 일을 맡겼어요: tasks/${ref.id} "${title}". 지금 처리하세요.`) : false;
+      const ref = await db.collection(P('tasks')).add({ title: title.slice(0, 200), detail: (f.get('detail') ?? '').toString().slice(0, 2000), dept, status: 'todo', by: 'ceo', createdAt: now(), updatedAt: now() });
+      const woke = f.get('now') ? await wake(dept, `대표가 새 일을 맡겼어요: ${P('tasks/' + ref.id)} "${title}". 지금 처리하세요.`) : false;
       el.reset();
       flash(woke ? `${DEPT[dept].name} 부서가 지금 일을 시작해요` : `${DEPT[dept].name} 부서에 맡겼어요`);
     } else if (a === 'toggle') {
@@ -392,7 +418,7 @@ async function act(el, ev) {
       if (await wake(el.dataset.dept, '대표가 지금 일하라고 했어요. 평소 루틴대로 처리하세요.')) flash(`${DEPT[el.dataset.dept].name} 부서가 지금 일을 시작해요. 몇 분 뒤 보고가 올라와요`);
       await loadRoutines();
     } else if (a === 'posted') {
-      await db.doc(`shared/${el.dataset.key}`).set({ channel: el.dataset.channel, at: now() });
+      await db.doc(P(`shared/${el.dataset.key}`)).set({ channel: el.dataset.channel, at: now() });
       flash('올린 것으로 기록했어요. 마케팅 부서가 채널별 반응을 비교해요');
     }
   } catch (e) {
@@ -400,10 +426,13 @@ async function act(el, ev) {
     flash(c === 'invalid_argument' ? '이 계정은 바꿀 권한이 없어요' : c ? remoteError(e) : '처리하지 못했어요. 잠시 후 다시 시도해 주세요');
   } finally {
     if (el.isConnected) el.disabled = false;
+    if (['approve', 'reject', 'human'].includes(a)) loadSums();
   }
 }
 
 document.addEventListener('click', (ev) => {
+  const sv = ev.target.closest('button[data-svc]');
+  if (sv) { select(sv.dataset.svc); return; }
   const t = ev.target.closest('[data-tab],[data-go]');
   if (t) {
     tab = t.dataset.tab ?? t.dataset.go;
@@ -421,6 +450,45 @@ document.addEventListener('submit', (ev) => { const f = ev.target.closest('form[
 // ---- 데이터 연결
 const sortDesc = (k) => (a, b) => String(b[k] ?? '').localeCompare(String(a[k] ?? ''));
 const docs = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+let unsubs = [], attached = null;
+function select(id) {
+  unsubs.forEach((u) => u());
+  unsubs = [];
+  cid = id;
+  attached = id;
+  try { if (id) localStorage.setItem('hq.service', id); } catch {}
+  Object.assign(S, { company: S.services.find((v) => v.id === id) ?? null, approvals: [], tasks: [], human: [], reports: {}, metrics: null, posts: null, shared: new Set(), feedback: [], routines: null, routinesErr: null });
+  render();
+  if (!id || !db) return;
+  const on = (ref, fn) => unsubs.push(ref.onSnapshot((x) => { fn(x); render(); }, S.onErr));
+  on(db.collection(P('approvals')).orderBy('createdAt', 'desc').limit(60), (x) => (S.approvals = docs(x)));
+  on(db.collection(P('tasks')).orderBy('updatedAt', 'desc').limit(200), (x) => (S.tasks = docs(x)));
+  on(db.collection(P('human')), (x) => (S.human = docs(x).sort(sortDesc('createdAt'))));
+  on(db.collection(P('reports')), (x) => (S.reports = Object.fromEntries(docs(x).map((r) => [r.id, r]))));
+  on(db.doc(P('metrics/main')), (d) => (S.metrics = d.exists ? d.data() : null));
+  on(db.doc(P('share/posts')), (d) => (S.posts = d.exists ? d.data() : null));
+  on(db.collection(P('shared')), (x) => (S.shared = new Set(x.docs.map((d) => d.id))));
+  on(db.collection(P('feedback')).orderBy('date', 'desc').limit(30), (x) => (S.feedback = docs(x)));
+  if (tab === 'depts') loadRoutines();
+}
+// 서비스 목록의 "대표 확인 n건" — 서비스마다 한 번씩 읽는다 (구독 수를 아끼려고)
+async function loadSums() {
+  if (!db) return;
+  await Promise.all(S.services.map(async (v) => {
+    try {
+      const base = `companies/${v.id}`;
+      const [ap, hu, re] = await Promise.all([
+        db.collection(`${base}/approvals`).where('status', '==', 'pending').get(),
+        db.collection(`${base}/human`).where('done', '==', false).get(),
+        db.collection(`${base}/reports`).get(),
+      ]);
+      const lv = re.docs.map((d) => d.data().level);
+      S.sums[v.id] = { pending: ap.size, todo: hu.size, level: lv.includes('critical') ? 'critical' : lv.includes('warning') || ap.size || hu.size ? 'warning' : lv.length ? 'good' : '' };
+    } catch { /* 요약만 빠진다 */ }
+  }));
+  renderServices();
+}
+
 render();
 (async () => {
   db = await claude.use('db');
@@ -428,15 +496,14 @@ render();
   mcp = await claude.use('mcp');
   if (user) { const w = await user.can?.('data.write'); canWrite = w !== false; }
   if (!db) { S.loaded = true; $('#state-title').textContent = 'claude.ai 에서 열어 주세요'; $('#state-text').textContent = '로그인한 상태에서만 회사 정보를 볼 수 있어요.'; return; }
-  const onErr = () => flash('일부 정보를 불러오지 못했어요. 새로 고침해 주세요');
-  db.doc('company/main').onSnapshot((d) => { S.company = d.exists ? d.data() : null; S.loaded = true; render(); if (tab === 'depts' && !S.routines) loadRoutines(); }, onErr);
-  db.collection('approvals').orderBy('createdAt', 'desc').limit(60).onSnapshot((s) => { S.approvals = docs(s); render(); }, onErr);
-  db.collection('tasks').orderBy('updatedAt', 'desc').limit(200).onSnapshot((s) => { S.tasks = docs(s); render(); }, onErr);
-  db.collection('human').onSnapshot((s) => { S.human = docs(s).sort(sortDesc('createdAt')); render(); }, onErr);
-  db.collection('reports').onSnapshot((s) => { S.reports = Object.fromEntries(docs(s).map((r) => [r.id, r])); render(); }, onErr);
-  db.doc('metrics/main').onSnapshot((d) => { S.metrics = d.exists ? d.data() : null; render(); }, onErr);
-  db.doc('share/posts').onSnapshot((d) => { S.posts = d.exists ? d.data() : null; render(); }, onErr);
-  db.collection('shared').onSnapshot((s) => { S.shared = new Set(s.docs.map((d) => d.id)); render(); }, onErr);
-  db.collection('feedback').orderBy('date', 'desc').limit(30).onSnapshot((s) => { S.feedback = docs(s); render(); }, onErr);
+  S.onErr = () => flash('일부 정보를 불러오지 못했어요. 새로 고침해 주세요');
+  db.collection('companies').onSnapshot((snap) => {
+    S.services = docs(snap).sort((a, b) => String(a.name ?? a.id).localeCompare(String(b.name ?? b.id), 'ko'));
+    S.loaded = true;
+    if (!S.services.some((v) => v.id === cid)) select(S.services[0]?.id ?? null);
+    else if (attached !== cid) select(cid);
+    else { S.company = S.services.find((v) => v.id === cid); render(); }
+    loadSums();
+  }, S.onErr);
 })();
 </script>

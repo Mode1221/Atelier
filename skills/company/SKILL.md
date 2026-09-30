@@ -20,14 +20,16 @@ description: AI 회사 운영. 부서(대표실·기획·디자인·개발·QA·
 
 ## A. `setup` — 회사 세우기 (클라우드, 기본)
 Claude 클라우드 세션(claude.ai/code)에서 실행한다. 대표에게 GitHub·토큰을 묻지 않는다.
-1. **본부 페이지**: `cloud/hq.html` 을 복사해 `<title>` 을 "<회사> 본부"로 바꾸고 Artifact 로 게시한다.
+본부는 **사람당 하나**다. 서비스가 여럿이면 같은 본부에 `companies/<서비스ID>` 로 추가하고, 본부 위쪽 목록에서 바꿔 가며 본다.
+0. 이미 본부가 있으면(PROJECT.md "AI 회사" 절, 또는 `Artifact list` 에서 "Atelier 본부") 1번을 건너뛰고 그 주소를 쓴다.
+1. **본부 페이지**: `cloud/hq.html` 을 그대로 Artifact 로 게시한다 (제목 "Atelier 본부").
    capabilities: `{"db":{}, "user":{}, "mcp":{"servers":[{"server":"Claude Code Remote","tools":["list_triggers","update_trigger","fire_trigger"]}]}}`
-2. **첫 데이터**(ArtifactData batch): `company/main`(name, url, stage, repo, project), `playbook/cloud-run`·`playbook/dept-<부서>`(`references/cloud-run.md`·`references/departments/*.md` 를 `{text}` 로 — 예약 실행 세션은 GitHub 에 못 갈 수 있어 절차를 본부에 둔다), `share/posts`(`docs/share/posts.json` 이 있으면), `human/*`(PROJECT.md "사람 할 일" 미완료 항목).
-3. **부서 예약 실행**: 부서마다 `create_trigger` — `create_new_session_on_fire: true`, `cron_expression: "CRON_TZ=Asia/Seoul M H * * 요일"`(정각·30분 피하기), 이름 `Atelier · <회사> · <부서이름>`, 프롬프트는 `cloud/dept-prompt.md` 를 채운 것.
+2. **첫 데이터**(ArtifactData batch). 서비스 ID 는 영문 소문자·숫자·`-` (예: `beolgeum`). 서비스 문서 `companies/<ID>`(name, url, stage, repo, project), 그 아래 `share/posts`·`human/*`. 본부 공통 `playbook/cloud-run`·`playbook/dept-<부서>`(`references/cloud-run.md`·`references/departments/*.md` 를 `{text}` 로 — 예약 실행 세션은 GitHub 에 못 갈 수 있어 절차를 본부에 둔다), (없거나 스킬이 바뀌었으면 다시 씀). `companies/<ID>/share/posts` 는 `docs/share/posts.json` 이 있으면, `companies/<ID>/human/*` 는 PROJECT.md "사람 할 일" 미완료 항목.
+3. **부서 예약 실행**: 부서마다 `create_trigger` — `create_new_session_on_fire: true`, `cron_expression: "CRON_TZ=Asia/Seoul M H * * 요일"`(정각·30분 피하기), 이름 `Atelier · <서비스이름> · <부서이름>`, 프롬프트는 `cloud/dept-prompt.md` 를 채운 것(`SERVICE` 포함).
    기본으로 **대표실·고객지원·마케팅만 켜고** 나머지는 `update_trigger enabled:false` — 부서 실행마다 Claude 사용량이 든다고 대표에게 알린다.
-4. `company/main.routines` 에 `{부서: trigger_id}` 를 적는다 (본부 "부서" 탭의 켜기·끄기·지금 일하기가 이걸 쓴다).
+4. 서비스 문서 `companies/<ID>.routines` 에 `{부서: trigger_id}` 를 적는다 (본부 "부서" 탭의 켜기·끄기·지금 일하기가 이걸 쓴다).
 5. 대표실을 `fire_trigger` 로 한 번 돌려 본부에 첫 보고가 뜨는지 확인한다.
-6. 대표에게: 본부 링크 하나, 켜 둔 부서, "claude.ai 설정 → 커넥터에 Claude Code Remote 가 있어야 부서 켜기·끄기가 된다".
+6. PROJECT.md 에 "AI 회사" 절(본부 주소, 서비스 ID)을 남긴다. 대표에게: 본부 링크 하나(서비스가 여럿이어도 같은 링크), 켜 둔 부서, "claude.ai 설정 → 커넥터에 Claude Code Remote 가 있어야 부서 켜기·끄기가 된다".
 
 예약 실행 세션에는 저장소가 붙지 않고 GitHub 접근도 막힐 수 있다 — 그래서 절차는 본부 `playbook` 에서 읽는다. 스킬 문서를 고치면 `playbook` 도 다시 써 준다. **코드를 바꾸는 부서(개발 등)** 를 켜려면 claude.ai → 루틴에서 그 부서에 저장소를 추가하거나, 저장소를 붙인 세션에서 예약을 만든다.
 
