@@ -26,6 +26,7 @@ AI 페르소나가 실제 브라우저로 과제를 수행하는 **AI 대리 테
 - 베타 링크가 열리면 한 줄로 확인받고 `atelier:company setup`(로컬 모드)으로 회사를 세운다(pilot 5-1). 의견 분류·홍보 글·운영 점검이 이때부터 부서 일이 된다.
 
 ### L3. 랜딩·스토어 페이지
+PROJECT.md "디자인 도구 계획"의 L3 칸만 실행한다(랜딩 중심이면 `/impeccable onboard`).
 `references/landing-copy.md`. 헤드라인 = 고유 가치 제안. 전환 측정(UTM·이벤트).
 게임은 Steam "Coming Soon" 페이지를 출시 전 충분히 일찍 연다(위시리스트).
 
@@ -34,6 +35,7 @@ AI 페르소나가 실제 브라우저로 과제를 수행하는 **AI 대리 테
 AI: 게시글(`docs/share/posts.json`)·예상 질문 답변·보도자료 초안. 사람: HQ 홍보 화면에서 "올리기" 버튼·답글.
 
 ### L5. 출시 준비 점검 (Go / No-Go)
+점검 전에 "디자인 도구 계획"의 L5 칸만 실행한다(감성형·랜딩이면 `/impeccable polish`).
 `references/launch-readiness.md` 를 출시 전날 확인한다. 하나라도 "No-Go" 항목이 걸리면 미룬다.
 
 ### L6. 출시일 운영

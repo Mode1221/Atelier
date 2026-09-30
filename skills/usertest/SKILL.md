@@ -28,6 +28,7 @@ node <atelier>/skills/usertest/scripts/walk.mjs docs/usertest/plan.json docs/use
 ```
 - 로컬 서버를 띄워 실행한다(운영 DB 오염 금지). IP 기준 속도 제한이 있으면 `"ipHeader"` 로 방문자를 나눈다.
 - playwright 가 없으면 `npm i -D playwright` (무료). 결과: `summary.md`, `results.json`, `shots/`.
+- **스크립트가 기본이다.** playwright-mcp(대화형 브라우저)는 PROJECT.md "디자인 도구 계획"의 usertest 칸에 있을 때만, 스크립트로 못 찾는 막힘 탐색·재현이 어려운 레이아웃 버그 추적에만 쓴다. 모바일 네이티브는 쓰지 않는다.
 
 ### U5. 관찰자 검토 (AI)
 `shots/*-end.jpg`·`*-stuck.jpg` 를 **페르소나 눈으로** 본다. 질문은 `references/observer.md`:

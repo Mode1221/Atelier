@@ -42,6 +42,16 @@
 출시 후 새 기능은 `grow → spec → design → build → guard → 릴리스` 기능 사이클로 작게 반복합니다.
 프로필(웹/앱/게임, 과금, 계정 유무)에 따라 해당 없는 세부 단계는 `N/A` 로 표시됩니다.
 
+## 디자인 강화 (선택)
+설치하면 화면 품질이 올라가고, 없으면 Atelier 자체 기준으로 진행합니다. `/atelier:pilot` 이 인터뷰 직후 서비스 유형에 맞춰 **어느 단계에서 무엇을 쓸지 한 번만 정해** PROJECT.md "디자인 도구 계획"에 적고(`skills/design/references/design-routing.md`), 필요한데 없는 것만 한 번 알려 줍니다. Pro 요금제는 "절약" 모드(시안 1안, 단계당 명령 1개)로 사용량을 아낍니다.
+| 스킬 | 하는 일 | 설치 (정확한 방법은 각 저장소 README) | 쓰이는 유형 |
+|---|---|---|---|
+| [frontend-design](https://github.com/anthropics/skills/tree/main/skills/frontend-design) (Anthropic, Apache 2.0) | 주제에 맞는 색·글꼴·레이아웃 방향, 흔한 AI 티 피하기 | `npx skills add https://github.com/anthropics/skills --skill frontend-design` | 도구형·모바일의 방향 잡기 |
+| [impeccable](https://github.com/pbakaus/impeccable) (Apache 2.0) | `shape`·`critique`·`audit`·`harden`·`polish`·`onboard` 등 화면 설계·검토 명령 | 프로젝트 폴더에서 `npx impeccable install` | 도구형(점검), 감성형·랜딩(설계·다듬기), 모바일(native 점검) |
+| [brandkit](https://github.com/Leonxlnx/taste-skill) (MIT) | 로고·브랜드 보드·키 아트 이미지용 프롬프트 (이미지는 ChatGPT Images 등에서 생성) | `npx skills add https://github.com/Leonxlnx/taste-skill --skill brandkit` | 모든 유형의 브랜드 에셋(범위는 유형별) |
+| [playwright-mcp](https://github.com/microsoft/playwright-mcp) (Apache 2.0) | 대화하면서 브라우저를 직접 조작 | `claude mcp add playwright npx @playwright/mcp@latest` | 웹 유형의 usertest 막힘 탐색·레이아웃 버그 추적만 |
+외부 스킬 파일은 이 저장소에 들어 있지 않습니다(각 라이선스는 원 저장소).
+
 ## AI 회사 모드 + 본부
 출시 후에는 부서 10개(대표실·기획·디자인·개발·QA·보안법무·마케팅·고객지원·운영·데이터재무)가 **스스로 일하고**, 사람은 **대표로서 결재만** 합니다.
 - **기본 = 로컬 모드**: 내 컴퓨터의 Claude Code 만 있으면 됩니다(클라우드·GitHub·토큰 없음). 본부는 프로젝트 폴더 `company/<서비스>/` 파일, 결재는 대화창에서 `/atelier:company` → "1번 승인". 부서 실행은 `run all`(직접) 또는 `schedule`(매일, **컴퓨터가 켜져 있을 때만**). 설치: `/atelier:company setup`.

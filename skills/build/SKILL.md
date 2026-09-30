@@ -83,6 +83,7 @@ spec 의 신원 모델을 구현한다.
 - 기능 플래그로 "배포"와 "공개"를 분리하면 위험이 줄어든다.
 
 ### B13. 운영 준비 체크리스트
+게이트 판정 전에 PROJECT.md "디자인 도구 계획"의 **build 게이트 전** 칸만 실행한다(예: 도구형 `/impeccable harden`, 없으면 대체). 칸이 비어 있으면 디자인 스킬을 쓰지 않는다.
 `references/production-readiness.md` 의 필수 항목을 전부 확인하고 결과를 `docs/build.md` 에 남긴다. 이게 build 게이트다.
 계정·결제가 필요해 AI 가 못 하는 항목은 `⏳ 사람 대기` 로 표시하고 PROJECT.md "사람 할 일"로 옮긴다 → 게이트 판정 **보류**.
 성능은 `references/bench.js` 를 프로젝트에 맞게 고쳐 측정한다.
