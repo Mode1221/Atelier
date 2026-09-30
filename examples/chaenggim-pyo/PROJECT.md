@@ -32,7 +32,7 @@
 - 의견: 매일 09:43 GitHub 이슈(라벨 `svc:chaenggim`)로 자동 수집 — `.github/workflows/chaenggim-feedback.yml`
 
 ## 사람 할 일
-- [ ] 운영 지표 연결: 저장소 Secrets `CHAENGGIM_STATS_TOKEN` (아무 긴 문자열) — R1 목표 측정
+- [x] 운영 지표 연결: 저장소 Secrets `CHAENGGIM_STATS_TOKEN` 등록 (2026-09-30) — R1 목표 측정
 - [ ] 홍보 글 올리기: `docs/share/posts.json` (에브리타임·오픈채팅은 방장 허락, 링크는 첫 댓글) — L2 유입
 - [ ] (선택) 후원 링크: 토스아이디 만들고 저장소 Variables `CHAENGGIM_SUPPORT_URL` — R4
 - [ ] (선택) 서비스 지킴이: `npm run watch:setup` 한 번 + 휴대폰 ntfy 앱 구독 — O1

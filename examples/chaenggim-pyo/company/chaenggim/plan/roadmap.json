@@ -57,9 +57,9 @@
       "title": "운영 지표 연결 (STATS 토큰)",
       "why": "g1",
       "dept": "human",
-      "status": "now",
+      "status": "done",
       "stage": "grow R1",
-      "done": false
+      "done": true
     },
     {
       "id": "r4",
@@ -101,6 +101,7 @@
   "updatedAt": "2026-09-30T08:59:12Z",
   "reviewAt": "2026-10-14",
   "history": [
-    "2026-09-30 처음 만듦 (공개 베타 시작)"
+    "2026-09-30 처음 만듦 (공개 베타 시작)",
+    "2026-09-30 지표 토큰 등록 (r3 완료)"
   ]
 }

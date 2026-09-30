@@ -2,6 +2,7 @@
   "text": "운영 지표 연결: 저장소 Secrets 에 CHAENGGIM_STATS_TOKEN (아무 긴 문자열) 추가",
   "why": "목표 숫자를 실제로 재려면 필요 (지금은 '측정 없음')",
   "link": "https://github.com/Mode1221/Atelier-dev/settings/secrets/actions",
-  "done": false,
-  "createdAt": "2026-09-30T08:59:12Z"
+  "done": true,
+  "createdAt": "2026-09-30T08:59:12Z",
+  "doneAt": "2026-09-30T09:14:59Z"
 }
