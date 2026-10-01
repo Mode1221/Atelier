@@ -20,7 +20,7 @@ Claude 클라우드 예약 실행(Routine)이 새 세션을 열고 이 절차로
 | `approvals/<id>` | dept, title, kind(배포/외부 게시/지출/약관/데이터 삭제), cost, detail, ifApprove, ifReject, status(pending/approved/rejected), reason, createdAt, decidedAt, done, result | 부서가 만들고 대표가 결정 |
 | `tasks/<id>` | dept, title, detail, status(todo/doing/review/done), by(ceo 또는 부서), note, createdAt, updatedAt | 대표·부서 |
 | `human/<id>` | text, why, link, done, createdAt | 부서가 만들고 대표가 체크 |
-| `reports/<DEPT>` | level(good/warning/critical), summary(결론 한 줄), todo(대표 할 일 한 줄, 없으면 비움), detail(근거 3줄 이하, 선택), at — 쓰는 법·level 기준은 2절 6 | 각 부서가 실행 끝에 덮어씀 |
+| `reports/<DEPT>` | level(good/warning/critical), summary(결론 한 줄), todo(대표 할 일 한 줄, 없으면 비움), detail(근거 3줄 이하, 선택), history(지난 보고 최대 7개), at — 쓰는 법·level 기준은 2절 6 | 각 부서가 실행 끝에 덮어씀 |
 | `metrics/main` | items{이름: 숫자}, at | 데이터·재무 |
 | `metrics/daily` | at, series{키: 표시 이름}, days[{date, visitors, views, <기능 키>…}], sources{출처: 방문} — 본부 "운영 지표"(방문자 추이·기능별 사용·유입 출처)가 그린다 | 데이터·재무 (`stats.url` 응답을 그대로) |
 | `share/posts` | product, url, campaign, posts[{channel, when, note, text}] — **channel 은 ID**(`everytime` `kakaotalk` `threads` `x` `bluesky` `facebook` `linkedin` `reddit` `band` `naver_blog` `naver_cafe` `daangn` `disquiet` `instagram` `discord`), **text 에 링크를 넣지 않는다**(올릴 때 url+utm 이 자동으로 붙음) | 마케팅 |
@@ -40,6 +40,7 @@ id 규칙: `approvals`·`tasks`·`human` 은 `<DEPT>-<YYYYMMDD>-<짧은이름>` 
 6. 끝에 `reports/<DEPT>` 를 덮어쓴다. **대표가 3초 안에 읽고 이해하게** 압축한다:
    - `summary`: 결론 **한 줄, 40자 안팎**(최대 60자). "무엇이 어떤 상태다" 하나만. 예: "사이트 정상, 오류 없음" · "홍보 글 5개 중 2개 올라감" · "새 의견 3건 — 버그 1건 개발에 넘김".
    - `todo`: 대표가 직접 할 일이 있을 때만 **한 줄**(동사로 끝, 예: "루틴에 저장소 연결하기"). 없으면 쓰지 않는다. 할 일함·결재에 이미 올린 일은 되풀이하지 않는다.
+   - `history`: 덮어쓰기 전에 읽은 이전 보고의 `{at, level, summary}` 를 맨 앞에 넣고 7개까지만 남긴다(본부 "자세히"에 지난 보고로 보인다).
    - `detail`: 근거가 꼭 필요할 때만, **3줄 이하**(`\n` 으로 줄 나눔). 본부에서는 "자세히"를 눌러야 보인다.
    - 쉬운 말로: 대표가 모르는 말(curl·WebFetch·API·403·TLS·UTC·세션·트리거·add_repo 같은 도구·코드 이름)을 쓰지 않는다 — "접속이 막혀", "한국 시각 15시"처럼 바꾼다. 명령어·파일 경로·주소는 `detail` 에만.
    - 빼는 것: "결재 대기 0건"·"할 일 없음" 같은 없음 나열, 다른 부서 보고 되풀이, 사과·과정 설명("~를 시도했으나"), 같은 말 두 번. 지난 보고와 달라진 게 없으면 summary 는 "변화 없음 — <상태>".

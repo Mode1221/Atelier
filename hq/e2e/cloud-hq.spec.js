@@ -76,17 +76,17 @@ function fakeRuntime({ seed, triggers, canWrite }) {
     async callTool(server, tool, args) {
       window.__calls.push({ server, tool, args });
       if (tool === 'list_triggers') { const i = args.cursor ? 2 : 0; return { payload: { data: triggers.slice(i, i + 2), has_more: !args.cursor, next_cursor: args.cursor ? '' : 'p2' } }; }
-      if (tool === 'update_trigger') { const t = triggers.find((x) => x.id === args.trigger_id); t.enabled = args.enabled; }
+      if (tool === 'update_trigger') { const t = triggers.find((x) => x.id === args.trigger_id); if ('enabled' in args) t.enabled = args.enabled; if (args.cron_expression) t.cron_expression = args.cron_expression; }
       return { payload: {} };
     },
   };
   window.claude = { use: async (c) => ({ db, mcp, user: { can: async () => canWrite } })[c] };
 }
 
-async function open(page, { canWrite = true, hash = '', seed = SEED } = {}) {
+async function open(page, { canWrite = true, hash = '', seed = SEED, triggers = TRIGGERS } = {}) {
   await page.route('https://fonts.googleapis.com/**', (r) => r.abort());
   await page.route('**/cloud-hq', (r) => r.fulfill({ contentType: 'text/html', body: PAGE }));
-  await page.addInitScript(fakeRuntime, { seed, triggers: structuredClone(TRIGGERS), canWrite });
+  await page.addInitScript(fakeRuntime, { seed, triggers: structuredClone(triggers), canWrite });
   await page.goto('/cloud-hq' + hash);
 }
 const calls = (page) => page.evaluate(() => window.__calls);
@@ -183,7 +183,7 @@ test('서비스 상세: 목표·숫자·보고·홍보·일 맡기기·부서 �
   expect((await calls(page)).filter((c) => c.tool === 'fire_trigger').pop().args.trigger_id).toBe('trig_c_mkt');
 
   // 부서 일정: 사람이 읽는 시간, 끄기
-  const mkt = main.locator('details.more li.item').filter({ hasText: '월·목 12:00' });
+  const mkt = main.locator('details.more li.item').filter({ hasText: '월·목 12:00' }).first();
   await expect(mkt).toContainText('마케팅');
   await mkt.getByRole('button', { name: '끄기' }).click();
   await expect(page.getByRole('status').filter({ hasText: '마케팅 부서를 껐어요' })).toBeVisible();
@@ -194,7 +194,9 @@ test('서비스 상세: 목표·숫자·보고·홍보·일 맡기기·부서 �
   // 다른 서비스: N시간마다 일정, 두 번째 쪽에 있던 예약도 찾는다
   await page.getByRole('navigation', { name: '서비스 목록' }).getByRole('button', { name: /벌금장부/ }).click();
   await main.getByText(/더 보기/).click();
-  await expect(main.getByText(/3시간마다 \(34분\) · 마지막 1시간 전 끝냄/)).toBeVisible();
+  const ops = main.locator('details.more li.item').filter({ hasText: '운영' }).first();
+  await expect(ops).toContainText('3시간마다 (34분) · 주 56회');
+  await expect(ops).toContainText('마지막 실행 1시간 전 끝냄');
   await expect(main.locator('details.more li.item').filter({ hasText: '고객지원' })).toContainText('꺼짐');
   await main.getByRole('button', { name: '← 전체 서비스' }).click();
   await expect(page.getByRole('heading', { level: 1, name: '전체 서비스' })).toBeVisible();
@@ -225,6 +227,43 @@ test('부서 보고: 결론 한 줄·대표 할 일만 보이고 근거는 "자�
   await expect(rep.getByText('운영 점검 3회 성공', { exact: false })).toBeVisible();
   await expect(rep.getByText('새로 나눈 일은 없어요(열린 일 2개가 이미 있음).', { exact: true })).toBeVisible();
   await expect(rep.getByText(/홍보 글 5개 중 2개/)).toBeHidden();
+});
+
+test('부서 운영: 실행 실패는 할 일함에 실행 기록과 함께, 일정 바꾸기·주간 실행 수·설정 점검·지난 보고', async ({ page }) => {
+  const triggers = TRIGGERS.map((t) => (t.id === 'trig_c_mkt' ? { ...t, last_run: { status: 'ROUTINE_RUN_STATUS_FAILED', fired_at: H(2), session_id: 'session_01FAIL' }, next_run_at: new Date(Date.now() + 5 * 3600e3).toISOString() } : t));
+  const seed = { ...SEED, 'companies/chaenggim/reports/marketing': { level: 'warning', summary: '홍보 글 2개 중 1개 올라감', detail: '이번 실행에서 GitHub 접속이 막혀 확인 못 함', history: [{ at: H(30), level: 'good', summary: '홍보 글 2개를 새로 썼어요' }], at: H(26) } };
+  await open(page, { seed, triggers });
+  const main = page.getByRole('main');
+  const fail = main.locator('.inbox > li[data-kind="runfail"]');
+  await expect(fail).toContainText('마케팅 부서 실행이 실패했어요');
+  await expect(fail.getByRole('link', { name: '실행 기록 ↗' })).toHaveAttribute('href', 'https://claude.ai/code/session_01FAIL');
+  await fail.getByRole('button', { name: '다시 실행' }).click();
+  await expect.poll(async () => (await calls(page)).filter((c) => c.tool === 'fire_trigger').pop()?.args.trigger_id).toBe('trig_c_mkt');
+
+  await fail.getByRole('button', { name: '부서 보기' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: '챙김표' })).toBeVisible();
+  const more = main.locator('#more');
+  await expect(more).toContainText('켜진 부서 2개 · 일주일에 약 9번 실행'); // 매일 1번(7) + 월·목(2)
+  const mkt = more.locator('li.item', { hasText: '마케팅' }).first();
+  await expect(mkt).toContainText('주 2회');
+  await mkt.getByText('일정 바꾸기').click();
+  await mkt.getByLabel('마케팅 일정').selectOption({ label: '평일 아침 08:50 (주 5회)' });
+  await mkt.getByRole('button', { name: '바꾸기' }).click();
+  await expect.poll(async () => (await calls(page)).find((c) => c.tool === 'update_trigger' && c.args.cron_expression)?.args).toEqual({ trigger_id: 'trig_c_mkt', cron_expression: 'CRON_TZ=Asia/Seoul 50 8 * * 1-5' });
+  await expect(mkt).toContainText('평일 08:50');
+
+  // 설정 점검: 실패·접속 막힘·지표 없음, 개발자 정보에 경로·예약 ID
+  const chk = more.locator('.checkup');
+  await expect(chk).toContainText('마케팅: 마지막 실행 실패');
+  await expect(chk).toContainText('마케팅: 실행 환경에서 접속이 막혔다고 보고했어요');
+  await chk.getByText('개발자 정보').click();
+  await expect(chk).toContainText('companies/chaenggim/reports');
+  await expect(chk).toContainText('trig_c_mkt');
+
+  // 지난 보고
+  const rep = main.locator('section[aria-labelledby="h-rep"] li', { hasText: '홍보 글 2개 중 1개' });
+  await rep.getByText('자세히').click();
+  await expect(rep).toContainText('홍보 글 2개를 새로 썼어요');
 });
 
 test('운영 지표: 방문자 추이·기능별 사용·유입 출처·표, 카드에 7일 방문자', async ({ page }) => {
@@ -278,7 +317,7 @@ for (const scheme of ['light', 'dark']) {
     await page.getByRole('button', { name: /챙김표/ }).first().click();
     await expect(page.getByRole('heading', { level: 1, name: '챙김표' })).toBeVisible();
     await page.getByText(/더 보기/).click();
-    await expect(page.getByText('월·목 12:00')).toBeVisible();
+    await expect(page.getByText('월·목 12:00').first()).toBeVisible();
     r = await new AxeBuilder({ page }).analyze();
     expect(r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(' ')}`)).toEqual([]);
     if (process.env.SHOTS) {
