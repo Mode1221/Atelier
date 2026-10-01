@@ -75,7 +75,7 @@ function fakeRuntime({ seed, triggers, canWrite }) {
   const mcp = {
     async callTool(server, tool, args) {
       window.__calls.push({ server, tool, args });
-      if (tool === 'list_triggers') { const i = args.cursor ? 2 : 0; return { payload: { data: triggers.slice(i, i + 2), has_more: !args.cursor, next_cursor: args.cursor ? '' : 'p2' } }; }
+      if (tool === 'list_triggers') { const i = Number(args.cursor ?? 0); const more = i + 2 < triggers.length; return { payload: { data: triggers.slice(i, i + 2), has_more: more, next_cursor: more ? String(i + 2) : '' } }; }
       if (tool === 'create_trigger') { const t = { id: `trig_new${triggers.length}`, enabled: true, cron_expression: args.cron_expression, derived_state: { prompt: args.prompt } }; triggers.push(t); return { payload: { trigger: t } }; }
       if (tool === 'update_trigger' && args.prompt) { const t = triggers.find((x) => x.id === args.trigger_id); t.derived_state = { prompt: args.prompt }; }
       if (tool === 'update_trigger') { const t = triggers.find((x) => x.id === args.trigger_id); if ('enabled' in args) t.enabled = args.enabled; if (args.cron_expression) t.cron_expression = args.cron_expression; }
@@ -318,6 +318,7 @@ test('고급 운영: 지표 경보, 결재 변경 내용, 사용량, 부서 세�
 
   // 규칙 버전
   await expect(more.locator('.checkup')).toContainText('본부 규칙이 낡았어요 (규칙 0.20.0');
+  await expect(more.locator('.checkup')).toContainText('사용자 의견이 본부로 들어올 길이 없어요'); // 방금 세운 고객지원
 });
 
 test('운영 지표: 방문자 추이·기능별 사용·유입 출처·표, 카드에 7일 방문자', async ({ page }) => {

@@ -693,6 +693,7 @@ function checkup(v, d) {
   if (!v.stats?.url && !v.metrics?.url && !d.daily) add(false, '운영 지표가 연결되지 않았어요', 'Claude 에게 "이 서비스 운영 지표 연결해 줘"라고 말하면 공개 통계 주소를 만들어 서비스 문서에 적어요.');
   else if (daily === null || daily > STALE_MS) add(false, daily === null ? '운영 지표가 아직 한 번도 안 들어왔어요' : `운영 지표가 ${ago(d.daily.at)} 뒤로 멈췄어요`, '데이터·재무 부서의 실행 기록을 보세요. 통계 주소의 도메인이 클라우드 환경의 네트워크 허용 목록에 있어야 해요.');
   else add(true, `운영 지표 ${ago(d.daily.at)} 갱신`);
+  if (routineOf(v.id, 'support')?.enabled && !v.feedback?.url) add(false, '사용자 의견이 본부로 들어올 길이 없어요', '고객지원 부서가 의견을 가져오려면 서비스 문서에 feedback(url·env)이 있어야 해요. Claude 에게 "이 서비스 의견 연결해 줘"라고 말해 주세요.');
   const needRepo = ['dev', 'qa', 'ops', 'security'].some((k) => v.routines?.[k]);
   if (needRepo) add(!!v.repo, v.repo ? `저장소 ${v.repo}` : '서비스 문서에 저장소(repo)가 없어요', v.repo ? '' : '개발·QA·운영 부서는 저장소가 있어야 일해요. Claude 에게 "서비스 문서에 저장소 적어 줘".');
   for (const x of DEPTS) {

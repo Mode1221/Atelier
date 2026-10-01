@@ -14,7 +14,7 @@ Claude 클라우드 예약 실행(Routine)이 새 세션을 열고 이 절차로
 ## 1. 본부 데이터 (서비스별 경로 = `companies/<SERVICE>/` + 아래)
 | 경로 | 내용 | 누가 쓰나 |
 |---|---|---|
-| `companies/<SERVICE>` (서비스 문서 자체) | name, summary(한 줄 설명), audience(대상 사용자), kind(웹/앱/게임), url, stage, repo, project, routines{부서: trigger_id}, stats{url} (공개 통계 주소 — 비밀 경로라 본부 밖에 적지 않음), metrics{url, header, env} (지표 주소·인증 헤더 이름·토큰이 든 환경변수 이름 — 토큰 값은 절대 적지 않음) | 설치 시, 단계는 승인 후 대표실 |
+| `companies/<SERVICE>` (서비스 문서 자체) | name, summary(한 줄 설명), audience(대상 사용자), kind(웹/앱/게임), url, stage, repo, project, routines{부서: trigger_id}, stats{url} (공개 통계 주소 — 비밀 경로라 본부 밖에 적지 않음), metrics{url, header, env} (지표 주소·인증 헤더 이름·토큰이 든 환경변수 이름 — 토큰 값은 절대 적지 않음), feedback{url, env} (서비스의 의견 가져오기 주소 `<url>/api/feedback`·FEEDBACK_TOKEN 이 든 환경변수 이름) | 설치 시, 단계는 승인 후 대표실 |
 | `plan/roadmap` | stage, focus, goals[], items[], updatedAt, reviewAt, history[] — 형식은 `playbook/planning` | 대표실이 자동 생성·갱신 |
 | `playbook/<이름>` (**본부 공통**, 앞에 companies 안 붙임) | text — 이 절차(`cloud-run`), 부서 역할(`dept-<부서>`), 계획(`planning`), 8단계·게이트(`stages`), 채널 가이드(`channels`) | 설치 시 (스킬 문서 복사) |
 | `approvals/<id>` | dept, title, kind(배포/외부 게시/지출/약관/데이터 삭제), cost, detail, changes[](바뀌는 것), link(바뀐 내용 주소), files, ifApprove, ifReject, status(pending/approved/rejected), reason, createdAt, decidedAt, done, result | 부서가 만들고 대표가 결정 |
@@ -58,7 +58,8 @@ id 규칙: `approvals`·`tasks`·`human` 은 `<DEPT>-<YYYYMMDD>-<짧은이름>` 
 
 ## 4. 부서별 추가 규칙
 - **대표실(ceo)**: **`playbook/planning` 을 매일 따른다** — 목표·로드맵(`plan/roadmap`)을 서비스에 맞게 만들거나 갱신하고, 오늘 할 일을 부서별 `tasks` 로 나눠 준다(하루 5개까지). 모든 `reports` 를 모아 `reports/ceo` 에 브리핑 — summary 는 오늘 가장 중요한 한 가지, 부서 보고를 옮겨 적지 않는다. 서비스가 오류를 돌려주면 level critical(세션이 주소에 못 닿는 것만으로는 critical 이 아니다 — 위 0의 간접 근거로 판단).
-- **고객지원(support)**: 새 `feedback/<날짜>`(status new)를 분류해 각 항목에 action 을 달고 summary·status triaged 로 바꾼다(개인정보는 옮기지 않음). 버그는 `tasks`(qa), 반복 불편·제안은 `tasks`(plan) — 대표실이 다음 계획 때 로드맵에 반영한다. 피드백을 가져올 길(저장소 `feedback` 이슈 등)에 접근할 수 없으면 그 사실을 보고한다.
+- **고객지원(support)**: 먼저 **의견을 가져온다** — 서비스 문서에 `feedback.url` 이 있으면 `curl -s -H "Authorization: Bearer $<env>" <url>` → `{items:[{id,kind,message,page,created_at}]}`. 오늘(한국 날짜) `feedback/<YYYY-MM-DD>` 문서에 합친다: 항목마다 `{sid: id, kind, message, page, at: created_at, action: ''}`(같은 sid 는 한 번만), count 갱신, 새 항목이 있으면 status new. 쓰기가 끝난 뒤에만 `curl -s -X POST -H "Authorization: Bearer $<env>" -H 'content-type: application/json' -d '{"upTo":<가져온 가장 큰 id>}' <url>/ack` 로 옮겼다고 표시한다(쓰기 실패면 ack 하지 않음 — 다음 실행에 다시 가져온다). 환경변수가 비어 있거나 401 이면 숫자·내용을 쓰지 않고, `human/support-feedback-setup` 이 없을 때만 "의견 연결: claude.ai 클라우드 환경 → 환경변수 <env> = 서비스의 FEEDBACK_TOKEN(채팅에 붙여 넣지 않기), 네트워크 허용 도메인에 <호스트>"를 만든다. `feedback.url` 자체가 없으면 보고 detail 에 "의견 연결 안 됨" 한 줄.
+  그다음 새 `feedback/<날짜>`(status new)를 분류해 각 항목에 action 을 달고 summary·status triaged 로 바꾼다(개인정보는 옮기지 않음). 버그는 `tasks`(qa), 반복 불편·제안은 `tasks`(plan) — 대표실이 다음 계획 때 로드맵에 반영한다. 피드백을 가져올 길(저장소 `feedback` 이슈 등)에 접근할 수 없으면 그 사실을 보고한다.
 - **마케팅(marketing)**: `share/posts` 가 홍보 글의 원본이다. `playbook/channels`(채널별 말투·길이·금기)에 맞춰 채널마다 따로 다듬거나 새 글(채널당 1개, 글자 수 한도, `note`·`when` 포함)을 쓰고, 올리지 않은 채널이 있으면 `human` 에 "○○ 올리기"를 남긴다. `shared` 기록으로 "N개 중 M개 올라감"을 `reports/marketing` summary 에.
 - **데이터·재무(data)**: 서비스가 주는 지표만 `metrics/main` 에. 숫자를 지어내지 않는다 — 없으면 "지표 없음"과 만드는 방법을 `tasks`(dev)로.
   서비스 문서에 `stats.url` 이 있으면(**공개 통계 — 기본**): 그 주소를 `curl -s` 로, 막히면 WebFetch 로 "응답 JSON 을 고치지 말고 그대로 출력" 해서 읽는다. 받은 `{at, series, days, sources}` 를 **값을 바꾸지 않고** `metrics/daily` 에 쓰고(set), `totals` 의 숫자를 `metrics/main.items` 에. 쓰기 전에 확인: days 가 날짜순 배열이고 모든 값이 0 이상 정수, series 키가 days 에 있다 — 하나라도 어긋나면(요약·추측된 값일 수 있음) 쓰지 않고 보고한다. 주소(비밀 경로)는 보고·출력에 쓰지 않는다.
