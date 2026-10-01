@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>요금</title>
+<link rel="stylesheet" href="/pay/pay.css">
+</head>
+<body>
+<main class="pay">
+  <h1>요금</h1>
+  <p class="muted">모든 가격은 부가가치세 포함이에요. 로그인 없이 볼 수 있는 이 페이지는 결제사 가맹 심사에도 쓰여요.</p>
+  <div id="list">불러오는 중…</div>
+  <p class="muted">정기결제는 언제든 해지할 수 있고, 해지해도 남은 기간은 쓸 수 있어요. 결제 후 7일 이내·사용 전이면 전액 환불돼요. 자세한 내용은 <a href="/terms">이용약관</a>.</p>
+</main>
+<script>
+fetch('/api/pay/products').then((r) => r.json()).then((list) => {
+  const el = document.getElementById('list');
+  el.innerHTML = '';
+  for (const p of list) {
+    const d = document.createElement('div');
+    d.className = 'item';
+    const h = document.createElement('h2'); h.textContent = p.name;
+    const price = document.createElement('p'); price.textContent = `${p.amount.toLocaleString('ko-KR')}원${p.kind === 'subscription' ? ` / ${p.period_days}일 (자동 갱신)` : ''}`;
+    const a = document.createElement('a'); a.className = 'btn'; a.href = `/pay/checkout.html?product=${encodeURIComponent(p.key)}`; a.textContent = p.kind === 'subscription' ? '구독하기' : '구매하기';
+    d.append(h, price, a);
+    el.append(d);
+  }
+}).catch(() => { document.getElementById('list').textContent = '요금을 불러오지 못했어요.'; });
+</script>
+</body>
+</html>

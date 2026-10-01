@@ -53,7 +53,7 @@ spec 의 신원 모델을 구현한다.
 - **생성형 AI 기능**(LLM 이 만든 글·이미지·추천을 보여 줌)이면 같은 슬라이스에서: 기능 화면에 "AI 가 만든 결과" 사전 고지 한 줄, 결과물에 AI 표시(보이는 배지, 공유되는 이미지면 보이는 표시 + 메타데이터). 문구·기준은 `../guard/references/privacy-checklist-kr.md` "인공지능 기본법". E2E 로 표시가 보이는지 확인한다.
 
 ### B5. 결제 (과금 있을 때)
-`references/payments.md` 를 따른다. 결제는 직접 만들지 않는다.
+`references/payments.md` 를 따른다. 결제는 직접 만들지 않는다 — 국내 웹은 **`templates/pay/` 를 설치**(`pay-first.mjs install`)하고 plans.js·약관(`../guard/templates/paid-terms-kr.md`)만 채운다. 완료: 테스트 키로 단건 결제·환불, 정기결제 등록·해지가 화면에서 한 번씩 된다.
 
 ### B6. 알림
 - 이메일: 트랜잭션 메일(가입 확인·재설정·영수증)은 전용 서비스, 발신 도메인 인증(SPF·DKIM·DMARC).

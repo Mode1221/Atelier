@@ -1,0 +1,4 @@
+.pay{max-width:480px;margin:40px auto;padding:0 16px;font:16px/1.6 system-ui,sans-serif;color:#1b1b1f}
+.pay h1{font-size:1.4rem}.pay .btn{display:inline-block;padding:12px 18px;border-radius:10px;background:#3182f6;color:#fff;text-decoration:none;border:0;font:inherit;cursor:pointer;min-height:44px}
+.pay .muted{color:#555}.pay .item{border:1px solid #ddd;border-radius:12px;padding:12px;margin:8px 0}
+@media (prefers-color-scheme:dark){.pay{color:#eee}body{background:#111}.pay .item{border-color:#333}.pay .muted{color:#aaa}}

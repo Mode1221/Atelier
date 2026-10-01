@@ -12,6 +12,7 @@
   "totals": { "<이름>": 123 } }
 ```
 - `days` 는 날짜순(한국 시간), 빠진 날은 0. 값은 0 이상 정수.
+- 결제가 있으면 `series` 에 `revenue: "매출(원)"`, `paid_orders: "결제 건수"` 를 넣고(`templates/pay/store.js` 의 `revenueByDay`), `totals` 에 활성 구독 수(`activeSubs`). 본부 "기능별 사용"에 매출이 함께 그려진다.
 - `visitors` 가 있으면 본부가 방문자를 주 지표로, 없으면 `series` 의 첫 키를 주 지표로 그린다.
 - 기능 키는 서비스의 **핵심 행동**(spec S6 의 활성화 이벤트)으로 2~5개. 테스트·점검이 만든 데이터는 뺀다(지운 데이터 제외, 스크립트 접속 제외).
 - 본부 서비스 문서에 `stats.url`(아래 주소)을 적으면 데이터·재무 부서가 매일 값 그대로 `metrics/daily` 에 옮긴다(`../../company/references/cloud-run.md`).
