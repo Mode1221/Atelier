@@ -44,3 +44,14 @@ test('문서에서 추정 → --yes 로 확정 → docs/rules.md', () => {
   assert.match(md, /신고 버튼/);
   assert.throws(() => execFileSync('node', [SCRIPT, root, '--yes', 'nope'], { stdio: 'pipe' }));
 });
+
+test('업종 패턴: 규제 id·템플릿 이름이 실제로 있다', async () => {
+  const { MAP } = await import('../skills/build/templates/add.mjs');
+  const md = readFileSync(new URL('../skills/spec/references/domain-patterns.md', import.meta.url), 'utf8');
+  const ids = new Set(QUESTIONS.map((q) => q.id));
+  for (const line of md.split('\n')) {
+    const words = (s) => s.replace(/\([^)]*\)/g, '').split(/[·,]/).map((w) => w.trim().split(/\s/)[0]).filter((w) => /^[a-z_]+$/.test(w));
+    if (line.startsWith('- 규제 id:')) for (const w of words(line.slice(line.indexOf(':') + 1))) assert.ok(ids.has(w), `규제 id ${w}`);
+    if (line.startsWith('- 템플릿:')) for (const w of words(line.slice(line.indexOf(':') + 1))) assert.ok(MAP[w], `템플릿 ${w}`);
+  }
+});
