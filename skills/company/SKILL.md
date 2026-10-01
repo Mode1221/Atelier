@@ -72,7 +72,7 @@ description: AI 회사 운영. 부서(대표실·기획·디자인·개발·QA·
 3. **부서 예약 실행**: 부서마다 `create_trigger` — `create_new_session_on_fire: true`, `cron_expression: "CRON_TZ=Asia/Seoul M H * * 요일"`(정각·30분 피하기), 이름 `Atelier · <서비스이름> · <부서이름>`, 프롬프트는 `cloud/dept-prompt.md` 를 채운 것(`SERVICE` 포함).
    기본으로 **대표실·고객지원·마케팅만 켜고** 나머지는 `update_trigger enabled:false` — 부서 실행마다 Claude 사용량이 든다고 대표에게 알린다.
 4. 서비스 문서 `companies/<ID>.routines` 에 `{부서: trigger_id}` 를 적는다 (본부 서비스 상세 "더 보기"의 켜기·끄기·지금 일하기가 이걸 쓴다).
-5. 대표실을 `fire_trigger` 로 한 번 돌린다 — 첫 실행에서 **서비스에 맞는 목표·로드맵을 자동으로 만들고** 부서에 첫 할 일을 나눈다. 본부 서비스 상세 "이번 목표"에 뜨는지 확인한다.
+5. 대표실을 `fire_trigger` 로 한 번 돌린다 — 첫 실행에서 `references/planning.md` 절차로 **서비스에 맞는 목표·로드맵을 자동으로 만들고** 부서에 첫 할 일을 나눈다. 본부 서비스 상세 "이번 목표"에 뜨는지 확인한다.
 6. PROJECT.md 에 "AI 회사" 절(본부 주소, 서비스 ID)을 남긴다. 대표에게: 본부 링크 하나(서비스가 여럿이어도 같은 링크), 켜 둔 부서, "claude.ai 설정 → 커넥터에 Claude Code Remote 가 있어야 부서 켜기·끄기가 된다".
 
 예약 실행 세션에는 저장소가 붙지 않고 GitHub 접근도 막힐 수 있다 — 그래서 절차는 본부 `playbook` 에서 읽는다. 서비스를 추가하거나 본부를 만질 때마다 `playbook` 컬렉션을 `ArtifactData list`(out_dir)로 내려받아 `node scripts/playbook.mjs check <그 폴더>` 로 낡은 것을 찾고, 낡았으면 build 결과로 다시 쓴다(부서들이 옛 절차로 일하지 않게). **코드를 바꾸는 부서(개발 등)** 를 켜려면 claude.ai → 루틴에서 그 부서에 저장소를 추가하거나, 저장소를 붙인 세션에서 예약을 만든다.

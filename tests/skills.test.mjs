@@ -224,3 +224,25 @@ test('share: 로컬 모드 대화창용 링크 — 공유 창, 복사 안내, Th
   assert.match(t, /3\. Threads[\s\S]*첫 댓글에 넣을 링크: https:\/\/a\.dev\/\?utm_source=threads/);
   assert.ok(!/│ https:\/\/a\.dev\/\?utm_source=threads/.test(t), 'Threads 본문에는 링크 없음');
 });
+
+// 참고 파일은 어느 단계에서든 읽혀야 한다 — 만들어 놓고 아무 SKILL.md 도 가리키지 않는 파일을 막는다.
+test('skills: 모든 참고 파일은 SKILL.md 에서 연결돼 있다', async () => {
+  const { readdirSync, statSync } = await import('node:fs');
+  const root = new URL('../skills/', import.meta.url).pathname;
+  const skills = readdirSync(root).filter((d) => statSync(join(root, d)).isDirectory());
+  const text = skills.map((s) => { try { return readFileSync(join(root, s, 'SKILL.md'), 'utf8'); } catch { return ''; } }).join('\n');
+  const walk = (dir) => readdirSync(dir).flatMap((f) => (statSync(join(dir, f)).isDirectory() ? walk(join(dir, f)) : [join(dir, f)]));
+  const orphans = [];
+  for (const s of skills) {
+    const refs = join(root, s, 'references');
+    let files = [];
+    try { files = walk(refs).filter((f) => f.endsWith('.md')); } catch { continue; }
+    for (const f of files) {
+      const rel = f.slice(refs.length + 1);
+      const dir = rel.includes('/') ? rel.slice(0, rel.lastIndexOf('/') + 1) : null;
+      const linked = text.includes(`references/${rel}`) || (dir && (text.includes(`references/${dir}*`) || text.includes(`references/${dir}<`)));
+      if (!linked) orphans.push(`${s}/references/${rel}`);
+    }
+  }
+  assert.deepEqual(orphans, []);
+});

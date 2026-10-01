@@ -62,6 +62,13 @@ async function runStep(page, s, ctx) {
     return;
   }
   if (s.url) return page.waitForURL(new RegExp(s.url), o);
+  if (s.shot !== undefined) {
+    // 심사 제출용 화면 캡처 (카카오·네이버 로그인 검수, 스토어 심사 등) — shots/review/<이름>.png
+    const name = String(s.shot).replace(/[^\w가-힣-]+/g, '-').slice(0, 60) || 'shot';
+    const dir = join(ctx.shotsDir ?? '.', 'review');
+    mkdirSync(dir, { recursive: true });
+    return page.screenshot({ path: join(dir, `${name}.png`), fullPage: true });
+  }
   if (s.openFrom) {
     // 화면에 보이는 링크 칸(라벨)의 값을 새 방문자처럼 연다 — 공유 링크 흐름
     const v = await locate(page, s.openFrom).inputValue(o);
@@ -128,6 +135,7 @@ export async function walk(plan, { outDir, cwd = process.cwd(), log = console.lo
   const browser = await pw.chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
   const shots = join(outDir, 'shots');
   mkdirSync(shots, { recursive: true });
+  plan.shotsDir = shots;
   const results = [];
   let visitor = 0;
   const findings = new Map(); // 같은 문제는 한 번만 (어디서 몇 번 났는지 모은다)
