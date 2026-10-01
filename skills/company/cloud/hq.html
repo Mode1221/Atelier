@@ -402,13 +402,17 @@ const TRAFFIC = new Set(['visitors', 'views']);
 const sum = (rows, k) => rows.reduce((s, r) => s + (Number(r[k]) || 0), 0);
 const fmt = (n) => Number(n || 0).toLocaleString('ko-KR');
 const md = (iso) => { const [, m, dd] = String(iso).split('-'); return `${Number(m)}/${Number(dd)}`; };
+// 방문자 숫자가 없는 서비스(예: 플러그인 — GitHub 활동만 있음)는 첫 번째 지표를 주 지표로 쓴다
+const mainKey = (st) => (st?.series && !('visitors' in st.series) ? Object.keys(st.series)[0] : 'visitors');
+const keyName = (st, k) => st?.series?.[k] ?? { visitors: '방문자', views: '페이지 열람' }[k] ?? k;
 function cardTraffic(d) {
   const days = d.daily?.days ?? [];
   if (!days.length) return '';
+  const mk = mainKey(d.daily), label = keyName(d.daily, mk);
   const last7 = days.slice(-7);
-  const max = Math.max(1, ...days.map((r) => r.visitors || 0));
-  return `<div class="row small" style="justify-content:space-between"><span><b style="font-family:var(--mono)">${fmt(sum(last7, 'visitors'))}</b> <span class="muted">최근 7일 방문자</span></span>
-    <span class="spark" style="width:45%" role="img" aria-label="최근 ${days.length}일 방문자 추이">${days.map((r) => `<i style="height:${Math.round(((r.visitors || 0) / max) * 100)}%"></i>`).join('')}</span></div>`;
+  const max = Math.max(1, ...days.map((r) => r[mk] || 0));
+  return `<div class="row small" style="justify-content:space-between"><span><b style="font-family:var(--mono)">${fmt(sum(last7, mk))}</b> <span class="muted">최근 7일 ${esc(label)}</span></span>
+    <span class="spark" style="width:45%" role="img" aria-label="최근 ${days.length}일 ${esc(label)} 추이">${days.map((r) => `<i style="height:${Math.round(((r[mk] || 0) / max) * 100)}%"></i>`).join('')}</span></div>`;
 }
 function barChart(days, key, label) {
   const W = 640, H = 180, top = 22, bottom = 22, n = days.length, gap = 4;
@@ -436,22 +440,23 @@ function opsSection(d, id) {
   if (!st?.days?.length) return `<section class="sec" aria-labelledby="h-ops">${head}<p class="empty">방문자·기능별 사용 숫자가 아직 없어요. 서비스에 공개 통계 주소를 만들고 서비스 문서에 <code>stats.url</code> 을 적으면 데이터·재무 부서가 매일 채워요.</p></section>`;
   const days = st.days, last7 = days.slice(-7), prev7 = days.slice(-14, -7);
   const series = st.series ?? {};
-  const name = (k) => series[k] ?? { visitors: '방문자', views: '페이지 열람' }[k] ?? k;
-  const feats = Object.keys(series).filter((k) => !TRAFFIC.has(k));
-  const v7 = sum(last7, 'visitors'), p7 = sum(prev7, 'visitors');
+  const name = (k) => keyName(st, k);
+  const mk = mainKey(st), hasVisits = mk === 'visitors';
+  const feats = Object.keys(series).filter((k) => !TRAFFIC.has(k) && k !== (hasVisits ? '' : mk));
+  const v7 = sum(last7, mk), p7 = sum(prev7, mk);
   const delta = prev7.length === 7 && p7 ? Math.round(((v7 - p7) / p7) * 100) : null;
   const today = days.at(-1);
   const featRows = feats.map((k) => [name(k), sum(last7, k)]).sort((a, b) => b[1] - a[1]);
   const srcRows = Object.entries(st.sources ?? {}).map(([k, v]) => [SRC[k] ?? k, v]).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  const cols = ['visitors', 'views', ...feats].filter((k) => days.some((r) => k in r));
+  const cols = [...new Set([mk, 'visitors', 'views', ...feats])].filter((k) => days.some((r) => k in r));
   return `<section class="sec" aria-labelledby="h-ops">${head}
     <div class="tiles">
-      <div><small>오늘 방문자</small><b>${fmt(today.visitors)}</b></div>
-      <div><small>최근 7일 방문자</small><b>${fmt(v7)}</b>${delta === null ? '' : `<small>지난 7일보다 ${delta >= 0 ? '+' : ''}${delta}%</small>`}</div>
-      <div><small>최근 7일 페이지 열람</small><b>${fmt(sum(last7, 'views'))}</b></div>
-      ${featRows[0] ? `<div><small>최근 7일 ${esc(featRows[0][0])}</small><b>${fmt(featRows[0][1])}</b></div>` : ''}
+      <div><small>오늘 ${esc(name(mk))}</small><b>${fmt(today[mk])}</b></div>
+      <div><small>최근 7일 ${esc(name(mk))}</small><b>${fmt(v7)}</b>${delta === null ? '' : `<small>지난 7일보다 ${delta >= 0 ? '+' : ''}${delta}%</small>`}</div>
+      ${hasVisits ? `<div><small>최근 7일 페이지 열람</small><b>${fmt(sum(last7, 'views'))}</b></div>` : ''}
+      ${featRows.slice(0, hasVisits ? 1 : 2).map(([k, v]) => `<div><small>최근 7일 ${esc(k)}</small><b>${fmt(v)}</b></div>`).join('')}
     </div>
-    <div class="card"><h3>날짜별 방문자</h3>${barChart(days, 'visitors', '방문자')}</div>
+    <div class="card"><h3>날짜별 ${esc(name(mk))}</h3>${barChart(days, mk, name(mk))}</div>
     <div class="grid two">
       ${featRows.length ? `<div class="card"><h3>기능별 사용 <span class="muted small">최근 7일</span></h3>${hbars(featRows)}</div>` : ''}
       ${srcRows.length ? `<div class="card"><h3>어디서 왔나 <span class="muted small">최근 ${days.length}일 방문</span></h3>${hbars(srcRows)}</div>` : ''}

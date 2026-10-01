@@ -31,6 +31,7 @@ const SEED = {
   'companies/chaenggim/tasks/t1': { title: '초대 링크 미리보기 이미지', dept: 'dev', status: 'doing', updatedAt: H(1) },
   'companies/picknus': { name: '픽앤어스', stage: 'operate', url: 'https://picknus.example.dev' },
   'companies/picknus/reports/ops': { level: 'good', summary: '응답 시간 정상, 오류 없음.', at: H(1) },
+  'companies/picknus/metrics/daily': { at: H(2), series: { commits: '개발 커밋', stars: '새 스타' }, days: Array.from({ length: 14 }, (_, i) => ({ date: new Date(Date.now() - (13 - i) * 864e5).toISOString().slice(0, 10), commits: i, stars: i % 2 })), sources: {} },
   'companies/picknus/metrics/main': { items: { '주간 사용자': 312, '코스 생성': 95 }, at: H(1) },
 };
 const TRIGGERS = [
@@ -229,7 +230,11 @@ test('운영 지표: 방문자 추이·기능별 사용·유입 출처·표, 카
   await noHScroll(page);
   // 숫자가 없는 서비스는 연결 방법을 알려 준다
   await page.getByRole('navigation', { name: '서비스 목록' }).getByRole('button', { name: /픽앤어스/ }).click();
-  await expect(page.locator('section[aria-labelledby="h-ops"]')).toContainText('stats.url');
+  // 방문자 없는 서비스는 첫 지표(개발 커밋)를 주 지표로
+  const ops2 = page.locator('section[aria-labelledby="h-ops"]');
+  await expect(ops2).toContainText('오늘 개발 커밋');
+  await expect(ops2).not.toContainText('방문자');
+  await expect(ops2.getByRole('img', { name: /날짜별 개발 커밋/ })).toBeVisible();
 });
 
 test('보기 전용 계정은 버튼 없이 상태만 본다', async ({ page }) => {
