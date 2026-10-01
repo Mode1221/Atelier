@@ -170,11 +170,12 @@ export function brief(root, service, at = new Date()) {
     depts: Object.keys(DEPTS).map((d) => ({
       id: d, name: DEPTS[d], on: (svc.enabled ?? DEFAULT_ENABLED).includes(d),
       open: tasks.filter((t) => t.dept === d && ['todo', 'doing', 'review'].includes(t.status)).length,
-      level: reports[d]?.level ?? null, summary: reports[d]?.summary ?? null, at: reports[d]?.at ?? null,
+      level: reports[d]?.level ?? null, summary: reports[d]?.summary ?? null, todo: reports[d]?.todo ?? null, at: reports[d]?.at ?? null,
     })),
   };
 }
 
+const REPORT_MAX = 60;
 const LEVEL = { good: '🟢', warning: '🟡', critical: '🔴' };
 export function briefText(b) {
   const out = [`■ ${b.name} — ${b.date} 브리핑${b.url ? ` (${b.url})` : ''}`];
@@ -193,6 +194,7 @@ export function briefText(b) {
   for (const d of b.depts) {
     if (!d.on && !d.summary && !d.open) continue;
     out.push(`  ${d.on ? '●' : '○'} ${d.name}${d.on ? '' : ' (꺼짐)'}${d.open ? ` · 할 일 ${d.open}` : ''}${d.summary ? ` · ${LEVEL[d.level] ?? ''} ${d.summary}` : d.on ? ' · 아직 보고 없음' : ''}`);
+    if (d.todo) out.push(`      → 대표님 할 일: ${d.todo}`);
   }
   const idle = b.depts.filter((d) => !d.on && d.open).map((d) => d.name);
   if (idle.length) out.push(`  ⚠ 꺼진 부서에 할 일이 있어요: ${idle.join(', ')} — "○○ 부서 켜 줘"`);
@@ -214,7 +216,13 @@ export function check(root, service) {
       for (const k of ['createdAt', 'updatedAt', 'decidedAt']) if (x[k] && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(x[k])) problems.push(`${c}/${x.id}: ${k} 는 date -u +%FT%TZ 형식`);
     }
   }
-  for (const r of list(root, service, 'reports')) if (!['good', 'warning', 'critical'].includes(r.level)) problems.push(`reports/${r.id}: level "${r.level}"`);
+  for (const r of list(root, service, 'reports')) {
+    if (!['good', 'warning', 'critical'].includes(r.level)) problems.push(`reports/${r.id}: level "${r.level}"`);
+    // 보고는 대표가 3초 안에 읽게: 결론 한 줄·할 일 한 줄·근거 3줄 (cloud-run.md 2절 6)
+    if ((r.summary ?? '').length > REPORT_MAX) problems.push(`reports/${r.id}: summary 는 결론 한 줄(${REPORT_MAX}자 이하) — 근거는 detail 로`);
+    if ((r.todo ?? '').length > REPORT_MAX) problems.push(`reports/${r.id}: todo 는 한 줄(${REPORT_MAX}자 이하)`);
+    if (String(r.detail ?? '').split('\n').filter((l) => l.trim()).length > 3) problems.push(`reports/${r.id}: detail 은 3줄 이하`);
+  }
   const posts = read(root, service, 'share', 'posts');
   for (const [i, p] of (posts?.posts ?? []).entries()) {
     if (!CHANNEL_IDS.includes(p.channel)) problems.push(`share/posts ${i + 1}번: channel 은 ID (받은 값 "${p.channel}")`);

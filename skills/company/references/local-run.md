@@ -40,7 +40,7 @@
 - `all` → `L order <서비스> all` 이 주는 순서(켜 둔 부서, 대표실 먼저)로 한 부서씩. 꺼진 부서를 이름으로 부르면 한 번만 실행해도 되는지 확인한다.
 - 부서마다 `cloud-run.md` **2~5절**을 따르되 경로는 1절 표의 파일로:
   1. 승인된 결재(`status approved`, `done` 아님) → 그 일을 하고 `done: true, result`. 반려 → reason 반영.
-  2. `tasks` 처리 → 3. 부서 루틴 → 4. 결재가 필요한 일은 `approvals` 에 `pending` → 5. 사람 몫은 `human` → 6. `reports/<부서>.json`.
+  2. `tasks` 처리 → 3. 부서 루틴 → 4. 결재가 필요한 일은 `approvals` 에 `pending` → 5. 사람 몫은 `human` → 6. `reports/<부서>.json` — summary 한 줄·todo 한 줄·detail 3줄 이하(쓰는 법은 `cloud-run.md` 2절 6).
 - **로컬은 저장소 파일을 직접 고칠 수 있다** (클라우드처럼 "tasks(dev)로 남기기"를 하지 않아도 됨). 테스트·린트 통과 후 커밋.
 - 그래도 **배포(운영 push·`wrangler deploy`)·외부 게시·지출·약관 변경·데이터 삭제는 결재 대상**이다 — 승인된 결재가 있을 때만 한다.
 - 서비스 상태는 `service.json` 의 `url`(와 `/health`)로 확인한다.

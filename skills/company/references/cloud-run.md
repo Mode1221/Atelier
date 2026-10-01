@@ -20,7 +20,7 @@ Claude 클라우드 예약 실행(Routine)이 새 세션을 열고 이 절차로
 | `approvals/<id>` | dept, title, kind(배포/외부 게시/지출/약관/데이터 삭제), cost, detail, ifApprove, ifReject, status(pending/approved/rejected), reason, createdAt, decidedAt, done, result | 부서가 만들고 대표가 결정 |
 | `tasks/<id>` | dept, title, detail, status(todo/doing/review/done), by(ceo 또는 부서), note, createdAt, updatedAt | 대표·부서 |
 | `human/<id>` | text, why, link, done, createdAt | 부서가 만들고 대표가 체크 |
-| `reports/<DEPT>` | level(good/warning/critical), summary(한두 문장), at — level 기준은 아래 | 각 부서가 실행 끝에 덮어씀 |
+| `reports/<DEPT>` | level(good/warning/critical), summary(결론 한 줄), todo(대표 할 일 한 줄, 없으면 비움), detail(근거 3줄 이하, 선택), at — 쓰는 법·level 기준은 2절 6 | 각 부서가 실행 끝에 덮어씀 |
 | `metrics/main` | items{이름: 숫자}, at | 데이터·재무 |
 | `metrics/daily` | at, series{키: 표시 이름}, days[{date, visitors, views, <기능 키>…}], sources{출처: 방문} — 본부 "운영 지표"(방문자 추이·기능별 사용·유입 출처)가 그린다 | 데이터·재무 (`stats.url` 응답을 그대로) |
 | `share/posts` | product, url, campaign, posts[{channel, when, note, text}] — **channel 은 ID**(`everytime` `kakaotalk` `threads` `x` `bluesky` `facebook` `linkedin` `reddit` `band` `naver_blog` `naver_cafe` `daangn` `disquiet` `instagram` `discord`), **text 에 링크를 넣지 않는다**(올릴 때 url+utm 이 자동으로 붙음) | 마케팅 |
@@ -37,7 +37,13 @@ id 규칙: `approvals`·`tasks`·`human` 은 `<DEPT>-<YYYYMMDD>-<짧은이름>` 
 3. 부서 파일의 **매 실행 루틴**을 한다.
 4. 대표 결재가 필요한 일(배포, 외부 게시, 지출, 약관·개인정보 변경, 데이터 삭제)은 하지 말고 `approvals` 에 `pending` 으로 올린다. ifApprove/ifReject 는 결과를 쉬운 말로.
 5. 사람만 할 수 있는 일(가입, 결제 수단, 게시 버튼, 계정 비밀번호)은 `human` 에 올린다 — why(왜), link(어디서). AI 가 할 수 있는 일을 사람에게 넘기지 않는다.
-6. 끝에 `reports/<DEPT>` 를 덮어쓴다: level + 대표가 읽을 한두 문장(한 일, 대표가 할 일).
+6. 끝에 `reports/<DEPT>` 를 덮어쓴다. **대표가 3초 안에 읽고 이해하게** 압축한다:
+   - `summary`: 결론 **한 줄, 40자 안팎**(최대 60자). "무엇이 어떤 상태다" 하나만. 예: "사이트 정상, 오류 없음" · "홍보 글 5개 중 2개 올라감" · "새 의견 3건 — 버그 1건 개발에 넘김".
+   - `todo`: 대표가 직접 할 일이 있을 때만 **한 줄**(동사로 끝, 예: "루틴에 저장소 연결하기"). 없으면 쓰지 않는다. 할 일함·결재에 이미 올린 일은 되풀이하지 않는다.
+   - `detail`: 근거가 꼭 필요할 때만, **3줄 이하**(`\n` 으로 줄 나눔). 본부에서는 "자세히"를 눌러야 보인다.
+   - 쉬운 말로: 대표가 모르는 말(curl·WebFetch·API·403·TLS·UTC·세션·트리거·add_repo 같은 도구·코드 이름)을 쓰지 않는다 — "접속이 막혀", "한국 시각 15시"처럼 바꾼다. 명령어·파일 경로·주소는 `detail` 에만.
+   - 빼는 것: "결재 대기 0건"·"할 일 없음" 같은 없음 나열, 다른 부서 보고 되풀이, 사과·과정 설명("~를 시도했으나"), 같은 말 두 번. 지난 보고와 달라진 게 없으면 summary 는 "변화 없음 — <상태>".
+   - 이 세션의 접속 제한(사이트·GitHub 에 못 닿음)은 서비스 문제가 아니다 — 간접 근거(운영 QA·CI 등)로 정상이면 `good` 으로 쓰고 제한은 `detail` 에 한 줄. 간접 근거도 없어 상태를 모를 때만 `warning`.
    level 은 **서비스·부서 상태**다. 본부 첫 화면이 서비스마다 이 값으로 색을 칠하고, critical 은 할 일함 맨 위에 뜬다.
    - `good`: 정상. 결재·대표 할 일이 있어도 good — 그것들은 할 일함에 따로 뜬다(level 을 올리는 이유가 아니다).
    - `warning`: 대표가 알아야 할 이상 — 느려짐, 일부 실패, 지표 급변, 확인 수단이 막혀 상태를 모름, 해야 할 일을 못 함.
@@ -50,9 +56,9 @@ id 규칙: `approvals`·`tasks`·`human` 은 `<DEPT>-<YYYYMMDD>-<짧은이름>` 
 - 비밀값을 본부·커밋·로그에 쓰지 않는다.
 
 ## 4. 부서별 추가 규칙
-- **대표실(ceo)**: **`playbook/planning` 을 매일 따른다** — 목표·로드맵(`plan/roadmap`)을 서비스에 맞게 만들거나 갱신하고, 오늘 할 일을 부서별 `tasks` 로 나눠 준다(하루 5개까지). 모든 `reports` 를 모아 `reports/ceo` 에 브리핑. 서비스가 오류를 돌려주면 level critical(세션이 주소에 못 닿는 것만으로는 critical 이 아니다 — 위 0의 간접 근거로 판단).
+- **대표실(ceo)**: **`playbook/planning` 을 매일 따른다** — 목표·로드맵(`plan/roadmap`)을 서비스에 맞게 만들거나 갱신하고, 오늘 할 일을 부서별 `tasks` 로 나눠 준다(하루 5개까지). 모든 `reports` 를 모아 `reports/ceo` 에 브리핑 — summary 는 오늘 가장 중요한 한 가지, 부서 보고를 옮겨 적지 않는다. 서비스가 오류를 돌려주면 level critical(세션이 주소에 못 닿는 것만으로는 critical 이 아니다 — 위 0의 간접 근거로 판단).
 - **고객지원(support)**: 새 `feedback/<날짜>`(status new)를 분류해 각 항목에 action 을 달고 summary·status triaged 로 바꾼다(개인정보는 옮기지 않음). 버그는 `tasks`(qa), 반복 불편·제안은 `tasks`(plan) — 대표실이 다음 계획 때 로드맵에 반영한다. 피드백을 가져올 길(저장소 `feedback` 이슈 등)에 접근할 수 없으면 그 사실을 보고한다.
-- **마케팅(marketing)**: `share/posts` 가 홍보 글의 원본이다. `playbook/channels`(채널별 말투·길이·금기)에 맞춰 채널마다 따로 다듬거나 새 글(채널당 1개, 글자 수 한도, `note`·`when` 포함)을 쓰고, 올리지 않은 채널이 있으면 `human` 에 "○○ 올리기"를 남긴다. `shared` 기록으로 채널별 상태를 `reports/marketing` 에.
+- **마케팅(marketing)**: `share/posts` 가 홍보 글의 원본이다. `playbook/channels`(채널별 말투·길이·금기)에 맞춰 채널마다 따로 다듬거나 새 글(채널당 1개, 글자 수 한도, `note`·`when` 포함)을 쓰고, 올리지 않은 채널이 있으면 `human` 에 "○○ 올리기"를 남긴다. `shared` 기록으로 "N개 중 M개 올라감"을 `reports/marketing` summary 에.
 - **데이터·재무(data)**: 서비스가 주는 지표만 `metrics/main` 에. 숫자를 지어내지 않는다 — 없으면 "지표 없음"과 만드는 방법을 `tasks`(dev)로.
   서비스 문서에 `stats.url` 이 있으면(**공개 통계 — 기본**): 그 주소를 `curl -s` 로, 막히면 WebFetch 로 "응답 JSON 을 고치지 말고 그대로 출력" 해서 읽는다. 받은 `{at, series, days, sources}` 를 **값을 바꾸지 않고** `metrics/daily` 에 쓰고(set), `totals` 의 숫자를 `metrics/main.items` 에. 쓰기 전에 확인: days 가 날짜순 배열이고 모든 값이 0 이상 정수, series 키가 days 에 있다 — 하나라도 어긋나면(요약·추측된 값일 수 있음) 쓰지 않고 보고한다. 주소(비밀 경로)는 보고·출력에 쓰지 않는다.
   서비스 문서에 `metrics` 가 있으면: `curl -s -H "<header>: $<env>" <url>` (header 가 `Authorization` 이면 값 앞에 `Bearer `) → 받은 JSON 의 숫자 필드를 그대로 `items` 에, `at` 은 지금. 출력·보고에 토큰을 쓰지 않는다.

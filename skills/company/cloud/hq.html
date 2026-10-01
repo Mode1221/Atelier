@@ -230,6 +230,22 @@ const ago = (iso) => {
   if (s < 86400) return `${Math.round(s / 3600)}시간 전`;
   return `${Math.round(s / 86400)}일 전`;
 };
+// 부서 보고: 결론 한 줄 + 대표 할 일 한 줄 + (자세히) 근거. 예전 형식의 긴 summary 는 첫 문장만 보이고 나머지는 "자세히"로
+function repParts(r) {
+  let sum = String(r.summary ?? '').trim(), detail = String(r.detail ?? '').trim();
+  if (!detail && sum.length > 70) {
+    const m = sum.match(/^(.{8,}?[.!?])\s+(.+)$/s);
+    if (m) { sum = m[1]; detail = m[2]; }
+  }
+  return { sum, todo: String(r.todo ?? '').trim(), detail };
+}
+function repItem(x, r, svc) {
+  const p = repParts(r);
+  return `<li class="item"><div class="row">${pill(r.level ?? 'idle')}<b>${esc(x.name)}</b><span class="small muted">${ago(r.at)}</span></div>
+    <p style="margin:4px 0 0">${esc(p.sum)}</p>
+    ${p.todo ? `<p class="small" style="margin:4px 0 0"><b>대표님 할 일</b> · ${esc(p.todo)}</p>` : ''}
+    ${p.detail ? `<details data-k="rd-${esc(svc)}-${esc(x.id)}"><summary class="small muted">자세히</summary><p class="small muted" style="margin:4px 0 0;white-space:pre-line">${esc(p.detail)}</p></details>` : ''}</li>`;
+}
 const pill = (level, text) => `<span class="pill ${esc(level)}">${esc(text ?? LEVEL[level] ?? level)}</span>`;
 const nameOf = (id) => S.services.find((v) => v.id === id)?.name ?? id;
 function flash(msg) {
@@ -270,7 +286,7 @@ function inboxOf(id) {
   const out = [];
   for (const dep of DEPTS) {
     const r = d.reports[dep.id];
-    if (r?.level === 'critical') out.push({ kind: 'report', svc: id, key: `r-${id}-${dep.id}`, title: `${dep.name} 부서가 문제를 보고했어요`, text: r.summary, at: r.at });
+    if (r?.level === 'critical') out.push({ kind: 'report', svc: id, key: `r-${id}-${dep.id}`, title: `${dep.name} 부서가 문제를 보고했어요`, text: [repParts(r).sum, r.todo && `대표님 할 일: ${r.todo}`].filter(Boolean).join(' '), at: r.at });
   }
   // 부서가 켜져 있는데 보고가 이틀 넘게 없으면 예약이 멈췄거나 실패한 것 — 조용한 고장을 드러낸다
   const lastAt = Object.values(d.reports).map((r) => r.at).filter(Boolean).sort().pop();
@@ -510,7 +526,7 @@ function detail(id) {
     <p class="note">"○○에 올리기"를 누르면 글이 채워진 창이 열려요. 올린 뒤 "올렸어요"를 눌러 주세요. 자동 게시는 하지 않아요.</p>
     ${unposted.length ? `<div class="grid two">${unposted.map(({ x, i }) => postCard(d, x, i, id)).join('')}</div>` : '<p class="empty">준비된 글을 모두 올렸어요.</p>'}</section>` : ''}
   <section class="sec" aria-labelledby="h-rep"><h2 id="h-rep">부서 보고</h2>
-    ${reps.length ? `<div class="card"><ul class="plain">${reps.map((x) => { const r = d.reports[x.id]; return `<li class="item"><div class="row">${pill(r.level ?? 'idle')}<b>${esc(x.name)}</b><span class="small muted">${ago(r.at)}</span></div><p style="margin:4px 0 0">${esc(r.summary)}</p></li>`; }).join('')}</ul></div>` : '<p class="empty">아직 보고가 없어요.</p>'}</section>
+    ${reps.length ? `<div class="card"><ul class="plain">${reps.map((x) => repItem(x, d.reports[x.id], id)).join('')}</ul></div>` : '<p class="empty">아직 보고가 없어요.</p>'}</section>
   <details class="more" id="more" data-k="more-${esc(id)}"><summary>더 보기 — 일 맡기기 · 진행 중인 부서 일 · 부서 켜기·끄기</summary><div>
     ${canWrite ? `<form class="grid" data-act="task" data-k="task-${esc(id)}" data-svc="${esc(id)}"><h3>부서에 일 맡기기</h3>
       <label>무엇을 해야 하나요?<input name="title" required maxlength="200" placeholder="예: 첫 화면에 사용 후기 넣기"></label>

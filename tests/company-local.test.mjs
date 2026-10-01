@@ -157,3 +157,15 @@ test('playbook: build 는 파일과 batch writes 를 만들고 check 는 그 결
   assert.equal(pbCli(['check', fresh()], () => {}), 1);
   assert.equal(pbCli([], () => {}), 2);
 });
+
+test('local: 부서 보고는 결론 한 줄·할 일 한 줄·근거 3줄 — 길면 형식 검사가 잡는다', () => {
+  const root = fresh();
+  init(root, 's', { name: '벌금장부' }, T);
+  write(root, 's', 'reports', 'ops', { level: 'good', summary: '사이트 정상, 오류 없음', todo: '루틴에 저장소 연결하기', detail: '운영 점검 3회 성공', at: '2026-09-30T00:00:00Z' });
+  assert.deepEqual(check(root, 's'), []);
+  assert.match(briefText(brief(root, 's', T)), /대표님 할 일: 루틴에 저장소 연결하기/);
+  write(root, 's', 'reports', 'qa', { level: 'warning', summary: '가'.repeat(61), detail: '1\n2\n3\n4', at: '2026-09-30T00:00:00Z' });
+  const p = check(root, 's').join('\n');
+  assert.match(p, /reports\/qa: summary 는 결론 한 줄/);
+  assert.match(p, /reports\/qa: detail 은 3줄 이하/);
+});

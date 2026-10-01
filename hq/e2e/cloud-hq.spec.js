@@ -212,6 +212,21 @@ test('부서가 켜져 있는데 보고가 이틀 넘게 없으면 할 일함에
   await expect(main.getByText('매일 08:00')).toBeVisible(); // 더 보기가 펼쳐져 부서 일정이 보인다
 });
 
+test('부서 보고: 결론 한 줄·대표 할 일만 보이고 근거는 "자세히", 예전 긴 보고는 첫 문장만', async ({ page }) => {
+  await open(page, { hash: '#s=picknus', seed: { ...SEED,
+    'companies/picknus/reports/ops': { level: 'good', summary: '사이트 정상, 오류 없음', todo: '루틴에 저장소 연결하기', detail: '운영 점검 3회 성공\n이번 실행은 사이트에 직접 못 닿음', at: H(1) },
+    'companies/picknus/reports/ceo': { level: 'warning', summary: '새로 나눈 일은 없어요(열린 일 2개가 이미 있음). 홍보 글 5개 중 2개가 올라갔고 나머지는 대표님이 올리기 대기 중이에요.', at: H(1) },
+  } });
+  const rep = page.getByRole('main').locator('section[aria-labelledby="h-rep"]');
+  await expect(rep.getByText('사이트 정상, 오류 없음')).toBeVisible();
+  await expect(rep.getByText('대표님 할 일 · 루틴에 저장소 연결하기')).toBeVisible();
+  await expect(rep.getByText('운영 점검 3회 성공', { exact: false })).toBeHidden();
+  await rep.locator('li', { hasText: '사이트 정상' }).getByText('자세히').click();
+  await expect(rep.getByText('운영 점검 3회 성공', { exact: false })).toBeVisible();
+  await expect(rep.getByText('새로 나눈 일은 없어요(열린 일 2개가 이미 있음).', { exact: true })).toBeVisible();
+  await expect(rep.getByText(/홍보 글 5개 중 2개/)).toBeHidden();
+});
+
 test('운영 지표: 방문자 추이·기능별 사용·유입 출처·표, 카드에 7일 방문자', async ({ page }) => {
   await open(page);
   const card = page.getByRole('main').locator('.svc-card').filter({ hasText: '챙김표' });
