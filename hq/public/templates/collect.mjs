@@ -2,6 +2,7 @@
 // 저장소 비밀값 ATELIER_SVC_<서비스> (JSON) 로 외부 서비스를 조회하고, 결과를 데이터 브랜치의 status.json 에 쓴다.
 // 대시보드(Atelier HQ)는 이 파일을 읽어 화면에 보여 준다. 키는 이 실행 안에서만 쓰이고 어디에도 기록되지 않는다.
 // 이 파일은 Atelier HQ "회사 세우기"가 설치한다. 직접 고치지 말고 Atelier 에서 갱신한다.
+import { pathToFileURL } from 'node:url';
 
 const monthStart = () => {
   const d = new Date();
@@ -151,7 +152,7 @@ export async function writeStatus(status, { repo, token, fetchImpl = fetch, apiB
   if (!res.ok) throw new Error(`status.json 저장 실패 (${res.status})`);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const status = await collect();
   await writeStatus(status, { repo: process.env.GITHUB_REPOSITORY, token: process.env.GH_TOKEN });
   console.log(`수집 완료: ${Object.keys(status.services).join(', ') || '(연결된 서비스 없음)'}`);

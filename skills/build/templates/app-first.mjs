@@ -6,6 +6,7 @@
 // 사람 몫: expo.dev 무료 가입 + 이 명령 한 줄 (처음이면 로그인 질문에 답하기).
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 export const EAS_JSON = {
   cli: { appVersionSource: 'remote' },
@@ -69,6 +70,6 @@ export async function appFirst({ run = eas, log = console.log, dir = '.' } = {})
   return url;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   appFirst().catch((e) => { console.error(`\n✗ ${e.message}`); process.exit(1); });
 }

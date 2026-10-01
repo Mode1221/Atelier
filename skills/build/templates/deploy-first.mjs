@@ -11,6 +11,7 @@ import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { dirname, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 // wrangler.toml 의 [[d1_databases]] 블록들 → [{ binding, name, id }]
 export function d1Blocks(toml) {
@@ -150,6 +151,6 @@ export async function deployFirst({ run = wrangler, file = 'wrangler.toml', log 
   return url;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   deployFirst().catch((e) => { console.error(`\n✗ ${e.message}`); process.exit(1); });
 }

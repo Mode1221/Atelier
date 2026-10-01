@@ -6,7 +6,7 @@
 //   --check: 복사본이 플러그인 원본과 같은지만 확인 (다르면 종료 코드 1)
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const SKILLS = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 // 복사할 도구: [원본 (skills/ 기준), 설명]
@@ -71,7 +71,7 @@ export function install(root, { check = false } = {}) {
   return { results, script };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   if (args.includes('--help') || args.includes('-h')) {
     console.log('사용: node install-tools.mjs [프로젝트 폴더=.] [--check]\n  검사 도구를 <프로젝트>/scripts/atelier/ 에 복사하고 package.json 에 "quality" 를 넣는다. --check 는 바꾸지 않고 낡았는지만 본다.');

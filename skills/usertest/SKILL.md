@@ -43,7 +43,7 @@ node scripts/atelier/walk.mjs docs/usertest/plan.json docs/usertest/<날짜>
 `docs/usertest/<날짜>.md` 에 발견 표(심각도·근거·조치). 치명·높음은 **바로 고치고** U4 재실행. 테스트 코드(E2E)도 같이 돌린다 — 라벨 변경이 접근성 이름 충돌을 만들 수 있다.
 
 ### U7. 자동화 (권장)
-프로젝트에 `npm run usertest`(로컬 서버 + 실행기) 를 만들고 CI 에 넣는다. 매 변경마다 과제가 여전히 되는지 확인되고 결과가 CI 요약에 붙는다. 예: `examples/beolgeum-jangbu/scripts/usertest.sh`(실행기는 `scripts/atelier/walk.mjs`), `.github/workflows/beolgeum.yml`.
+프로젝트에 `npm run usertest`(로컬 서버 + 실행기) 를 만들고 CI 에 넣는다. 매 변경마다 과제가 여전히 되는지 확인되고 결과가 CI 요약에 붙는다. 실행 스크립트는 `templates/usertest.mjs` → 프로젝트 `scripts/usertest.mjs`(Windows·Mac 공통, 실행기는 `scripts/atelier/walk.mjs`), `.github/workflows/beolgeum.yml`.
 
 ## 판정
 - 통과: 실패 0, 부분은 검토 완료, 자동 점검 높음 0 → launch L1 완료, **공개 베타로 간다**.

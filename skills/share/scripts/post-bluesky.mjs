@@ -5,6 +5,7 @@
 // 사용: node post-bluesky.mjs [posts.json=docs/share/posts.json]
 import { readFileSync } from 'node:fs';
 import { withUtm } from './channels.mjs';
+import { pathToFileURL } from 'node:url';
 
 const PDS = 'https://bsky.social/xrpc';
 
@@ -59,7 +60,7 @@ export async function postAll(spec, { env = process.env, fetchImpl = fetch, log 
   return { posted };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const spec = JSON.parse(readFileSync(process.argv[2] ?? 'docs/share/posts.json', 'utf8'));
   postAll(spec).catch((e) => {
     console.error(e.message);

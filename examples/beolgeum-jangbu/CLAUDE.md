@@ -7,7 +7,7 @@ Cloudflare Workers + D1(SQLite) + 정적 자산 + 크론. Hono, 서버 렌더링
 
 ## 명령
 - 실행: `npm run dev` (로컬 D1 + workerd). 테스트(E2E·usertest)는 빈 포트를 자동으로 고른다 — `scripts/free-port.mjs`
-- 검증: `./scripts/check.sh` (법률 번들 → lint → vitest → Playwright(workerd) → audit). 파일 추가 후에도 다시 실행
+- 검증: `npm run check` (법률 번들 → lint → vitest → Playwright(workerd) → audit). 파일 추가 후에도 다시 실행
 - 배포: main 푸시 → 루트 `.github/workflows/beolgeum.yml` (테스트 → D1 마이그레이션 → `wrangler deploy`)
 - 관리: `node scripts/admin.mjs <find|delete|restore|purge|stats> [모임ID]`
 - 법률 문서 수정 후: `npm run legal`

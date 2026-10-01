@@ -5,6 +5,7 @@
 // 종료 코드: 증거 없는 완료 항목이 있으면 1
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 // 항목 ID → 증거 (하나라도 맞으면 통과). 문자열 = 파일 패턴(* 는 한 단계, ** 는 여러 단계), { file, has } = 파일에 글자 포함
 export const EVIDENCE = {
@@ -85,7 +86,7 @@ export function check(root, projectText) {
   return { rows, problems: rows.filter((r) => r.status === 'no-evidence') };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const file = args.find((a) => !a.startsWith('--')) ?? 'PROJECT.md';
   if (!existsSync(file)) {

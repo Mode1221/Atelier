@@ -8,6 +8,7 @@
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const DAY = 86_400_000;
 
@@ -147,4 +148,4 @@ export async function main(args = process.argv.slice(2), { run = wrangler, fetch
   return r.verdict.level === 'ok' ? 0 : 1;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) main().then((c) => process.exit(c));
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().then((c) => process.exit(c));

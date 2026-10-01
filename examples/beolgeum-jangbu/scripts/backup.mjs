@@ -9,6 +9,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const KEEP = 14;
 const readJson = (p) => { try { return JSON.parse(readFileSync(p, 'utf8')); } catch { return null; } };
@@ -87,7 +88,7 @@ function defaultExportDb(root, out, log) {
   return out;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const a = process.argv.slice(2);
   const i = a.indexOf('--to');
   try { backup({ to: i >= 0 ? a[i + 1] : undefined, remember: a.includes('--remember') }); } catch (e) { console.error(`✗ ${e.message}`); process.exit(1); }

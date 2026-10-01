@@ -4,6 +4,7 @@
 //              POST {SERVICE_URL}/api/feedback/ack {upTo} → 옮긴 것까지 표시 (Authorization: Bearer FEEDBACK_TOKEN)
 // 환경변수: SERVICE_URL, FEEDBACK_TOKEN, GH_TOKEN, REPO(owner/name). 선택: FEEDBACK_LABELS (쉼표, 기본 "feedback,dept:support"), SERVICE_NAME (이슈 제목 앞 [이름] — 저장소 하나에 서비스가 여럿일 때)
 // 의존성 없음 (Node 22+).
+import { pathToFileURL } from 'node:url';
 
 export const KIND_LABEL = { good: '좋아요', hard: '불편해요', bug: '오류', idea: '제안' };
 
@@ -78,7 +79,7 @@ export async function sync({ env = process.env, fetchImpl = fetch, apiBase = 'ht
   return { created: items.length, url: html_url };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   sync().catch((e) => {
     console.error(e.message);
     process.exit(1);

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Atelier 0.11.0 의 skills/build/scripts/quality-gate.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
+// Atelier 0.28.0 의 skills/build/scripts/quality-gate.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
 // Atelier 품질 게이트 — 사람의 성실함 대신 자동으로 확인하는 5가지를 한 번에 (CI·push 전·게이트 판정 때).
 //   1. 증거 검사 (pilot gate-check)   2. 요구사항 추적 (spec trace)   3. 분석 이벤트 계획 (spec events-check)
 //   4. DB 변경 안전 (build migration-check)   5. 비밀값 유출 (guard secret-scan)
@@ -11,6 +11,7 @@ import { trace } from './trace.mjs';
 import { checkEvents } from './events-check.mjs';
 import { checkMigrations } from './migration-check.mjs';
 import { scan } from './secret-scan.mjs';
+import { pathToFileURL } from 'node:url';
 
 export function runGate(root) {
   const out = [];
@@ -37,7 +38,7 @@ export function runGate(root) {
   return out;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const root = process.argv[2] ?? '.';
   const res = runGate(root);
   let fail = 0;

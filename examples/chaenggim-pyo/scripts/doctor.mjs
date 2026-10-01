@@ -5,6 +5,7 @@
 // deploy-first.mjs 가 실패하면 자동으로 explain 을 부른다. 모르는 오류면 마지막 줄들을 AI 에게 보여 주라고 안내한다.
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 // by: AI = Claude 에게 "고쳐 줘"라고 하면 됨 · 사람 = 계정·결제·버튼처럼 사람만 할 수 있음
 export const KNOWN = [
@@ -90,7 +91,7 @@ export function checkup(root = '.', { node = process.versions.node, today = new 
   return out;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const i = args.indexOf('--explain');
   if (i >= 0) {

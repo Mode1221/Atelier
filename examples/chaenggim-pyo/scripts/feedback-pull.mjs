@@ -9,6 +9,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const readJson = (p) => { try { return JSON.parse(readFileSync(p, 'utf8')); } catch { return null; } };
 const writeJson = (p, d) => { mkdirSync(join(p, '..'), { recursive: true }); writeFileSync(`${p}.tmp`, `${JSON.stringify(d, null, 2)}\n`); renameSync(`${p}.tmp`, p); };
@@ -83,7 +84,7 @@ export async function connectCloud({ root = process.cwd(), service, env = proces
   return { name, host, copied, feedback };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   if (args[0] === '--cloud') connectCloud({ service: args[1] }).catch((e) => { console.error(`✗ ${e.message}`); process.exit(1); });
   else pull({ service: args[0] }).catch((e) => { console.error(`✗ ${e.message}`); process.exit(1); });

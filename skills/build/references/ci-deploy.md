@@ -20,7 +20,7 @@ jobs:
 스택에 맞게 setup 단계·명령을 바꾼다. 액션 버전은 최신 태그를 확인한다.
 
 ## 로컬 검증 스크립트
-CI 와 같은 명령을 `scripts/check.sh` 하나로 묶어 푸시 전에 돌린다.
+CI 와 같은 명령을 `npm run check`(`../templates/check.mjs` → `scripts/check.mjs`, Windows·Mac 공통) 하나로 묶어 푸시 전에 돌린다.
 
 ## 무료 배포: Cloudflare Workers + D1 (GitHub Actions)
 사람이 할 일은 Cloudflare 가입(카드 불필요)과 시크릿 2개 등록뿐이다. 나머지는 워크플로가 처음 한 번 알아서 만든다.

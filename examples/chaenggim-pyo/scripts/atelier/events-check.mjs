@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Atelier 0.26.1 의 skills/spec/scripts/events-check.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
+// Atelier 0.28.0 의 skills/spec/scripts/events-check.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
 // Atelier spec — 분석 이벤트 추적 계획 검증: docs/spec.md S6 에 정의한 이벤트와 코드가 실제로 보내는 이벤트를 대조한다.
 // 계획에만 있고 코드에 없으면 → 출시 뒤 그 숫자가 영영 비어 있다. 코드에만 있으면 → 아무도 모르는 숫자가 쌓인다.
 // S6 표기: 백틱 안 이벤트 이름, 속성은 {…} (예: `landing{src}`), 같은 접두어 묶음은 `item_claim|unclaim|pack`
@@ -7,6 +7,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles, isCode, isTest } from './lib.mjs';
+import { pathToFileURL } from 'node:url';
 
 export function parseDeclared(spec) {
   const sec = spec.split(/\n(?=##\s)/).find((s) => /^##\s*S6\b|^##\s.*(분석 이벤트|이벤트 설계)/m.test(s.split('\n')[0]));
@@ -49,7 +50,7 @@ export function checkEvents(root, { emit = EMIT } = {}) {
   return { declared: [...declared], emitted: [...emitted], dynamic: [...dynamic], missing, undeclared };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const i = args.indexOf('--emit');
   const root = args.find((a, j) => !a.startsWith('--') && args[j - 1] !== '--emit') ?? '.';

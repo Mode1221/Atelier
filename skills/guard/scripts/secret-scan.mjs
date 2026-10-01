@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles } from '../../spec/scripts/lib.mjs';
+import { pathToFileURL } from 'node:url';
 
 export const RULES = [
   ['AWS 액세스 키', /\bAKIA[0-9A-Z]{16}\b/],
@@ -65,7 +66,7 @@ export function scan(root) {
   return hits;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const root = args.find((a) => !a.startsWith('--')) ?? '.';
   const hits = scan(root);

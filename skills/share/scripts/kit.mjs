@@ -10,6 +10,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import { CHANNELS, withUtm, length, postLength, check, disclosureLine } from './channels.mjs';
+import { pathToFileURL } from 'node:url';
 export { CHANNELS, withUtm, length, postLength, check };
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -77,7 +78,7 @@ document.querySelectorAll('[data-done]').forEach(function(c){var k='kit-done-'+c
 `;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const onlyCheck = args[0] === '--check';
   const onlyLinks = args[0] === '--links';

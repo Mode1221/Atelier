@@ -7,6 +7,7 @@
 // 한도는 무료 요금제 기준(확인일 2026-10). 바뀌면 LIMITS 만 고친다: https://developers.cloudflare.com/d1/platform/pricing/
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 export const LIMITS = {
   workersRequests: { label: '요청 수(하루, 계정 전체)', max: 100_000 },
@@ -91,7 +92,7 @@ function wrangler(args) {
   });
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const toml = existsSync('wrangler.toml') ? readFileSync('wrangler.toml', 'utf8') : '';
   const rows = await collect({ run: wrangler, toml, env: process.env });

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Atelier 0.11.0 의 skills/build/scripts/migration-check.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
+// Atelier 0.28.0 의 skills/build/scripts/migration-check.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
 // Atelier build — DB 변경(마이그레이션) 안전 검사. 운영 데이터를 날리거나, 배포하는 몇 초 사이 옛 코드를 깨뜨리는 변경을 잡는다.
 // 원칙 (확장 → 이전 → 축소): 1) 새 칸·표를 "추가"만 하고 배포  2) 코드가 새 칸을 쓰게 바꾸고 데이터 옮기기  3) 다음 배포에서 옛 칸 삭제.
 // 위험한 변경을 일부러 할 때는 그 파일에 `-- migration-check: ok <이유>` (예: 아직 운영 데이터 없음) — 이유 없이 넘기지 않는다.
@@ -7,6 +7,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles } from './lib.mjs';
+import { pathToFileURL } from 'node:url';
 
 export const RULES = [
   ['표 삭제', /\bDROP\s+TABLE\b/i, '데이터가 사라진다. 먼저 코드에서 안 쓰게 배포 → 백업 → 다음 배포에서 삭제'],
@@ -50,7 +51,7 @@ export function checkMigrations(root) {
   return { files: results, duplicates: dup, blocking };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const root = args.find((a) => !a.startsWith('--')) ?? '.';
   if (!existsSync(root)) process.exit(2);

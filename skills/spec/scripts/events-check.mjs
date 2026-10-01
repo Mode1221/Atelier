@@ -6,6 +6,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles, isCode, isTest } from './lib.mjs';
+import { pathToFileURL } from 'node:url';
 
 export function parseDeclared(spec) {
   const sec = spec.split(/\n(?=##\s)/).find((s) => /^##\s*S6\b|^##\s.*(분석 이벤트|이벤트 설계)/m.test(s.split('\n')[0]));
@@ -48,7 +49,7 @@ export function checkEvents(root, { emit = EMIT } = {}) {
   return { declared: [...declared], emitted: [...emitted], dynamic: [...dynamic], missing, undeclared };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const i = args.indexOf('--emit');
   const root = args.find((a, j) => !a.startsWith('--') && args[j - 1] !== '--emit') ?? '.';

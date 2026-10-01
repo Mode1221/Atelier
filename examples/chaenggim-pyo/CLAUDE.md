@@ -6,7 +6,7 @@
 Cloudflare Workers + D1(SQLite) + 정적 자산 + 크론. Hono, 서버 렌더링 HTML + `public/static/app.js`. 빌드 없음.
 
 ## 명령
-- 실행: `npm run dev` / 검증: `./scripts/check.sh` (파일 추가 후에도 다시) / 사용성: `npm run usertest`
+- 실행: `npm run dev` / 검증: `npm run check` (파일 추가 후에도 다시) / 사용성: `npm run usertest`
 - 첫 배포: `npm run deploy:first` / 이후: main 푸시 → 루트 `.github/workflows/chaenggim.yml`
 - 법률 문서 수정 후: `npm run legal`
 

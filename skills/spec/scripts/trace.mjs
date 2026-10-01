@@ -5,6 +5,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles, isTest } from './lib.mjs';
+import { pathToFileURL } from 'node:url';
 
 // S1 절의 스토리 ID 와 제목. 표 "| F1 | 총무로서 … |" 또는 제목 "### F1. 모임 만들기 (Must)". "(나중)"·"Won't"·"N/A" 는 제외
 export function parseStories(spec) {
@@ -37,7 +38,7 @@ export function trace(root) {
   return { rows, missing: rows.filter((r) => !r.files.length) };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const root = args.find((a) => !a.startsWith('--')) ?? '.';
   const r = trace(root);

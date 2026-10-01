@@ -5,7 +5,7 @@
 ## 세부 단계 결과
 | 단계 | 결과 |
 |---|---|
-| B1 기반 | ✅ Node 22 + Hono, ESLint, Vitest, Playwright, `scripts/check.sh`, CI(`.github/workflows/ci.yml`), `.env.example`, `CLAUDE.md` |
+| B1 기반 | ✅ Node 22 + Hono, ESLint, Vitest, Playwright, `npm run check`, CI(`.github/workflows/ci.yml`), `.env.example`, `CLAUDE.md` |
 | B2 데이터 | ✅ `migrations/001_init.sql` + `schema_migrations`, 외래키·인덱스·CHECK 제약, 저장소 어댑터 `src/repo.js` |
 | B3 인증·계정 | ✅ 계정 대신 관리 키(144비트, SHA-256 해시 저장, 상수 시간 비교, `#k=` 조각 → 헤더), 키 실패 속도 제한, 모임 삭제(30일 후 영구 삭제) |
 | B4 핵심 기능 | ✅ F1~F6 (F6 카톡 복사 포함) |

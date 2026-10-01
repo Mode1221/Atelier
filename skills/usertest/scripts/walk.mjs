@@ -9,6 +9,7 @@ import { createRequire } from 'node:module';
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const STEP_TIMEOUT = 5000; // 사람이 5초 안에 못 찾으면 막힌 것으로 본다
 
@@ -265,7 +266,7 @@ export function summarize({ at, baseUrl, personas, tasks, results, findings }) {
   return lines.join('\n');
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const [planPath, dir] = process.argv.slice(2);
   if (!planPath) {
     console.error('사용: node walk.mjs <plan.json> [출력 폴더]');

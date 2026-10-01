@@ -10,6 +10,7 @@ import { trace } from '../../spec/scripts/trace.mjs';
 import { checkEvents } from '../../spec/scripts/events-check.mjs';
 import { checkMigrations } from './migration-check.mjs';
 import { scan } from '../../guard/scripts/secret-scan.mjs';
+import { pathToFileURL } from 'node:url';
 
 export function runGate(root) {
   const out = [];
@@ -36,7 +37,7 @@ export function runGate(root) {
   return out;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const root = process.argv[2] ?? '.';
   const res = runGate(root);
   let fail = 0;

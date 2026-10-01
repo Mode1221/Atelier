@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Atelier 0.11.0 의 skills/guard/scripts/secret-scan.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
+// Atelier 0.28.0 의 skills/guard/scripts/secret-scan.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
 // Atelier guard — 비밀값 유출 검사 (의존성 없음). 저장소에 올라가는 파일에서 키·토큰·개인키 모양을 찾는다.
 // 찾으면: 파일에서 지우는 것만으로는 부족하다 — 이미 올라갔다면 그 키를 **폐기·재발급**한다 (guard G1).
 // 사용: node <atelier>/skills/guard/scripts/secret-scan.mjs [폴더] [--json]   · 찾으면 종료 코드 1
@@ -8,6 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles } from './lib.mjs';
+import { pathToFileURL } from 'node:url';
 
 export const RULES = [
   ['AWS 액세스 키', /\bAKIA[0-9A-Z]{16}\b/],
@@ -66,7 +67,7 @@ export function scan(root) {
   return hits;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const root = args.find((a) => !a.startsWith('--')) ?? '.';
   const hits = scan(root);

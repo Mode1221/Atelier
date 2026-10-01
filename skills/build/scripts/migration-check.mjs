@@ -6,6 +6,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles } from '../../spec/scripts/lib.mjs';
+import { pathToFileURL } from 'node:url';
 
 export const RULES = [
   ['표 삭제', /\bDROP\s+TABLE\b/i, '데이터가 사라진다. 먼저 코드에서 안 쓰게 배포 → 백업 → 다음 배포에서 삭제'],
@@ -49,7 +50,7 @@ export function checkMigrations(root) {
   return { files: results, duplicates: dup, blocking };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const root = args.find((a) => !a.startsWith('--')) ?? '.';
   if (!existsSync(root)) process.exit(2);

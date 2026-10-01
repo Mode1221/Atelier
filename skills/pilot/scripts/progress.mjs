@@ -5,6 +5,7 @@
 // 개발 용어 없이 읽히게: 세부 단계 ID 는 작게, 설명을 크게. 의존성 없음, 인터넷 없이 열린다.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const section = (md, name) => (md.match(new RegExp(`^## ${name}[^\\n]*\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, 'm'))?.[1] ?? '');
 const field = (text, key) => text.match(new RegExp(`^- ${key}:\\s*(.+)$`, 'm'))?.[1]?.trim() ?? '';
@@ -79,7 +80,7 @@ ${m.cost ? `<h2>비용</h2><div class="card">${table(m.cost)}</div>` : ''}
 `;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const file = resolve(args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--out') ?? 'PROJECT.md');
   const model = parse(readFileSync(file, 'utf8'));

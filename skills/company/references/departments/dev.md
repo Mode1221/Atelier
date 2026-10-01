@@ -4,7 +4,7 @@
 
 ## 매 실행 루틴
 1. `dept:dev` 이슈를 우선순위순으로 1~2개 가져와 `status:doing`.
-2. 브랜치를 만들고 `atelier-dev:build` 공통 루프로 구현·테스트한다. 로컬 검증 명령(`scripts/check.sh` 등)을 통과시킨다.
+2. 브랜치를 만들고 `atelier-dev:build` 공통 루프로 구현·테스트한다. 로컬 검증 명령(`npm run check` 등)을 통과시킨다.
 3. PR 을 올리고(`Closes #번호`) 이슈를 `status:review` + `dept:qa` 로 넘긴다.
 4. QA·보안 지적이 달리면 같은 PR 에서 고친다.
 

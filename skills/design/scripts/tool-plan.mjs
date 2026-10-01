@@ -7,6 +7,7 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 export const TOOLS = {
   'frontend-design': { name: 'frontend-design', kind: 'skill', install: 'npx skills add https://github.com/anthropics/skills --skill frontend-design', why: '디자인 방향 원칙' },
@@ -139,7 +140,7 @@ export function parseScreens(s) {
   return String(s ?? '').split(',').map((x) => x.trim()).filter(Boolean).map((x) => { const [screen, type] = x.split('='); return { screen: screen.trim(), type: type?.trim() }; });
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const a = process.argv.slice(2);
   const get = (k) => { const i = a.indexOf(`--${k}`); return i >= 0 ? a[i + 1] : undefined; };
   try {

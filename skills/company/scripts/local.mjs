@@ -15,6 +15,7 @@
 //   node local.mjs now
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 export const DEPTS = {
   ceo: '대표실', plan: '기획', design: '디자인', dev: '개발', qa: 'QA',
@@ -272,6 +273,6 @@ export function cli(argv, root = process.cwd()) {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try { console.log(cli(process.argv.slice(2))); } catch (e) { console.error(e.check ? e.message : `✗ ${e.message}`); process.exit(1); }
 }

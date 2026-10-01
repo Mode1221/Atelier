@@ -1,11 +1,12 @@
 #!/usr/bin/env node
-// Atelier 0.27.0 의 skills/pilot/scripts/gate-check.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
+// Atelier 0.28.0 의 skills/pilot/scripts/gate-check.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
 // Atelier pilot — 체크박스와 실제 산출물이 맞는지 확인한다 (PROJECT.md 에 [x] 인데 증거 파일이 없으면 알림).
 // "했다"는 말이 아니라 파일로 확인 — 테스트는 통과했는데 화면을 한 번도 안 본 경우 같은 빈틈을 잡는다.
 // 사용 (프로젝트 폴더에서): node <atelier>/skills/pilot/scripts/gate-check.mjs [PROJECT.md] [--json]
 // 종료 코드: 증거 없는 완료 항목이 있으면 1
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 // 항목 ID → 증거 (하나라도 맞으면 통과). 문자열 = 파일 패턴(* 는 한 단계, ** 는 여러 단계), { file, has } = 파일에 글자 포함
 export const EVIDENCE = {
@@ -86,7 +87,7 @@ export function check(root, projectText) {
   return { rows, problems: rows.filter((r) => r.status === 'no-evidence') };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const file = args.find((a) => !a.startsWith('--')) ?? 'PROJECT.md';
   if (!existsSync(file)) {

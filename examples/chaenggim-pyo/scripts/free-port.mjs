@@ -5,6 +5,7 @@
 //   node scripts/free-port.mjs --check N  → N 이 쓰이는 중이면 이유를 말하고 종료 코드 1
 //   import { freePort, assertPortFree } from './scripts/free-port.mjs'  (playwright.config.js 등)
 import { createServer } from 'node:net';
+import { pathToFileURL } from 'node:url';
 
 const HOST = '127.0.0.1';
 
@@ -31,7 +32,7 @@ export async function testPort(requested, host = HOST) {
   return requested ? assertPortFree(Number(requested), host) : freePort(host);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const [flag, n] = process.argv.slice(2);
   (flag === '--check' ? assertPortFree(Number(n)) : freePort())
     .then((p) => { if (flag !== '--check') console.log(p); })

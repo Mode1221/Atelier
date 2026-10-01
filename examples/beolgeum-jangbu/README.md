@@ -14,7 +14,7 @@ npm run dev        # 실제 Cloudflare 런타임을 로컬에서 (주소는 실�
 
 ## 테스트
 ```
-./scripts/check.sh # 법률 번들 · lint · 단위/API · E2E(workerd) · 의존성 감사
+npm run check # 법률 번들 · lint · 단위/API · E2E(workerd) · 의존성 감사
 ```
 
 ## 배포

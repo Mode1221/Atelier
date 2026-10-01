@@ -1,11 +1,12 @@
 #!/usr/bin/env node
-// Atelier 0.11.0 의 skills/spec/scripts/trace.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
+// Atelier 0.28.0 의 skills/spec/scripts/trace.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
 // Atelier spec — 요구사항 추적: 명세의 기능(스토리) ID 마다 그 ID 를 이름에 단 테스트가 있는지 확인한다.
 // 규칙: docs/spec.md S1 표의 첫 칸 ID(F1, F2, S3 …) → 테스트 이름에 그 ID 를 쓴다 (예: describe('F3 준비물 맡기', …)).
 // 사용: node <atelier>/skills/spec/scripts/trace.mjs [프로젝트 폴더] [--json]   · 테스트 없는 스토리가 있으면 종료 코드 1
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles, isTest } from './lib.mjs';
+import { pathToFileURL } from 'node:url';
 
 // S1 절의 스토리 ID 와 제목. 표 "| F1 | 총무로서 … |" 또는 제목 "### F1. 모임 만들기 (Must)". "(나중)"·"Won't"·"N/A" 는 제외
 export function parseStories(spec) {
@@ -38,7 +39,7 @@ export function trace(root) {
   return { rows, missing: rows.filter((r) => !r.files.length) };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const root = args.find((a) => !a.startsWith('--')) ?? '.';
   const r = trace(root);

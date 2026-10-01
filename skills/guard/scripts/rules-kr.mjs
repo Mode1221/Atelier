@@ -7,6 +7,7 @@
 // 판정은 "확인할 것" 목록이다. 법적 판단이 아니다 — 기준·금액은 바뀌므로 링크(법제처·기관)에서 최신본을 확인한다. 확인일: 2026-10.
 import { readFileSync, existsSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const LAW = (n) => `https://www.law.go.kr/법령/${n}`;
 
@@ -124,7 +125,7 @@ function readDocs(root) {
   return files.map((f) => (existsSync(join(root, f)) ? readFileSync(join(root, f), 'utf8') : '')).join('\n');
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const root = args.find((a, i) => !a.startsWith('--') && !['--yes', '--no'].includes(args[i - 1])) ?? '.';
   const list = (flag) => { const i = args.indexOf(flag); return i >= 0 ? (args[i + 1] ?? '').split(',').filter(Boolean) : []; };

@@ -81,3 +81,18 @@ test('migration-check: 이유가 있으면 확인됨, 번호 겹침은 막는다
   assert.deepEqual(r.blocking.map((b) => b.file), ['migrations/0003_x.sql']);
   assert.equal(r.duplicates.length, 1);
 });
+
+test('스크립트는 한글·공백이 든 폴더에서도 직접 실행된다 (Windows 한글 사용자 이름 등)', async () => {
+  const { mkdtempSync, copyFileSync, readdirSync, readFileSync } = await import('node:fs');
+  const { execFileSync } = await import('node:child_process');
+  const { join } = await import('node:path');
+  const { tmpdir } = await import('node:os');
+  const dir = join(mkdtempSync(join(tmpdir(), 'kr-')), '내 서비스');
+  (await import('node:fs')).mkdirSync(dir);
+  copyFileSync(new URL('../skills/guard/scripts/rules-kr.mjs', import.meta.url), join(dir, 'rules-kr.mjs'));
+  assert.match(execFileSync('node', [join(dir, 'rules-kr.mjs'), '--list'], { encoding: 'utf8' }), /^pay\t/);
+  // 같은 실수가 다시 들어오지 않게: 직접 실행 판정에 file:// 문자열 비교를 쓰지 않는다
+  const walk = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? (e.name === 'node_modules' ? [] : walk(join(d, e.name))) : [join(d, e.name)]));
+  const bad = walk(new URL('../skills', import.meta.url).pathname).filter((f) => /\.m?js$/.test(f) && readFileSync(f, 'utf8').includes('=== `file://${process.argv[1]}`'));
+  assert.deepEqual(bad, []);
+});
