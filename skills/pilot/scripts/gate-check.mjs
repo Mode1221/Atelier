@@ -8,7 +8,7 @@ import { join, relative } from 'node:path';
 
 // 항목 ID → 증거 (하나라도 맞으면 통과). 문자열 = 파일 패턴(* 는 한 단계, ** 는 여러 단계), { file, has } = 파일에 글자 포함
 export const EVIDENCE = {
-  I1: ['docs/idea.md'], I2: ['docs/idea.md'], I3: ['docs/idea.md'], I5: ['docs/idea.md'], I6: ['docs/idea.md'],
+  I1: ['docs/idea.md'], I2: ['docs/idea.md'], I3: ['docs/idea.md'], I5: ['docs/idea.md'], I6: ['docs/rules.md'], // I6 은 업종 규제 판정(rules-kr)까지 해야 완료
   I7: [{ file: 'docs/idea.md', has: '상표' }],
   S1: ['docs/spec.md'], S2: ['docs/spec.md'], S3: ['docs/spec.md', 'docs/architecture.md'], S4: ['docs/architecture.md', 'docs/spec.md'],
   S5: ['docs/spec.md'], S6: ['docs/spec.md'], S7: ['docs/spec.md'], S8: [{ file: 'docs/spec.md', has: '한 장 요약' }],

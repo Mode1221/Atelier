@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Atelier 0.26.2 의 skills/pilot/scripts/gate-check.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
+// Atelier 0.27.0 의 skills/pilot/scripts/gate-check.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
 // Atelier pilot — 체크박스와 실제 산출물이 맞는지 확인한다 (PROJECT.md 에 [x] 인데 증거 파일이 없으면 알림).
 // "했다"는 말이 아니라 파일로 확인 — 테스트는 통과했는데 화면을 한 번도 안 본 경우 같은 빈틈을 잡는다.
 // 사용 (프로젝트 폴더에서): node <atelier>/skills/pilot/scripts/gate-check.mjs [PROJECT.md] [--json]
@@ -9,7 +9,7 @@ import { join, relative } from 'node:path';
 
 // 항목 ID → 증거 (하나라도 맞으면 통과). 문자열 = 파일 패턴(* 는 한 단계, ** 는 여러 단계), { file, has } = 파일에 글자 포함
 export const EVIDENCE = {
-  I1: ['docs/idea.md'], I2: ['docs/idea.md'], I3: ['docs/idea.md'], I5: ['docs/idea.md'], I6: ['docs/idea.md'],
+  I1: ['docs/idea.md'], I2: ['docs/idea.md'], I3: ['docs/idea.md'], I5: ['docs/idea.md'], I6: ['docs/rules.md'], // I6 은 업종 규제 판정(rules-kr)까지 해야 완료
   I7: [{ file: 'docs/idea.md', has: '상표' }],
   S1: ['docs/spec.md'], S2: ['docs/spec.md'], S3: ['docs/spec.md', 'docs/architecture.md'], S4: ['docs/architecture.md', 'docs/spec.md'],
   S5: ['docs/spec.md'], S6: ['docs/spec.md'], S7: ['docs/spec.md'], S8: [{ file: 'docs/spec.md', has: '한 장 요약' }],

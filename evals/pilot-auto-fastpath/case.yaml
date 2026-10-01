@@ -27,6 +27,9 @@ graders:
     name: name-trademark-table
     pattern: "상표"
     target: {source: file, path: docs/idea.md}
+  - type: file_exists
+    name: rules-early
+    path: docs/rules.md
   - type: llm
     name: short-report
     criteria: 마지막 답변이 대표에게 하는 보고로서 짧고(웹 검색 출처 목록을 빼고 대략 12줄 이하) 결과·대표가 할 일·다음 할 일을 담는다. 2단계(기획) 이후 일을 했다고 하지 않는다.
