@@ -67,3 +67,17 @@ test('usage: D1·R2·AI 사용률과 경고, costs.md 갱신', async () => {
   assert.match(again, /## 기타\n내용/);
   assert.equal(usage.parseR2Size('Bucket Size: 120 MB'), 120 * 1024 ** 2);
 });
+
+test('usage: 토큰이 있으면 Workers 요청 수(24시간)도 — GraphQL 합산·오류율', async () => {
+  let body;
+  const fetchImpl = async (u, o) => { body = JSON.parse(o.body); return { ok: true, json: async () => ({ data: { viewer: { accounts: [{ workersInvocationsAdaptive: [{ sum: { requests: 60000, errors: 10 } }, { sum: { requests: 15000, errors: 5000 } }] }] } } }) }; };
+  const rows = await usage.collect({ run: async () => ({ code: 1, out: '' }), toml: '', env: { CLOUDFLARE_API_TOKEN: 't', CLOUDFLARE_ACCOUNT_ID: 'acc' }, fetchImpl });
+  assert.equal(body.variables.a, 'acc');
+  assert.match(body.query, /workersInvocationsAdaptive/);
+  const by = Object.fromEntries(rows.map((r) => [r.key, r]));
+  assert.equal(by.workersRequests.used, 75000);
+  assert.equal(by.workersRequests.level, 'warn');
+  assert.equal(by.errors.level, 'warn');
+  const bad = await usage.collect({ run: async () => ({ code: 1, out: '' }), toml: '', env: { CLOUDFLARE_API_TOKEN: 't', CLOUDFLARE_ACCOUNT_ID: 'acc' }, fetchImpl: async () => ({ ok: false, json: async () => ({}) }) });
+  assert.match(bad[0].note, /권한/);
+});

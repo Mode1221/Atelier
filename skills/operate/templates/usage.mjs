@@ -9,6 +9,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 export const LIMITS = {
+  workersRequests: { label: '요청 수(하루, 계정 전체)', max: 100_000 },
   d1RowsRead: { label: 'DB 읽기(행/일)', max: 5_000_000 },
   d1RowsWritten: { label: 'DB 쓰기(행/일)', max: 100_000 },
   d1Storage: { label: 'DB 용량', max: 5 * 1024 ** 3, bytes: true },
@@ -32,7 +33,17 @@ export function parseR2Size(out) {
 }
 const human = (n, bytes) => (bytes ? (n >= 1024 ** 3 ? `${(n / 1024 ** 3).toFixed(2)}GB` : `${Math.round(n / 1024 ** 2)}MB`) : n.toLocaleString('ko-KR'));
 
-export async function collect({ run, toml }) {
+// Workers 요청 수 (지난 24시간, 계정 전체) — Cloudflare GraphQL. 토큰 권한: Account Analytics 읽기
+export async function workersRequests({ token, account, fetchImpl = fetch, now = Date.now() }) {
+  const query = `query($a: String!, $from: Time!, $to: Time!) { viewer { accounts(filter: { accountTag: $a }) { workersInvocationsAdaptive(limit: 10000, filter: { datetime_geq: $from, datetime_leq: $to }) { sum { requests errors } } } } }`;
+  const r = await fetchImpl('https://api.cloudflare.com/client/v4/graphql', { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ query, variables: { a: account, from: new Date(now - 86_400_000).toISOString(), to: new Date(now).toISOString() } }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j.errors?.length) return null;
+  const rows = j.data?.viewer?.accounts?.[0]?.workersInvocationsAdaptive ?? [];
+  return rows.reduce((t, x) => ({ requests: t.requests + (x.sum?.requests ?? 0), errors: t.errors + (x.sum?.errors ?? 0) }), { requests: 0, errors: 0 });
+}
+
+export async function collect({ run, toml, env = {}, fetchImpl = fetch }) {
   const rows = [];
   let read = 0, written = 0, bytes = 0;
   for (const name of blocks(toml, 'd1_databases', 'database_name')) {
@@ -41,6 +52,11 @@ export async function collect({ run, toml }) {
     read += info.rowsRead; written += info.rowsWritten; bytes += info.bytes;
   }
   const add = (key, used) => { const l = LIMITS[key]; const ratio = used / l.max; rows.push({ key, label: l.label, used, max: l.max, ratio, level: ratio >= DANGER ? 'danger' : ratio >= WARN ? 'warn' : 'ok', text: `${human(used, l.bytes)} / ${human(l.max, l.bytes)}` }); };
+  if (env.CLOUDFLARE_API_TOKEN && env.CLOUDFLARE_ACCOUNT_ID) {
+    const w = await workersRequests({ token: env.CLOUDFLARE_API_TOKEN, account: env.CLOUDFLARE_ACCOUNT_ID, fetchImpl }).catch(() => null);
+    if (w) { add('workersRequests', w.requests); if (w.errors) rows.push({ key: 'errors', label: '오류 응답(24시간)', text: `${w.errors.toLocaleString('ko-KR')}건`, level: w.requests && w.errors / w.requests > 0.05 ? 'warn' : 'ok' }); }
+    else rows.push({ key: 'error', label: '요청 수', note: '가져오지 못했어요 (토큰에 Account Analytics 읽기 권한 필요)' });
+  }
   if (blocks(toml, 'd1_databases', 'database_name').length) { add('d1RowsRead', read); add('d1RowsWritten', written); add('d1Storage', bytes); }
   const buckets = blocks(toml, 'r2_buckets', 'bucket_name');
   if (buckets.length) { let r2 = 0; for (const b of buckets) r2 += parseR2Size((await run(['r2', 'bucket', 'info', b, '--json'])).out); add('r2Storage', r2); }
@@ -58,7 +74,7 @@ export function format(rows) {
   const lines = rows.map((r) => `${ICON[r.level] ?? '⚠️'} ${r.label}: ${r.text ?? r.note}${r.ratio != null ? ` (${Math.round(r.ratio * 100)}%)` : ''}`);
   const bad = rows.filter((r) => r.level === 'warn' || r.level === 'danger');
   if (bad.length) lines.push('', '할 일: 70% 넘은 항목부터 — 캐시·호출 줄이기를 AI 에게 맡기고(operate O5 절감 순서), 유료 전환은 대표 결정.');
-  lines.push('', '요청 수(무료 하루 10만)는 Cloudflare 대시보드 → Workers 에서.');
+  if (!rows.some((r) => r.key === 'workersRequests')) lines.push('', '요청 수(무료 하루 10만)는 Cloudflare 대시보드 → Workers 에서 (CLOUDFLARE_API_TOKEN·CLOUDFLARE_ACCOUNT_ID 가 있으면 여기에도 나와요).');
   return lines.join('\n');
 }
 
@@ -78,7 +94,7 @@ function wrangler(args) {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const args = process.argv.slice(2);
   const toml = existsSync('wrangler.toml') ? readFileSync('wrangler.toml', 'utf8') : '';
-  const rows = await collect({ run: wrangler, toml });
+  const rows = await collect({ run: wrangler, toml, env: process.env });
   if (args.includes('--json')) console.log(JSON.stringify(rows, null, 2)); else console.log(format(rows));
   if (args.includes('--write')) { const f = 'docs/costs.md'; writeFileSync(f, writeCosts(existsSync(f) ? readFileSync(f, 'utf8') : '# 비용\n', rows, new Date().toISOString().slice(0, 10))); console.log(`\n${f} 갱신`); }
   process.exit(rows.some((r) => r.level === 'danger') ? 1 : 0);

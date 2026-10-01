@@ -97,6 +97,8 @@ export async function setupWatchdog({ root = process.cwd(), dir = HERE, service,
   const rel = relative(root, config) || config;
   await must(['deploy', '--config', rel], {}, '지킴이 배포');
   await must(['secret', 'put', 'NTFY_TOPIC', '--config', rel], { input: secrets.NTFY_TOPIC, quiet: true }, '알림 주제 저장');
+  // (선택) 무료 한도 알림 — .atelier/secrets.json 에 CF_API_TOKEN(Account Analytics 읽기)·CF_ACCOUNT_ID 가 있으면 함께 넣는다
+  for (const k of ['CF_API_TOKEN', 'CF_ACCOUNT_ID']) if (secrets[k]) await must(['secret', 'put', k, '--config', rel], { input: secrets[k], quiet: true }, `${k} 저장`);
 
   log('5/5 시험 알림 보내기');
   const sent = await fetchImpl(`https://ntfy.sh/${secrets.NTFY_TOPIC}`, { method: 'POST', body: `${serviceName} 지킴이가 연결됐어요. 서비스가 10분 넘게 응답하지 않으면 여기로 알려 드려요.`, headers: { Title: encodeURIComponent('✅ Atelier 알림 연결'), Tags: 'white_check_mark' } }).then((r) => r.ok).catch(() => false);

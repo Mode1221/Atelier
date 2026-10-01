@@ -33,7 +33,7 @@ description: 운영 단계. 업타임·에러·비용 모니터링과 알림, �
 `references/support.md`. 문의 창구 하나(국내 대상이면 카카오톡 채널과 이메일을 비교해 제시), 자주 묻는 질문, 답변 템플릿, 신고 처리 절차.
 
 ### O5. 비용 관리
-**`npm run usage`**(`templates/usage.mjs`): DB 읽기·쓰기·용량, 파일 저장소, AI 비용을 무료 한도 대비 %로(70% 🟡, 90% 🔴 → 종료 코드 1). `--write` 로 `docs/costs.md` "사용량" 절 갱신. 월 1회 점검과 checkup 매일 검사에서 돌린다.
+**`npm run usage`**(`templates/usage.mjs`): DB 읽기·쓰기·용량, 파일 저장소, AI 비용을 무료 한도 대비 %로(70% 🟡, 90% 🔴 → 종료 코드 1). `--write` 로 `docs/costs.md` "사용량" 절 갱신. 월 1회 점검과 checkup 매일 검사에서 돌린다. 요청 수(하루 10만)는 `CLOUDFLARE_API_TOKEN`·`CLOUDFLARE_ACCOUNT_ID`(Account Analytics 읽기 토큰)가 있을 때 함께 나온다. GitHub 없이 휴대폰으로 받으려면 같은 토큰을 `.atelier/secrets.json` 의 `CF_API_TOKEN`·`CF_ACCOUNT_ID` 에 두고 `npm run watch:setup` 을 다시 — 지킴이가 6시간마다 보고 80% 넘으면 하루 한 번 알린다(토큰 만들기는 사람 할 일, 선택).
 `references/cost-maintenance.md` 1절. 월 1회 비용 점검, 사용자당 비용 추적, 한도·알림. 유료 API 를 많이 부르는 스크립트는 1-1절(예상 비용 먼저 → 승인 → 작은 표본 → 전체, 한도 90% 알림).
 
 ### O6. 유지보수

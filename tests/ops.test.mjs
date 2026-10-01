@@ -133,3 +133,17 @@ test('repo-traffic: GitHub Traffic 을 날짜별 행으로, 이전 기록과 합
   assert.ok(!('clones' in out.series) && !('clones' in out.days.at(-1)));
   assert.equal(merge([], {}, '2026-10-01').length, 0);
 });
+
+test('watchdog: 무료 한도 80% 넘으면 하루 한 번 알림, 6시간 간격, 토큰 없으면 아무것도 안 함', async () => {
+  const { usageCheck } = await import('../skills/operate/templates/watchdog/worker.js');
+  const kv = new Map(); const STATE = { get: async (k) => kv.get(k) ?? null, put: async (k, v) => { kv.set(k, v); } };
+  const sent = [];
+  const fetchImpl = async (u, o) => (u.includes('graphql') ? { json: async () => ({ data: { viewer: { accounts: [{ workersInvocationsAdaptive: [{ sum: { requests: 85000 } }] }] } } }) } : (sent.push(o), { ok: true }));
+  assert.equal(await usageCheck({ STATE }, fetchImpl), null);
+  const env = { STATE, CF_API_TOKEN: 't', CF_ACCOUNT_ID: 'a', NTFY_TOPIC: 'x' };
+  const t0 = Date.parse('2026-10-01T03:00:00Z');
+  assert.deepEqual(await usageCheck(env, fetchImpl, t0), { requests: 85000, alerted: true });
+  assert.equal(await usageCheck(env, fetchImpl, t0 + 3_600_000), null, '6시간 안에는 다시 안 봄');
+  assert.deepEqual(await usageCheck(env, fetchImpl, t0 + 7 * 3_600_000), { requests: 85000, alerted: false }, '같은 날은 한 번만');
+  assert.equal(sent.length, 1);
+});

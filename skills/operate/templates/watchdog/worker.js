@@ -41,8 +41,29 @@ export async function check(env, fetchImpl = fetch) {
   return { ok, alerted };
 }
 
+// (선택) 무료 한도 알림: 비밀값 CF_API_TOKEN(Account Analytics 읽기)·CF_ACCOUNT_ID 가 있으면 6시간마다 지난 24시간 요청 수를 보고
+// 하루 10만(무료)의 80% 를 넘으면 하루 한 번 알린다. 없으면 아무것도 안 함.
+const FREE_REQUESTS = 100_000, USAGE_EVERY = 6 * 3_600_000;
+export async function usageCheck(env, fetchImpl = fetch, now = Date.now()) {
+  if (!env.CF_API_TOKEN || !env.CF_ACCOUNT_ID) return null;
+  const last = Number((await env.STATE.get('usage-at')) ?? 0);
+  if (now - last < USAGE_EVERY) return null;
+  await env.STATE.put('usage-at', String(now));
+  const query = 'query($a: String!, $from: Time!, $to: Time!) { viewer { accounts(filter: { accountTag: $a }) { workersInvocationsAdaptive(limit: 10000, filter: { datetime_geq: $from, datetime_leq: $to }) { sum { requests } } } } }';
+  const r = await fetchImpl('https://api.cloudflare.com/client/v4/graphql', { method: 'POST', headers: { authorization: `Bearer ${env.CF_API_TOKEN}`, 'content-type': 'application/json' }, body: JSON.stringify({ query, variables: { a: env.CF_ACCOUNT_ID, from: new Date(now - 86_400_000).toISOString(), to: new Date(now).toISOString() } }) });
+  const j = await r.json().catch(() => ({}));
+  const requests = (j.data?.viewer?.accounts?.[0]?.workersInvocationsAdaptive ?? []).reduce((t, x) => t + (x.sum?.requests ?? 0), 0);
+  const ratio = requests / FREE_REQUESTS, day = new Date(now + 9 * 3_600_000).toISOString().slice(0, 10);
+  if (ratio >= 0.8 && (await env.STATE.get('usage-alerted')) !== day) {
+    await env.STATE.put('usage-alerted', day);
+    await notify(env, { title: `🟡 무료 한도 ${Math.round(ratio * 100)}%`, message: `지난 24시간 요청 ${requests.toLocaleString('ko-KR')}건 / 무료 하루 10만. 넘으면 그날 남은 시간 동안 오류가 날 수 있어요.\n프로젝트에서 npm run usage → AI 에게 "요청 줄여 줘"(캐시), 계속 넘으면 유료($5/월) 검토.`, priority: 'default', tags: 'chart_with_upwards_trend' }, fetchImpl);
+    return { requests, alerted: true };
+  }
+  return { requests, alerted: false };
+}
+
 export default {
-  async scheduled(_event, env, ctx) { ctx.waitUntil(check(env)); },
+  async scheduled(_event, env, ctx) { ctx.waitUntil(check(env)); ctx.waitUntil(usageCheck(env).catch(() => null)); },
   // 주소로 열면 지금 상태만 보여 준다 (알림 주제는 숨김)
   async fetch(_req, env) {
     const s = JSON.parse((await env.STATE.get('state')) ?? '{"down":false,"fails":0}');
