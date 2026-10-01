@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // 기능 템플릿을 프로젝트에 넣는다 (이미 있는 파일은 덮지 않음 — 고친 것을 지키기 위해).
 //   node <atelier>/skills/build/templates/add.mjs <이름> [프로젝트 폴더=.]
-//   이름: pay · ai · upload · realtime · bot · extension · desktop · iap · ads
+//   이름: pay · ai · upload · realtime · bot · extension · desktop · iap · ads · admin · notify
 // 넣은 뒤 할 일(코드 연결·비밀값·사람 할 일)은 각 템플릿 README / 파일 맨 위 설명에 있다.
 import { existsSync, mkdirSync, copyFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -19,6 +19,8 @@ export const MAP = {
   desktop: { dist: 'dist', 'src-tauri': 'src-tauri', '.github/workflows/desktop.yml': '.github/workflows/desktop.yml', 'README.md': 'docs/desktop.md' },
   iap: { 'purchases.js': 'src/purchases.js', 'README.md': 'docs/iap.md' },
   ads: { 'ads.js': 'public/ads.js' },
+  admin: { 'admin.js': 'src/admin/admin.js' },
+  notify: { 'notify.js': 'src/notify/notify.js' },
 };
 
 function nextMigration(root) {
