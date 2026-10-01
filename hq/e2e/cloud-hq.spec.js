@@ -20,6 +20,12 @@ const SEED = {
   'companies/chaenggim/human/h1': { text: '카카오 개발자 콘솔에서 도메인 등록', why: '공유 미리보기가 안 떠요', link: 'https://developers.kakao.com', done: false, createdAt: H(6) },
   'companies/chaenggim/feedback/2026-09-30': { date: '2026-09-30', status: 'new', count: 2, items: [{ kind: 'hard', message: '품목 삭제가 어디 있는지 모르겠어요' }, { kind: 'good', message: '캠핑 갈 때 잘 썼어요' }] },
   'companies/chaenggim/metrics/main': { items: { '주간 사용자': 128, '새 목록': 23, '재방문': '31%' }, at: H(2) },
+  'companies/chaenggim/metrics/daily': {
+    at: H(3),
+    series: { visitors: '방문자', views: '페이지 열람', created: '목록 만들기', joined: '참여(이름 추가)', expenses: '정산 기록' },
+    days: Array.from({ length: 14 }, (_, i) => ({ date: new Date(Date.now() - (13 - i) * 864e5).toISOString().slice(0, 10), visitors: 10 + i, views: 20 + 2 * i, created: i % 3, joined: i, expenses: i % 2 })),
+    sources: { direct: 40, threads: 25, kakaotalk: 12 },
+  },
   'companies/chaenggim/plan/roadmap': { focus: '첫 목록을 만든 사람이 친구를 부르게 하기', stage: 'grow', updatedAt: H(20), goals: [{ text: '초대 수락률', metric: '수락', current: 12, target: 30, unit: '%' }], items: [{ title: '초대 링크 미리보기', status: 'now', dept: 'dev' }, { title: '도메인 등록', status: 'now', dept: 'human' }] },
   'companies/chaenggim/share/posts': { url: 'https://chaenggim.example.dev', campaign: 'launch', posts: [{ channel: 'threads', text: '캠핑 준비물, 누가 뭘 챙길지 링크 하나로.' }, { channel: 'x', text: '준비물 분담표를 만들었어요.' }] },
   'companies/chaenggim/tasks/t1': { title: '초대 링크 미리보기 이미지', dept: 'dev', status: 'doing', updatedAt: H(1) },
@@ -203,6 +209,27 @@ test('부서가 켜져 있는데 보고가 이틀 넘게 없으면 할 일함에
   await item.getByRole('button', { name: '부서 확인' }).click();
   await expect(page.getByRole('heading', { level: 1, name: '스터디 타이머' })).toBeVisible();
   await expect(main.getByText('매일 08:00')).toBeVisible(); // 더 보기가 펼쳐져 부서 일정이 보인다
+});
+
+test('운영 지표: 방문자 추이·기능별 사용·유입 출처·표, 카드에 7일 방문자', async ({ page }) => {
+  await open(page);
+  const card = page.getByRole('main').locator('.svc-card').filter({ hasText: '챙김표' });
+  await expect(card).toContainText('최근 7일 방문자');
+  await expect(card).toContainText(String([7, 8, 9, 10, 11, 12, 13].reduce((s, i) => s + 10 + i, 0)));
+  await page.getByRole('navigation', { name: '서비스 목록' }).getByRole('button', { name: /챙김표/ }).click();
+  const ops = page.locator('section[aria-labelledby="h-ops"]');
+  await expect(ops.getByRole('heading', { name: '운영 지표' })).toBeVisible();
+  await expect(ops).toContainText('오늘 방문자');
+  await expect(ops.getByText('23', { exact: true }).first()).toBeVisible(); // 오늘 = 10 + 13
+  await expect(ops.getByRole('img', { name: /날짜별 방문자/ })).toBeVisible();
+  await expect(ops.locator('.hbars').first()).toContainText('참여(이름 추가)');
+  await expect(ops.locator('.hbars').nth(1)).toContainText('Threads');
+  await ops.getByText('표로 보기').click();
+  await expect(ops.locator('table.data tbody tr')).toHaveCount(14);
+  await noHScroll(page);
+  // 숫자가 없는 서비스는 연결 방법을 알려 준다
+  await page.getByRole('navigation', { name: '서비스 목록' }).getByRole('button', { name: /픽앤어스/ }).click();
+  await expect(page.locator('section[aria-labelledby="h-ops"]')).toContainText('stats.url');
 });
 
 test('보기 전용 계정은 버튼 없이 상태만 본다', async ({ page }) => {

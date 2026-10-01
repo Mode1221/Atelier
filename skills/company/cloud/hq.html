@@ -89,6 +89,28 @@ textarea{min-height:80px}
 .nums div{background:var(--sunk);border-radius:8px;padding:8px 10px;min-width:0}
 .nums b{display:block;font:600 19px/1.3 var(--mono);font-variant-numeric:tabular-nums}
 .nums span{display:block;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 운영 지표 */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.tiles div{background:var(--sunk);border-radius:8px;padding:10px 12px}
+.tiles b{display:block;font:600 22px/1.3 var(--mono);font-variant-numeric:tabular-nums}
+.tiles small{color:var(--muted)}
+.chart{display:block;width:100%;height:auto;overflow:visible}
+.chart .bar{fill:var(--accent)}
+.chart .bar:hover,.chart .bar:focus{fill:var(--ink-2);outline:none}
+.chart .hit{fill:transparent}
+.chart .axis{stroke:var(--line);stroke-width:1}
+.chart text{fill:var(--muted);font:12px var(--font)}
+.chart .val{fill:var(--ink);font-weight:600}
+.hbars{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.hbars li{display:grid;grid-template-columns:minmax(90px,40%) 1fr auto;gap:10px;align-items:center;font-size:14px}
+.hbars .track{height:10px;border-radius:5px;background:var(--sunk);overflow:hidden}
+.hbars .fill{display:block;height:100%;border-radius:0 5px 5px 0;background:var(--accent);min-width:2px}
+.hbars b{font:600 14px var(--mono);font-variant-numeric:tabular-nums;min-width:3ch;text-align:right}
+table.data{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+table.data th,table.data td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right}
+table.data th:first-child,table.data td:first-child{text-align:left}
+.spark{display:flex;align-items:flex-end;gap:2px;height:28px}
+.spark i{flex:1;background:var(--accent);border-radius:2px 2px 0 0;min-height:2px;opacity:.85}
 .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
 .kv div{background:var(--sunk);border-radius:8px;padding:10px 12px}
 .kv b{display:block;font:600 20px/1.3 var(--mono);font-variant-numeric:tabular-nums}
@@ -187,7 +209,7 @@ const withUtm = (url, source, campaign) => {
 
 // ---- 상태: 서비스마다 운영에 필요한 것만 구독한다. 상세 화면을 열면 로드맵·홍보·부서 일을 더 구독한다.
 const S = { services: [], svc: {}, loaded: false, routines: null, routinesErr: null };
-const blank = () => ({ approvals: [], human: [], reports: {}, metrics: null, feedback: [], plan: null, posts: null, shared: new Set(), tasks: [], extra: false });
+const blank = () => ({ approvals: [], human: [], reports: {}, metrics: null, daily: null, feedback: [], plan: null, posts: null, shared: new Set(), tasks: [], extra: false });
 let db = null, mcp = null, canWrite = true;
 let view = parseHash();
 const subs = {}; // 서비스 id → 구독 해제 함수들
@@ -368,9 +390,75 @@ function svcCard(v) {
   return `<article class="card svc-card" data-go="${esc(v.id)}">
     <div class="top"><h3><button class="link" data-go="${esc(v.id)}" style="padding:0;font-weight:700;color:var(--ink);text-decoration:none">${esc(v.name ?? v.id)}</button></h3>${pill(lv, n ? `확인 ${n}건` : LEVEL[lv])}</div>
     <p class="small muted" style="margin:0">${esc(v.stage ? stageOf(v.stage) : v.summary ?? '')}</p>
+    ${cardTraffic(d)}
     ${nums.length ? `<div class="nums">${nums.map(([k, val]) => `<div><b>${esc(val)}</b><span title="${esc(k)}">${esc(k)}</span></div>`).join('')}</div>` : '<p class="note">숫자 없음 — 서비스에 지표를 연결하면 나와요</p>'}
     <div class="row small muted"><span>마지막 보고 ${ago(last)}</span>${v.url ? `<a href="${esc(v.url)}" target="_blank" rel="noopener" data-noop>서비스 열기 ↗</a>` : ''}</div>
   </article>`;
+}
+
+// ---- 운영 지표 (metrics/daily: 데이터 부서가 서비스의 공개 통계에서 매일 옮겨 적는다)
+// 형식: { at, series: {키: 표시 이름}, days: [{date, visitors, views, <기능 키>…}], sources: {출처: 방문} }
+const TRAFFIC = new Set(['visitors', 'views']);
+const sum = (rows, k) => rows.reduce((s, r) => s + (Number(r[k]) || 0), 0);
+const fmt = (n) => Number(n || 0).toLocaleString('ko-KR');
+const md = (iso) => { const [, m, dd] = String(iso).split('-'); return `${Number(m)}/${Number(dd)}`; };
+function cardTraffic(d) {
+  const days = d.daily?.days ?? [];
+  if (!days.length) return '';
+  const last7 = days.slice(-7);
+  const max = Math.max(1, ...days.map((r) => r.visitors || 0));
+  return `<div class="row small" style="justify-content:space-between"><span><b style="font-family:var(--mono)">${fmt(sum(last7, 'visitors'))}</b> <span class="muted">최근 7일 방문자</span></span>
+    <span class="spark" style="width:45%" role="img" aria-label="최근 ${days.length}일 방문자 추이">${days.map((r) => `<i style="height:${Math.round(((r.visitors || 0) / max) * 100)}%"></i>`).join('')}</span></div>`;
+}
+function barChart(days, key, label) {
+  const W = 640, H = 180, top = 22, bottom = 22, n = days.length, gap = 4;
+  const bw = (W - gap * (n - 1)) / n;
+  const max = Math.max(1, ...days.map((r) => r[key] || 0));
+  const y = (v) => top + (H - top - bottom) * (1 - v / max);
+  const peak = days.reduce((b, r, i) => ((r[key] || 0) > (days[b][key] || 0) ? i : b), 0);
+  const bars = days.map((r, i) => {
+    const v = r[key] || 0, x = i * (bw + gap), yy = y(v), h = H - bottom - yy;
+    const path = h > 0 ? `M${x},${H - bottom}V${yy + Math.min(4, h)}Q${x},${yy} ${x + Math.min(4, bw / 2)},${yy}H${x + bw - Math.min(4, bw / 2)}Q${x + bw},${yy} ${x + bw},${yy + Math.min(4, h)}V${H - bottom}Z` : '';
+    return `<g><title>${esc(md(r.date))} ${esc(label)} ${fmt(v)}</title><rect class="hit" x="${x}" y="${top}" width="${bw}" height="${H - top - bottom}"></rect>${path ? `<path class="bar" d="${path}" tabindex="0" role="img" aria-label="${esc(md(r.date))} ${esc(label)} ${fmt(v)}"></path>` : ''}
+      ${i === peak && v ? `<text class="val" x="${x + bw / 2}" y="${yy - 6}" text-anchor="middle">${fmt(v)}</text>` : ''}</g>`;
+  }).join('');
+  const ticks = [0, Math.floor((n - 1) / 2), n - 1].map((i) => `<text x="${i * (bw + gap) + bw / 2}" y="${H - 6}" text-anchor="middle">${esc(md(days[i].date))}</text>`).join('');
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="날짜별 ${esc(label)} — 표로 보기에 숫자가 있어요"><line class="axis" x1="0" x2="${W}" y1="${H - bottom}" y2="${H - bottom}"></line>${bars}${ticks}</svg>`;
+}
+function hbars(entries) {
+  const max = Math.max(1, ...entries.map(([, v]) => v));
+  return `<ul class="hbars">${entries.map(([k, v]) => `<li><span>${esc(k)}</span><span class="track" aria-hidden="true"><span class="fill" style="width:${(v / max) * 100}%"></span></span><b>${fmt(v)}</b></li>`).join('')}</ul>`;
+}
+const SRC = { direct: '직접 방문', threads: 'Threads', x: 'X', instagram: '인스타그램', kakaotalk: '카카오톡', share: '공유 링크', view: '공유받은 화면', everytime: '에브리타임', band: '밴드', naver_blog: '네이버 블로그', disquiet: '디스콰이엇', bluesky: 'Bluesky' };
+function opsSection(d, id) {
+  const st = d.daily;
+  const head = `<div class="sec-head"><h2 id="h-ops">운영 지표</h2>${st?.at ? `<span class="small muted">${ago(st.at)} 기준 · 최근 ${st.days?.length ?? 0}일</span>` : ''}</div>`;
+  if (!st?.days?.length) return `<section class="sec" aria-labelledby="h-ops">${head}<p class="empty">방문자·기능별 사용 숫자가 아직 없어요. 서비스에 공개 통계 주소를 만들고 서비스 문서에 <code>stats.url</code> 을 적으면 데이터·재무 부서가 매일 채워요.</p></section>`;
+  const days = st.days, last7 = days.slice(-7), prev7 = days.slice(-14, -7);
+  const series = st.series ?? {};
+  const name = (k) => series[k] ?? { visitors: '방문자', views: '페이지 열람' }[k] ?? k;
+  const feats = Object.keys(series).filter((k) => !TRAFFIC.has(k));
+  const v7 = sum(last7, 'visitors'), p7 = sum(prev7, 'visitors');
+  const delta = prev7.length === 7 && p7 ? Math.round(((v7 - p7) / p7) * 100) : null;
+  const today = days.at(-1);
+  const featRows = feats.map((k) => [name(k), sum(last7, k)]).sort((a, b) => b[1] - a[1]);
+  const srcRows = Object.entries(st.sources ?? {}).map(([k, v]) => [SRC[k] ?? k, v]).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const cols = ['visitors', 'views', ...feats].filter((k) => days.some((r) => k in r));
+  return `<section class="sec" aria-labelledby="h-ops">${head}
+    <div class="tiles">
+      <div><small>오늘 방문자</small><b>${fmt(today.visitors)}</b></div>
+      <div><small>최근 7일 방문자</small><b>${fmt(v7)}</b>${delta === null ? '' : `<small>지난 7일보다 ${delta >= 0 ? '+' : ''}${delta}%</small>`}</div>
+      <div><small>최근 7일 페이지 열람</small><b>${fmt(sum(last7, 'views'))}</b></div>
+      ${featRows[0] ? `<div><small>최근 7일 ${esc(featRows[0][0])}</small><b>${fmt(featRows[0][1])}</b></div>` : ''}
+    </div>
+    <div class="card"><h3>날짜별 방문자</h3>${barChart(days, 'visitors', '방문자')}</div>
+    <div class="grid two">
+      ${featRows.length ? `<div class="card"><h3>기능별 사용 <span class="muted small">최근 7일</span></h3>${hbars(featRows)}</div>` : ''}
+      ${srcRows.length ? `<div class="card"><h3>어디서 왔나 <span class="muted small">최근 ${days.length}일 방문</span></h3>${hbars(srcRows)}</div>` : ''}
+    </div>
+    <details data-k="ops-${esc(id)}"><summary class="small">표로 보기</summary><div style="overflow-x:auto"><table class="data"><thead><tr><th scope="col">날짜</th>${cols.map((k) => `<th scope="col">${esc(name(k))}</th>`).join('')}</tr></thead>
+      <tbody>${days.slice().reverse().map((r) => `<tr><td>${esc(md(r.date))}</td>${cols.map((k) => `<td>${fmt(r[k])}</td>`).join('')}</tr>`).join('')}</tbody></table></div></details>
+  </section>`;
 }
 
 const STATUS = { now: '이번 주', next: '다음', later: '나중', done: '끝남' };
@@ -404,6 +492,7 @@ function detail(id) {
     <div class="card">${p.focus ? `<p class="focus">${esc(p.focus)}</p>` : ''}<div class="grid two">${(p.goals ?? []).slice(0, 4).map(goalCard).join('')}</div>
     ${(p.items ?? []).length ? `<details data-k="road-${esc(id)}"><summary class="small">로드맵 전체 (${p.items.length}개)</summary><ul class="plain">${['now', 'next', 'later', 'done'].flatMap((st) => (p.items ?? []).filter((i) => (i.status ?? 'later') === st).map((i) => `<li class="item small">${pill(st === 'now' ? 'warning' : st === 'done' ? 'good' : '', STATUS[st])} ${esc(i.title)} <span class="muted">· ${esc(i.dept === 'human' ? '대표님' : DEPT[i.dept]?.name ?? i.dept ?? '')}</span></li>`)).join('')}</ul></details>` : ''}
     <p class="note">${p.stage ? `${esc(stageOf(p.stage))} · ` : ''}${ago(p.updatedAt)} 갱신${p.reviewAt ? ` · 다음 재검토 ${esc(p.reviewAt)}` : ''}</p></div></section>` : ''}
+  ${opsSection(d, id)}
   <section class="sec" aria-labelledby="h-num"><div class="sec-head"><h2 id="h-num">숫자</h2>${d.metrics?.at ? `<span class="small muted">${ago(d.metrics.at)} 기준</span>` : ''}</div>
     ${m.length ? `<div class="kv">${m.map(([k, val]) => `<div><span class="small muted">${esc(k)}</span><b>${esc(val)}</b></div>`).join('')}</div>` : '<p class="empty">아직 숫자가 없어요. 데이터·재무 부서나 서비스 지표가 연결되면 나와요.</p>'}</section>
   <section class="sec" aria-labelledby="h-rep"><h2 id="h-rep">부서 보고</h2>
@@ -604,6 +693,7 @@ function watch(id) {
   on(db.collection(P(id, 'human')), (x) => (d.human = docs(x).sort(sortDesc('createdAt'))));
   on(db.collection(P(id, 'reports')), (x) => { d.reports = Object.fromEntries(docs(x).map((r) => [r.id, r])); d.reportsIn = true; });
   on(db.doc(P(id, 'metrics/main')), (x) => (d.metrics = x.exists ? x.data() : null));
+  on(db.doc(P(id, 'metrics/daily')), (x) => (d.daily = x.exists ? x.data() : null));
   on(db.collection(P(id, 'feedback')).orderBy('date', 'desc').limit(14), (x) => (d.feedback = docs(x)));
 }
 function loadExtra(id) {

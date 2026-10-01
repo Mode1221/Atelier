@@ -14,7 +14,7 @@ Claude 클라우드 예약 실행(Routine)이 새 세션을 열고 이 절차로
 ## 1. 본부 데이터 (서비스별 경로 = `companies/<SERVICE>/` + 아래)
 | 경로 | 내용 | 누가 쓰나 |
 |---|---|---|
-| `companies/<SERVICE>` (서비스 문서 자체) | name, summary(한 줄 설명), audience(대상 사용자), kind(웹/앱/게임), url, stage, repo, project, routines{부서: trigger_id}, metrics{url, header, env} (지표 주소·인증 헤더 이름·토큰이 든 환경변수 이름 — 토큰 값은 절대 적지 않음) | 설치 시, 단계는 승인 후 대표실 |
+| `companies/<SERVICE>` (서비스 문서 자체) | name, summary(한 줄 설명), audience(대상 사용자), kind(웹/앱/게임), url, stage, repo, project, routines{부서: trigger_id}, stats{url} (공개 통계 주소 — 비밀 경로라 본부 밖에 적지 않음), metrics{url, header, env} (지표 주소·인증 헤더 이름·토큰이 든 환경변수 이름 — 토큰 값은 절대 적지 않음) | 설치 시, 단계는 승인 후 대표실 |
 | `plan/roadmap` | stage, focus, goals[], items[], updatedAt, reviewAt, history[] — 형식은 `playbook/planning` | 대표실이 자동 생성·갱신 |
 | `playbook/<이름>` (**본부 공통**, 앞에 companies 안 붙임) | text — 이 절차(`cloud-run`), 부서 역할(`dept-<부서>`), 계획(`planning`), 8단계·게이트(`stages`), 채널 가이드(`channels`) | 설치 시 (스킬 문서 복사) |
 | `approvals/<id>` | dept, title, kind(배포/외부 게시/지출/약관/데이터 삭제), cost, detail, ifApprove, ifReject, status(pending/approved/rejected), reason, createdAt, decidedAt, done, result | 부서가 만들고 대표가 결정 |
@@ -22,6 +22,7 @@ Claude 클라우드 예약 실행(Routine)이 새 세션을 열고 이 절차로
 | `human/<id>` | text, why, link, done, createdAt | 부서가 만들고 대표가 체크 |
 | `reports/<DEPT>` | level(good/warning/critical), summary(한두 문장), at — level 기준은 아래 | 각 부서가 실행 끝에 덮어씀 |
 | `metrics/main` | items{이름: 숫자}, at | 데이터·재무 |
+| `metrics/daily` | at, series{키: 표시 이름}, days[{date, visitors, views, <기능 키>…}], sources{출처: 방문} — 본부 "운영 지표"(방문자 추이·기능별 사용·유입 출처)가 그린다 | 데이터·재무 (`stats.url` 응답을 그대로) |
 | `share/posts` | product, url, campaign, posts[{channel, when, note, text}] — **channel 은 ID**(`everytime` `kakaotalk` `threads` `x` `bluesky` `facebook` `linkedin` `reddit` `band` `naver_blog` `naver_cafe` `daangn` `disquiet` `instagram` `discord`), **text 에 링크를 넣지 않는다**(올릴 때 url+utm 이 자동으로 붙음) | 마케팅 |
 | `shared/<채널__번호>` | channel, at | 대표가 "올렸어요" |
 | `feedback/<YYYY-MM-DD>` | date, count, items[{kind, message, page, action}], summary, status(new/triaged) | 고객지원 |
@@ -53,6 +54,7 @@ id 규칙: `approvals`·`tasks`·`human` 은 `<DEPT>-<YYYYMMDD>-<짧은이름>` 
 - **고객지원(support)**: 새 `feedback/<날짜>`(status new)를 분류해 각 항목에 action 을 달고 summary·status triaged 로 바꾼다(개인정보는 옮기지 않음). 버그는 `tasks`(qa), 반복 불편·제안은 `tasks`(plan) — 대표실이 다음 계획 때 로드맵에 반영한다. 피드백을 가져올 길(저장소 `feedback` 이슈 등)에 접근할 수 없으면 그 사실을 보고한다.
 - **마케팅(marketing)**: `share/posts` 가 홍보 글의 원본이다. `playbook/channels`(채널별 말투·길이·금기)에 맞춰 채널마다 따로 다듬거나 새 글(채널당 1개, 글자 수 한도, `note`·`when` 포함)을 쓰고, 올리지 않은 채널이 있으면 `human` 에 "○○ 올리기"를 남긴다. `shared` 기록으로 채널별 상태를 `reports/marketing` 에.
 - **데이터·재무(data)**: 서비스가 주는 지표만 `metrics/main` 에. 숫자를 지어내지 않는다 — 없으면 "지표 없음"과 만드는 방법을 `tasks`(dev)로.
+  서비스 문서에 `stats.url` 이 있으면(**공개 통계 — 기본**): 그 주소를 `curl -s` 로, 막히면 WebFetch 로 "응답 JSON 을 고치지 말고 그대로 출력" 해서 읽는다. 받은 `{at, series, days, sources}` 를 **값을 바꾸지 않고** `metrics/daily` 에 쓰고(set), `totals` 의 숫자를 `metrics/main.items` 에. 쓰기 전에 확인: days 가 날짜순 배열이고 모든 값이 0 이상 정수, series 키가 days 에 있다 — 하나라도 어긋나면(요약·추측된 값일 수 있음) 쓰지 않고 보고한다. 주소(비밀 경로)는 보고·출력에 쓰지 않는다.
   서비스 문서에 `metrics` 가 있으면: `curl -s -H "<header>: $<env>" <url>` (header 가 `Authorization` 이면 값 앞에 `Bearer `) → 받은 JSON 의 숫자 필드를 그대로 `items` 에, `at` 은 지금. 출력·보고에 토큰을 쓰지 않는다.
   - 인증 헤더가 필요해 WebFetch 로는 못 읽는다. 환경변수가 비어 있거나 주소에 연결이 안 되면(세션 네트워크 제한) 숫자를 쓰지 않고, `human/data-metrics-setup` 이 없을 때만 하나 만든다: text "지표 연결: 클라우드 환경 설정 두 가지", why "① claude.ai 클라우드 환경 → 네트워크 허용 도메인에 <주소의 호스트> 추가 ② 같은 화면 환경변수에 <env> = 지표 토큰 (채팅에 붙여 넣지 않기)". 보고 level 은 warning.
   - 401 이면 토큰이 서비스 쪽 값과 다르다고 보고한다.
