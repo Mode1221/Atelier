@@ -164,7 +164,7 @@ test('local: 부서 보고는 결론 한 줄·할 일 한 줄·근거 3줄 — �
   init(root, 's', { name: '벌금장부' }, T);
   write(root, 's', 'reports', 'ops', { level: 'good', summary: '사이트 정상, 오류 없음', todo: '루틴에 저장소 연결하기', detail: '운영 점검 3회 성공', at: '2026-09-30T00:00:00Z' });
   assert.deepEqual(check(root, 's'), []);
-  assert.match(briefText(brief(root, 's', T)), /대표님 할 일: 루틴에 저장소 연결하기/);
+  assert.match(briefText(brief(root, 's', T)), /대표 할 일 [0-9]+건[\s\S]*루틴에 저장소 연결하기 \(.* 보고\)/);
   write(root, 's', 'reports', 'qa', { level: 'warning', summary: '가'.repeat(61), detail: '1\n2\n3\n4', at: '2026-09-30T00:00:00Z' });
   const p = check(root, 's').join('\n');
   assert.match(p, /reports\/qa: summary 는 결론 한 줄/);

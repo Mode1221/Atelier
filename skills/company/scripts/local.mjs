@@ -191,13 +191,16 @@ export function briefText(b) {
     if (a.ifApprove) out.push(`     승인하면: ${a.ifApprove}`);
     if (a.ifReject) out.push(`     반려하면: ${a.ifReject}`);
   }
-  out.push('', `대표 할 일 ${b.human.length}건${b.human.length ? ' — 끝나면 "할 일 1 완료"' : ''}`);
+  // 부서 보고의 todo 도 대표 할 일이다 — 한 목록에 모아 개수가 맞게 (보고 것은 다음 보고에서 사라진다)
+  const fromReports = b.depts.filter((d) => d.todo).map((d) => ({ text: d.todo, dept: d.name }));
+  const total = b.human.length + fromReports.length;
+  out.push('', `대표 할 일 ${total}건${b.human.length ? ' — 끝나면 "할 일 1 완료"' : ''}`);
   for (const h of b.human) out.push(`  ${h.n}. ${h.text}${h.why ? ` — ${h.why}` : ''}${h.link ? ` (${h.link})` : ''}`);
+  fromReports.forEach((t, i) => out.push(`  ${b.human.length + i + 1}. ${t.text} (${t.dept} 보고)`));
   out.push('', '부서');
   for (const d of b.depts) {
     if (!d.on && !d.summary && !d.open) continue;
     out.push(`  ${d.on ? '●' : '○'} ${d.name}${d.on ? '' : ' (꺼짐)'}${d.open ? ` · 할 일 ${d.open}` : ''}${d.summary ? ` · ${LEVEL[d.level] ?? ''} ${d.summary}` : d.on ? ' · 아직 보고 없음' : ''}`);
-    if (d.todo) out.push(`      → 대표님 할 일: ${d.todo}`);
   }
   const idle = b.depts.filter((d) => !d.on && d.open).map((d) => d.name);
   if (idle.length) out.push(`  ⚠ 꺼진 부서에 할 일이 있어요: ${idle.join(', ')} — "○○ 부서 켜 줘"`);

@@ -1,0 +1,28 @@
+schema_version: "1.0"
+name: guard-rules
+description: 업종 규제 판정(G7) — 규제 스크립트로 docs/rules.md 를 만들고, 거래 대금 직접 보관 같은 설계 금지 항목을 짚는다
+tags: [guard, domain]
+runs: 1
+context:
+  scaffold_script: setup.sh
+execution:
+  prompt: "/atelier-dev:guard G7 해 줘. 질문은 문서 보고 알아서 판단해."
+  max_turns: 20
+  timeout_seconds: 480
+  allowed_tools: [Skill, Read, Glob, Grep, Bash, Write, Edit]
+graders:
+  - type: file_exists
+    name: rules-doc
+    path: docs/rules.md
+  - type: regex
+    name: mail-order
+    pattern: "통신판매"
+    target: { source: file, path: docs/rules.md }
+  - type: regex
+    name: escrow-ban
+    pattern: "거래 대금|대금을 직접|지급대행|에스크로"
+    target: { source: file, path: docs/rules.md }
+  - type: llm
+    name: flags-design-change
+    criteria: |
+      통과 조건: 대표에게 하는 보고에서 "구매자 돈을 서비스가 직접 보관했다가 보내는 안전결제" 설계가 문제(전자금융업 등록 대상 가능)이고 PG 의 지급대행·에스크로로 바꿔야 한다는 점을 분명히 말한다. 신고할 것(사업자등록·통신판매업 등)을 사람 할 일로 나눈다.

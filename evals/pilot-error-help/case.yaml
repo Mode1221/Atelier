@@ -1,0 +1,25 @@
+schema_version: "1.0"
+name: pilot-error-help
+description: 배포 명령이 실패했다고 오류를 붙여 넣으면 — 무슨 일·어떻게·누가(사람/AI)를 쉬운 말로 짧게, 사람 할 일이면 그렇다고
+tags: [pilot, entry, cheap]
+runs: 2
+context:
+  scaffold_script: setup.sh
+execution:
+  prompt: "/atelier-dev:pilot npm run deploy:first 했는데 에러 나요. 이렇게 떠요: ✘ [ERROR] You need to register a workers.dev subdomain before publishing to workers.dev"
+  max_turns: 10
+  timeout_seconds: 300
+  allowed_tools: [Skill, Read, Glob, Grep, Bash, Edit, Write]
+graders:
+  - type: regex
+    name: names-subdomain
+    pattern: "workers\\.dev"
+  - type: llm
+    name: plain-what-how-who
+    criteria: |
+      아래 네 가지를 모두 하면 PASS. 표현이 달라도 뜻이 같으면 인정한다.
+      1. 원인: Cloudflare 계정에서 workers.dev 주소(이름)를 아직 정하지 않았다는 것 — "서브도메인"·"주소 이름"·"하위 주소" 어느 말이든 된다.
+      2. 해결: Cloudflare 대시보드(Workers 메뉴)에서 그 이름을 정하라고 안내한다.
+      3. 누가: 사람(대표)이 해야 한다고 밝힌다.
+      4. 그다음: 정한 뒤 배포를 다시 실행하면 된다(또는 AI 가 다시 실행하겠다)고 말한다.
+      답이 30줄을 넘거나 위 내용이 틀렸을 때만 FAIL.

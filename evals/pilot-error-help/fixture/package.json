@@ -1,0 +1,2 @@
+{ "name": "chaekmoim", "private": true, "type": "module",
+  "scripts": { "dev": "wrangler dev", "deploy:first": "node scripts/deploy-first.mjs", "doctor": "node scripts/doctor.mjs" } }
