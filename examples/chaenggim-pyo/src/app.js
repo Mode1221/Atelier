@@ -72,7 +72,7 @@ export function createApp({ log = (o) => console.log(JSON.stringify(o)), limits 
   });
 
   // 방문 집계: 사람이 연 페이지만 (링크 미리보기·검색 로봇 제외). 실패해도 화면에는 영향 없음.
-  const BOT = /bot|crawl|spider|slurp|preview|scrap|facebookexternalhit|embed|headless|lighthouse/i;
+  const BOT = /bot|crawl|spider|slurp|preview|scrap|facebookexternalhit|embed|headless|lighthouse|curl|wget|python|node-fetch|undici|axios|go-http|okhttp|playwright/i;
   const KST = () => new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10);
   const countVisit = (c, src) => {
     const ua = c.req.header('user-agent') ?? '';

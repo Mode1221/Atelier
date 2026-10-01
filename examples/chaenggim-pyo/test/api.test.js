@@ -481,6 +481,17 @@ describe('운영 대시보드 공개 통계', () => {
     expect(s.series.created).toBe('목록 만들기');
     expect(JSON.stringify(s)).not.toMatch(/1\.2\.3\.4|iPhone/);
   });
+  it('지운 목록(배포 점검의 테스트 목록 포함)과 스크립트 접속은 세지 않는다', async () => {
+    const { publicStatsKey } = await import('../src/security.js');
+    await app.request('/', { headers: { 'user-agent': 'curl/8.5.0' } }, env);
+    await repo.createTrip({ name: '남는 목록', starts_on: null });
+    const gone = await repo.createTrip({ name: '점검 목록', starts_on: null });
+    await repo.deleteTrip(gone.id ?? gone.trip?.id);
+    env.STATS_TOKEN = 'stats-secret';
+    const s = await (await app.request(`/api/stats/p/${publicStatsKey('stats-secret')}`, {}, env)).json();
+    expect(s.days.at(-1).views).toBe(0);
+    expect(s.days.at(-1).created).toBe(1);
+  });
   it('STATS_TOKEN 이 없으면 꺼져 있다', async () => {
     delete env.STATS_TOKEN;
     expect((await app.request('/api/stats/p/anything', {}, env)).status).toBe(404);

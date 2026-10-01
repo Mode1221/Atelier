@@ -290,10 +290,10 @@ export function createRepo(db) {
       const [visitors, counts, created, joined, items, expenses, daily] = await Promise.all([
         all('SELECT date, COUNT(*) AS n FROM visits WHERE date >= ? GROUP BY date', sinceDate),
         all('SELECT date, key, n FROM daily_counts WHERE date >= ?', sinceDate),
-        byDay(`SELECT ${kst('created_at')} AS date, COUNT(*) AS n FROM trips WHERE created_at >= ? GROUP BY 1`),
-        byDay(`SELECT ${kst('created_at')} AS date, COUNT(*) AS n FROM people WHERE created_at >= ? GROUP BY 1`),
-        byDay(`SELECT ${kst('created_at')} AS date, COUNT(*) AS n FROM items WHERE created_at >= ? GROUP BY 1`),
-        byDay(`SELECT ${kst('created_at')} AS date, COUNT(*) AS n FROM expenses WHERE created_at >= ? GROUP BY 1`),
+        byDay(`SELECT ${kst('created_at')} AS date, COUNT(*) AS n FROM trips WHERE created_at >= ? AND deleted_at IS NULL GROUP BY 1`),
+        byDay(`SELECT ${kst('x.created_at')} AS date, COUNT(*) AS n FROM people x JOIN trips t ON t.id = x.trip_id WHERE x.created_at >= ? AND t.deleted_at IS NULL GROUP BY 1`),
+        byDay(`SELECT ${kst('x.created_at')} AS date, COUNT(*) AS n FROM items x JOIN trips t ON t.id = x.trip_id WHERE x.created_at >= ? AND t.deleted_at IS NULL GROUP BY 1`),
+        byDay(`SELECT ${kst('x.created_at')} AS date, COUNT(*) AS n FROM expenses x JOIN trips t ON t.id = x.trip_id WHERE x.created_at >= ? AND t.deleted_at IS NULL GROUP BY 1`),
         this.daily(days),
       ]);
       const vis = Object.fromEntries(visitors.map((r) => [r.date, r.n]));
@@ -326,7 +326,7 @@ export function createRepo(db) {
         `SELECT date(t.created_at, '+9 hours') AS date, COUNT(*) AS created,
            SUM(CASE WHEN (SELECT COUNT(*) FROM people p WHERE p.trip_id = t.id) >= 2 THEN 1 ELSE 0 END) AS together,
            SUM(CASE WHEN EXISTS (SELECT 1 FROM expenses e WHERE e.trip_id = t.id) THEN 1 ELSE 0 END) AS settled
-         FROM trips t WHERE t.created_at >= ? GROUP BY date(t.created_at, '+9 hours') ORDER BY date`,
+         FROM trips t WHERE t.created_at >= ? AND t.deleted_at IS NULL GROUP BY date(t.created_at, '+9 hours') ORDER BY date`,
         since,
       );
       return rows;
