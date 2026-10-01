@@ -268,6 +268,57 @@ export function createRepo(db) {
       return { '전체 목록': t.n, '이번 주 새 목록': c.n, '이번 주 참여가 생긴 목록': p.n, '이번 주 2명 이상 함께 쓴 목록': g.n, '이번 주 정산 쓴 목록': e.n, '이번 주 피드백': f.n };
     },
 
+    async recordVisit(date, vid, src) {
+      const stmts = [
+        db.prepare('INSERT OR IGNORE INTO visits (date, vid) VALUES (?, ?)').bind(date, vid),
+        db.prepare("INSERT INTO daily_counts (date, key, n) VALUES (?, 'views', 1) ON CONFLICT(date, key) DO UPDATE SET n = n + 1").bind(date),
+      ];
+      if (src) stmts.push(db.prepare('INSERT INTO daily_counts (date, key, n) VALUES (?, ?, 1) ON CONFLICT(date, key) DO UPDATE SET n = n + 1').bind(date, `src:${src}`));
+      await db.batch(stmts);
+    },
+    async purgeVisits(days = 30) {
+      const cut = new Date(Date.now() + 9 * 3_600_000 - days * 86_400_000).toISOString().slice(0, 10);
+      await db.batch([db.prepare('DELETE FROM visits WHERE date < ?').bind(cut), db.prepare('DELETE FROM daily_counts WHERE date < ?').bind(cut)]);
+    },
+
+    // 운영 대시보드용 공개 통계 — 집계 숫자만 (개인정보·목록 내용 없음). 날짜는 한국 시간.
+    async publicStats(days = 14) {
+      const since = new Date(Date.now() - days * 86_400_000).toISOString();
+      const sinceDate = new Date(Date.now() + 9 * 3_600_000 - days * 86_400_000).toISOString().slice(0, 10);
+      const kst = (col) => `date(${col}, '+9 hours')`;
+      const byDay = async (sql) => Object.fromEntries((await all(sql, since)).map((r) => [r.date, r.n]));
+      const [visitors, counts, created, joined, items, expenses, daily] = await Promise.all([
+        all('SELECT date, COUNT(*) AS n FROM visits WHERE date >= ? GROUP BY date', sinceDate),
+        all('SELECT date, key, n FROM daily_counts WHERE date >= ?', sinceDate),
+        byDay(`SELECT ${kst('created_at')} AS date, COUNT(*) AS n FROM trips WHERE created_at >= ? GROUP BY 1`),
+        byDay(`SELECT ${kst('created_at')} AS date, COUNT(*) AS n FROM people WHERE created_at >= ? GROUP BY 1`),
+        byDay(`SELECT ${kst('created_at')} AS date, COUNT(*) AS n FROM items WHERE created_at >= ? GROUP BY 1`),
+        byDay(`SELECT ${kst('created_at')} AS date, COUNT(*) AS n FROM expenses WHERE created_at >= ? GROUP BY 1`),
+        this.daily(days),
+      ]);
+      const vis = Object.fromEntries(visitors.map((r) => [r.date, r.n]));
+      const views = {}, sources = {};
+      for (const r of counts) {
+        if (r.key === 'views') views[r.date] = r.n;
+        else if (r.key.startsWith('src:')) sources[r.key.slice(4)] = (sources[r.key.slice(4)] ?? 0) + r.n;
+      }
+      const together = Object.fromEntries(daily.map((r) => [r.date, r.together]));
+      const settled = Object.fromEntries(daily.map((r) => [r.date, r.settled]));
+      const dates = [];
+      for (let i = days - 1; i >= 0; i--) dates.push(new Date(Date.now() + 9 * 3_600_000 - i * 86_400_000).toISOString().slice(0, 10));
+      return {
+        at: new Date().toISOString(),
+        // 대시보드가 이 이름 그대로 보여 준다 (서비스마다 다른 기능 이름을 본부가 몰라도 되게)
+        series: { visitors: '방문자', views: '페이지 열람', created: '목록 만들기', joined: '참여(이름 추가)', items: '준비물 추가', expenses: '정산 기록' },
+        days: dates.map((date) => ({
+          date, visitors: vis[date] ?? 0, views: views[date] ?? 0, created: created[date] ?? 0, joined: joined[date] ?? 0,
+          items: items[date] ?? 0, expenses: expenses[date] ?? 0, together: together[date] ?? 0, settled: settled[date] ?? 0,
+        })),
+        sources,
+        totals: await this.stats(),
+      };
+    },
+
     // 날짜별 (한국 시간) — 만든 목록 / 그중 2명 이상 참여 / 그중 정산까지 쓴 목록
     async daily(days = 14) {
       const since = new Date(Date.now() - days * 86_400_000).toISOString();

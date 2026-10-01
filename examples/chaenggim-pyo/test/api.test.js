@@ -460,3 +460,29 @@ describe('F7 베타 피드백', () => {
     expect((await (await app.request('/api/feedback', h, env)).json()).items).toEqual([]);
   });
 });
+
+describe('운영 대시보드 공개 통계', () => {
+  it('사람 방문만 세고(로봇 제외, 같은 사람 하루 1명), 비밀 경로로만 집계 숫자를 준다', async () => {
+    const { publicStatsKey } = await import('../src/security.js');
+    const ua = { 'user-agent': 'Mozilla/5.0 (iPhone)', 'cf-connecting-ip': '1.2.3.4' };
+    await app.request('/?utm_source=threads', { headers: ua }, env);
+    await app.request('/', { headers: ua }, env);
+    await app.request('/', { headers: { 'user-agent': 'Mozilla/5.0 (Android)', 'cf-connecting-ip': '5.6.7.8' } }, env);
+    await app.request('/', { headers: { 'user-agent': 'facebookexternalhit/1.1', 'cf-connecting-ip': '9.9.9.9' } }, env);
+    env.STATS_TOKEN = 'stats-secret';
+    expect((await app.request('/api/stats/p/wrong', {}, env)).status).toBe(404);
+    const res = await app.request(`/api/stats/p/${publicStatsKey('stats-secret')}`, {}, env);
+    expect(res.status).toBe(200);
+    const s = await res.json();
+    const today = s.days.at(-1);
+    expect(s.days).toHaveLength(14);
+    expect(today).toMatchObject({ visitors: 2, views: 3 });
+    expect(s.sources).toMatchObject({ threads: 1, direct: 2 });
+    expect(s.series.created).toBe('목록 만들기');
+    expect(JSON.stringify(s)).not.toMatch(/1\.2\.3\.4|iPhone/);
+  });
+  it('STATS_TOKEN 이 없으면 꺼져 있다', async () => {
+    delete env.STATS_TOKEN;
+    expect((await app.request('/api/stats/p/anything', {}, env)).status).toBe(404);
+  });
+});

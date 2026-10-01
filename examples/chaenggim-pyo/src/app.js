@@ -4,7 +4,7 @@ import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { createRepo, RepoError } from './repo.js';
 import { validateTrip, validatePersonName, validateItem, validateExpense, validateFeedback } from './validate.js';
-import { keyMatches, rateLimiter, hashIp, safeEqual } from './security.js';
+import { keyMatches, rateLimiter, hashIp, safeEqual, publicStatsKey, visitorId } from './security.js';
 import { homePage, tripPage, notFoundPage, docPage, feedbackPage, statsPage } from './views.js';
 import { LEGAL } from './legal.gen.js';
 
@@ -71,9 +71,22 @@ export function createApp({ log = (o) => console.log(JSON.stringify(o)), limits 
     return c.redirect(url, 302);
   });
 
-  app.get('/', (c) => {
+  // 방문 집계: 사람이 연 페이지만 (링크 미리보기·검색 로봇 제외). 실패해도 화면에는 영향 없음.
+  const BOT = /bot|crawl|spider|slurp|preview|scrap|facebookexternalhit|embed|headless|lighthouse/i;
+  const KST = () => new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10);
+  const countVisit = (c, src) => {
+    const ua = c.req.header('user-agent') ?? '';
+    if (!ua || BOT.test(ua)) return;
+    const date = KST();
+    const job = c.get('repo').recordVisit(date, visitorId(ipOf(c), ua, date), src).catch(() => {});
+    try { c.executionCtx.waitUntil(job); } catch { /* 테스트 등 실행 문맥 없음 */ }
+    return job;
+  };
+  app.get('/', async (c) => {
     const src = (c.req.query('ref') ?? c.req.query('utm_source') ?? '').toLowerCase();
-    if (/^[a-z0-9_-]{1,32}$/.test(src)) event(c, 'landing', { src });
+    const ok = /^[a-z0-9_-]{1,32}$/.test(src);
+    if (ok) event(c, 'landing', { src });
+    await countVisit(c, ok ? src : 'direct');
     return c.html(homePage(pageOpts(c)));
   });
   app.get('/t/:id', async (c) => {
@@ -81,6 +94,7 @@ export function createApp({ log = (o) => console.log(JSON.stringify(o)), limits 
     const trip = await repo.getTrip(c.req.param('id'));
     if (!trip) return c.html(notFoundPage(pageOpts(c)), 404);
     event(c, 'trip_opened');
+    await countVisit(c, null);
     return c.html(tripPage({ trip, ...(await repo.load(trip.id)) }, pageOpts(c)));
   });
   app.get('/:doc{privacy|terms}', (c) => {
@@ -105,6 +119,14 @@ export function createApp({ log = (o) => console.log(JSON.stringify(o)), limits 
     const t = c.env.STATS_TOKEN;
     if (!t || !safeEqual(c.req.header('authorization')?.replace(/^Bearer /, '') ?? '', t)) return c.json({ error: 'unauthorized' }, 401);
     return c.json({ days: await c.get('repo').daily(14) });
+  });
+  // 공개 통계 (운영 대시보드가 읽는다): 집계 숫자만, 주소의 비밀 경로로 보호. STATS_TOKEN 이 없으면 꺼져 있다.
+  app.get('/api/stats/p/:key', async (c) => {
+    const t = c.env.STATS_TOKEN;
+    if (!t || !safeEqual(c.req.param('key'), publicStatsKey(t))) return c.json({ error: 'not_found' }, 404);
+    c.header('Cache-Control', 'no-store');
+    c.header('X-Robots-Tag', 'noindex');
+    return c.json(await c.get('repo').publicStats(14));
   });
   // 지표 화면 — 토큰은 주소의 #t= 조각(서버로 안 감)이나 입력칸으로 받아 브라우저가 헤더로 보낸다
   app.get('/stats', (c) => c.html(statsPage(pageOpts(c))));
@@ -296,5 +318,6 @@ export async function scheduled(env, log = (o) => console.log(JSON.stringify(o))
   const softDeleted = await repo.purgeSoftDeleted(7);
   await repo.cleanupRateLimits();
   await repo.purgeFeedback(365);
+  await repo.purgeVisits(30);
   log({ t: new Date().toISOString(), level: 'info', event: 'daily_cleanup', purged: deleted, stale, softDeleted });
 }

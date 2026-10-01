@@ -1,4 +1,4 @@
-import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
+import { randomBytes, createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 export const newId = () => randomBytes(12).toString('base64url'); // 16자
 export const newAdminKey = () => randomBytes(18).toString('base64url'); // 144비트
@@ -27,6 +27,10 @@ export function rateLimiter({ limit, windowMs, now = () => Date.now() }) {
   };
 }
 
+// 공개 통계 주소의 비밀 경로 — STATS_TOKEN 에서 만든다(새 비밀값 없이). 토큰을 모르면 추측할 수 없다.
+export const publicStatsKey = (token) => createHmac('sha256', String(token)).update('public-stats').digest('hex').slice(0, 32);
+// 하루 방문자 id: 날짜가 섞여 있어 다른 날과 이어지지 않는다
+export const visitorId = (ip, ua, date) => createHash('sha256').update(`v:${date}:${ip}:${ua}`).digest('hex').slice(0, 16);
 export const hashIp = (ip) => createHash('sha256').update(`ip:${ip}`).digest('hex').slice(0, 12);
 
 export function safeEqual(a, b) {
