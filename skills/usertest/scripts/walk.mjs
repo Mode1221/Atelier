@@ -6,7 +6,7 @@
 // 사용: node walk.mjs <plan.json> [출력 폴더=docs/usertest/<날짜>]
 // 필요: 프로젝트에 playwright 또는 @playwright/test (선택: @axe-core/playwright). 크로미움 경로를 바꾸려면 PW_CHROMIUM.
 import { createRequire } from 'node:module';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const STEP_TIMEOUT = 5000; // 사람이 5초 안에 못 찾으면 막힌 것으로 본다
@@ -267,7 +267,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
   const plan = JSON.parse(readFileSync(planPath, 'utf8'));
   if (process.env.BASE_URL) plan.baseUrl = process.env.BASE_URL;
-  const outDir = dir ?? join('docs', 'usertest', new Date().toISOString().slice(0, 10));
+  // 같은 날 다시 돌리면 앞 결과(1차 증거)를 덮지 않고 -r2, -r3 … 폴더에 쓴다
+  let outDir = dir;
+  if (!outDir) {
+    const base = join('docs', 'usertest', new Date().toISOString().slice(0, 10));
+    outDir = base;
+    for (let n = 2; existsSync(outDir); n++) outDir = `${base}-r${n}`;
+  }
   walk(plan, { outDir })
     .then((r) => {
       const fails = r.results.filter((x) => x.status === '실패').length;

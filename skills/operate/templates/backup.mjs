@@ -4,7 +4,7 @@
 // 3) 운영 DB(Cloudflare D1)가 있으면 .sql 로 내보내기 4) 오래된 백업 정리(최근 14개).
 // 백업 폴더는 구글 드라이브·OneDrive·iCloud·Dropbox 처럼 **클라우드와 동기화되는 폴더**를 권한다 → 컴퓨터가 고장 나도 남는다.
 // 비밀값(.atelier/, .dev.vars, .env)은 .gitignore 로 빠진다.
-// 사용 (프로젝트 폴더에서): npm run backup [-- --to <폴더>]     복구: git clone <백업.bundle> 새폴더
+// 사용 (프로젝트 폴더에서): npm run backup [-- --to <폴더> [--remember]]  (--to 는 처음 정할 때만 기억, 이후엔 --remember 로 바꿈)     복구: git clone <백업.bundle> 새폴더
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -49,7 +49,7 @@ export function prune(dir, project, keep = KEEP) {
   return removed;
 }
 
-export function backup({ root = process.cwd(), to, now = new Date(), exportDb = defaultExportDb, log = console.log } = {}) {
+export function backup({ root = process.cwd(), to, remember = false, now = new Date(), exportDb = defaultExportDb, log = console.log } = {}) {
   const cfgFile = join(root, '.atelier', 'backup.json');
   const cfg = readJson(cfgFile) ?? {};
   const dest = to || cfg.dir;
@@ -57,7 +57,8 @@ export function backup({ root = process.cwd(), to, now = new Date(), exportDb = 
     const found = syncedFolders();
     throw new Error(`백업할 폴더를 정해 주세요: npm run backup -- --to <폴더>\n${found.length ? `  클라우드와 동기화되는 폴더를 찾았어요 (추천):\n${found.map((f) => `   ${join(f, 'Atelier 백업')}`).join('\n')}` : '  구글 드라이브·OneDrive·iCloud 같은 동기화 폴더를 권해요 (컴퓨터가 고장 나도 남음)'}`);
   }
-  if (to && to !== cfg.dir) { mkdirSync(join(root, '.atelier'), { recursive: true }); writeFileSync(cfgFile, `${JSON.stringify({ ...cfg, dir: to }, null, 2)}\n`); }
+  // 처음 정할 때만 기억한다. 이미 정한 폴더가 있으면 --to 는 이번 한 번만(시험 백업이 사람이 고른 폴더를 덮지 않게), 바꾸려면 --remember
+  if (to && to !== cfg.dir && (!cfg.dir || remember)) { mkdirSync(join(root, '.atelier'), { recursive: true }); writeFileSync(cfgFile, `${JSON.stringify({ ...cfg, dir: to }, null, 2)}\n`); }
   mkdirSync(dest, { recursive: true });
 
   const project = basename(root).replace(/[^\w.-]+/g, '_') || 'project';
@@ -89,5 +90,5 @@ function defaultExportDb(root, out, log) {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const a = process.argv.slice(2);
   const i = a.indexOf('--to');
-  try { backup({ to: i >= 0 ? a[i + 1] : undefined }); } catch (e) { console.error(`✗ ${e.message}`); process.exit(1); }
+  try { backup({ to: i >= 0 ? a[i + 1] : undefined, remember: a.includes('--remember') }); } catch (e) { console.error(`✗ ${e.message}`); process.exit(1); }
 }

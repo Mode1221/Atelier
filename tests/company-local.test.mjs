@@ -62,20 +62,20 @@ test('local: 결재 번호는 올라온 순서, 승인·반려를 반영하고 �
   assert.equal(read(root, 's', 'approvals', 'dev-20260930-d').status, 'rejected');
 });
 
-test('local: 대표 할 일 완료, 부서 켜기·끄기, all 실행 순서는 대표실 먼저', () => {
+test('local: 대표 할 일 완료, 부서 켜기·끄기, all 실행 순서는 데이터·재무 → 대표실', () => {
   const root = fresh();
   init(root, 's', {}, T);
   write(root, 's', 'human', 'marketing-20260930-post', { text: 'Threads 올리기', done: false, createdAt: '2026-09-30T00:00:00Z' });
   assert.match(humanDone(root, 's', 1), /Threads 올리기/);
   assert.equal(read(root, 's', 'human', 'marketing-20260930-post').done, true);
 
-  assert.deepEqual(runOrder(root, 's', 'all'), ['ceo', 'marketing', 'support', 'data']);
+  assert.deepEqual(runOrder(root, 's', 'all'), ['data', 'ceo', 'marketing', 'support']);
   assert.match(setEnabled(root, 's', 'dev', true), /사용량/);
   setEnabled(root, 's', 'ceo', false);
   assert.deepEqual(read(root, 's', null).enabled, ['dev', 'marketing', 'support', 'data']);
-  assert.deepEqual(runOrder(root, 's', 'all'), ['dev', 'marketing', 'support', 'data']);
+  assert.deepEqual(runOrder(root, 's', 'all'), ['data', 'dev', 'marketing', 'support']);
   setEnabled(root, 's', 'ceo', true);
-  assert.equal(runOrder(root, 's', 'all')[0], 'ceo');
+  assert.equal(runOrder(root, 's', 'all')[1], 'ceo');
   assert.deepEqual(runOrder(root, 's', 'qa'), ['qa']);
   assert.throws(() => setEnabled(root, 's', 'hr', true), /모르는 부서/);
 });
@@ -120,7 +120,7 @@ test('local: 서비스가 여럿이면 ID 를 묻고, 명령줄은 서비스 ID 
   assert.deepEqual(services(root).map((s) => s.id), ['a', 'b']);
   assert.throws(() => pickService(root), /여럿/);
   assert.match(cli(['brief', 'b'], root), /■ B/);
-  assert.equal(cli(['order', 'a', 'all'], root), 'ceo marketing support data');
+  assert.equal(cli(['order', 'a', 'all'], root), 'data ceo marketing support');
 });
 
 // 클라우드 본부 절차 동기화 (skills/company/scripts/playbook.mjs)
@@ -175,4 +175,12 @@ test('본부 화면 버전(HQ_VERSION)은 플러그인 버전과 같다 — 본�
   const html = readFileSync(new URL('../skills/company/cloud/hq.html', import.meta.url), 'utf8');
   const plugin = JSON.parse(readFileSync(new URL('../.claude-plugin/plugin.json', import.meta.url), 'utf8'));
   assert.equal(html.match(/const HQ_VERSION = '([\d.]+)'/)?.[1], plugin.version);
+});
+
+test('local: 대표 할 일은 priority 1(지금 막는 것)이 먼저, 그다음 먼저 생긴 것', () => {
+  const root = fresh();
+  init(root, 's', {}, T);
+  write(root, 's', 'human', 'ops-20260930-2fa', { text: '2단계 인증', done: false, createdAt: '2026-09-30T00:00:00Z' });
+  write(root, 's', 'human', 'dev-20260930-deploy', { text: 'Cloudflare 가입 후 배포', priority: 1, done: false, createdAt: '2026-09-30T00:00:00Z' });
+  assert.equal(brief(root, 's', T).human[0].text, 'Cloudflare 가입 후 배포');
 });

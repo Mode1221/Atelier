@@ -102,7 +102,8 @@ export function init(root, service, fields = {}, at = new Date()) {
 // 결재 대기 — 번호는 올라온 순서(createdAt, 같으면 id). 브리핑과 decide 가 같은 번호를 쓴다.
 export function pending(root, service) {
   return list(root, service, 'approvals').filter((a) => a.status === 'pending')
-    .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)) || a.id.localeCompare(b.id));
+    // priority 1 = 지금 다른 일을 막는 것(배포·가입 등). 없으면 2. 같으면 먼저 생긴 것부터
+    .sort((a, b) => (a.priority ?? 2) - (b.priority ?? 2) || String(a.createdAt).localeCompare(String(b.createdAt)) || a.id.localeCompare(b.id));
 }
 export function openHuman(root, service) {
   return list(root, service, 'human').filter((h) => !h.done)
@@ -152,7 +153,9 @@ export function runOrder(root, service, what) {
     if (!DEPTS[what]) throw new Error(`모르는 부서 "${what}"`);
     return [what];
   }
-  return Object.keys(DEPTS).filter((d) => enabled.includes(d));
+  // 데이터·재무가 먼저(그날 숫자를 옮겨 둬야 대표실이 그 숫자로 계획한다 — cloud-run 과 같은 순서)
+  const order = ['data', ...Object.keys(DEPTS).filter((d) => d !== 'data')];
+  return order.filter((d) => enabled.includes(d));
 }
 
 export function brief(root, service, at = new Date()) {

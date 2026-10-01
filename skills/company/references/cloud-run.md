@@ -19,7 +19,7 @@ Claude 클라우드 예약 실행(Routine)이 새 세션을 열고 이 절차로
 | `playbook/<이름>` (**본부 공통**, 앞에 companies 안 붙임) | text — 이 절차(`cloud-run`), 부서 역할(`dept-<부서>`), 계획(`planning`), 8단계·게이트(`stages`), 채널 가이드(`channels`) | 설치 시 (스킬 문서 복사) |
 | `approvals/<id>` | dept, title, kind(배포/외부 게시/지출/약관/데이터 삭제), cost, detail, changes[](바뀌는 것), link(바뀐 내용 주소), files, ifApprove, ifReject, status(pending/approved/rejected), reason, createdAt, decidedAt, done, result | 부서가 만들고 대표가 결정 |
 | `tasks/<id>` | dept, title, detail, status(todo/doing/review/done), by(ceo 또는 부서), note, createdAt, updatedAt | 대표·부서 |
-| `human/<id>` | text, why, link, done, createdAt | 부서가 만들고 대표가 체크 |
+| `human/<id>` | text, why, link, priority(1 = 지금 다른 일을 막는 것, 없으면 2), done, createdAt | 부서가 만들고 대표가 체크 |
 | `reports/<DEPT>` | level(good/warning/critical), summary(결론 한 줄), todo(대표 할 일 한 줄, 없으면 비움), detail(근거 3줄 이하, 선택), history(지난 보고 최대 7개), at — 쓰는 법·level 기준은 2절 6 | 각 부서가 실행 끝에 덮어씀 |
 | `metrics/main` | items{이름: 숫자}, at | 데이터·재무 |
 | `metrics/daily` | at, series{키: 표시 이름}, days[{date, visitors, views, <기능 키>…}], sources{출처: 방문} — 본부 "운영 지표"(방문자 추이·기능별 사용·유입 출처)가 그린다 | 데이터·재무 (`stats.url` 응답을 그대로) |

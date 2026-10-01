@@ -92,7 +92,7 @@ PROJECT.md "디자인 도구 계획" 절을 만든다. **이후 단계는 이 �
 PROJECT.md "기능 사이클" 표에 한 줄씩 기록한다.
 
 ## 5-1. AI 회사 모드 (출시 후 기본 안내)
-**서비스 주소가 처음 생기면**(launch L2 공개 베타 시작, 늦어도 6단계 게이트 전) 사용자에게 한 줄로 확인받고 `atelier-dev:company setup` 을 실행한다 — **로컬 모드**(내 컴퓨터의 Claude Code 만, 프로젝트 폴더 `company/<서비스>/` 가 본부).
+**서비스 주소가 처음 생기면**(launch L2 공개 베타 시작 — 로컬 서버로 대신하는 동안에도 됨, 늦어도 6단계 게이트 전) 사용자에게 한 줄로 확인받고 `atelier-dev:company setup` 을 실행한다 — **로컬 모드**(내 컴퓨터의 Claude Code 만, 프로젝트 폴더 `company/<서비스>/` 가 본부).
 예: "이제 AI 부서들이 일하게 회사를 세울까요? (켜 둔 부서는 실행마다 Claude 사용량이 들어요)" → "응"이면 진행.
 - 그 뒤 대표가 할 일은 `/atelier-dev:company` 를 열어 브리핑을 보고 "1번 승인"처럼 답하는 것뿐이다. 부서를 돌릴 때는 `/atelier-dev:company run all`, 매일 자동이면 `/atelier-dev:company schedule`(컴퓨터가 켜져 있어야 함).
 - 이미 `company/` 가 있으면 새로 만들지 않고 이 서비스를 추가한다.

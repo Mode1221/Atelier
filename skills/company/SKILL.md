@@ -37,7 +37,7 @@ description: AI 회사 운영. 부서(대표실·기획·디자인·개발·QA·
 1. 서비스 ID(영문 소문자·숫자·`-`, 예 `beolgeum`)를 정하고 `L init <ID> --name "이름" --url <주소> --summary "한 줄" --audience "대상" --kind 웹 --stage "<PROJECT.md 현재 단계>"`. 여러 서비스면 ID 만 다르게 한 번 더 — `company/<ID>/` 폴더가 따로 생긴다.
 2. `service.json` 을 채운다(`cloud-run.md` 1절·`planning.md` 의 필드): `done`(이미 해 둔 것), `cautions`(지켜야 할 제약), `existing`(이미 도는 자동 점검) — PROJECT.md·STATUS 문서에서. `docs/share/posts.json` 이 있으면 `company/<ID>/share/posts.json` 으로 옮기고, PROJECT.md "사람 할 일" 미완료 항목은 `human/*.json` 으로.
 3. 켜진 부서는 기본 **대표실·고객지원·마케팅·데이터재무**(`service.json` 의 `enabled`). "실행할 때마다 Claude 사용량이 들어요"라고 알린다.
-3-1. **운영 지표는 항상 연결한다** — 아래 "운영 지표 연결" 절. 로컬 모드는 통계 주소를 `service.json` 의 `stats.url` 에 적고, 데이터재무 부서가 `metrics/daily.json` 으로 옮긴다.
+3-1. **운영 지표는 항상 연결한다** — 아래 "운영 지표 연결" 절. 로컬 모드는 `company/` 가 커밋될 수 있으므로 비밀 경로를 `service.json` 에 적지 않는다 — `stats: {base: "<서비스 주소>/api/stats/p/", token_env: "STATS_TOKEN"}` 처럼 적고 실행 때 `.dev.vars`·`.atelier/secrets.json` 의 토큰에서 경로를 계산한다(`ops-stats.md`). 그 숫자를 데이터재무 부서가 `metrics/daily.json` 으로 옮긴다.
 4. 대표실을 한 번 실행한다(C, `run ceo`) — 첫 실행에서 목표·로드맵(`plan/roadmap.json`)을 만들고 첫 할 일을 나눈다.
 5. `L check` 후 B 의 브리핑을 보여 준다. PROJECT.md 에 "AI 회사" 절(방식: 로컬, 서비스 ID, 폴더, 명령 `/atelier-dev:company`)을 남긴다.
 6. 끝으로 한 줄: "매일 자동으로 일하게 하려면 `/atelier-dev:company schedule`, 폰으로 결재하고 싶으면 `setup cloud`(고급)."

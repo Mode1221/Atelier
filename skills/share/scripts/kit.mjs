@@ -92,5 +92,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const out = args[1] ?? join(dirname(src), 'kit.html');
     writeFileSync(out, render(spec));
     console.log(`홍보 킷: ${out} (글 ${spec.posts.length}개)`);
-  } else console.log(`글 ${spec.posts.length}개 이상 없음`);
+  } else console.log(`글 ${spec.posts.length}개 — 문제 없음`);
 }
