@@ -12,9 +12,23 @@
 | 웹 (로그인 있음) | `deploy-first.mjs` + `auth/` (Supabase) | `npm run deploy:first` (키 3개 붙여 넣기) | Cloudflare·Supabase 가입, 키 복사 (auth-accounts.md 첫 절) |
 | 정적 웹·웹 게임 (Phaser 등) | `deploy-first.mjs` (DB 없으면 DB 단계 생략) | `npm run deploy:first` | Cloudflare 가입. itch.io 도 올리려면 itch 가입 후 zip 업로드(선택) |
 | 모바일 앱 (Expo) | `app-first.mjs` | `npm run app:first` → 안드로이드 설치 파일(APK) | expo.dev 가입. 스토어 출시는 계정 비용(Play $25, Apple 연 $99) — 결정 후 |
-| 브라우저 확장 프로그램 | (템플릿 없음) Manifest V3 + 순수 JS, 서버가 필요하면 위 웹 스택 | `zip` → 크롬 웹 스토어 개발자 대시보드 업로드 | Chrome 웹 스토어 개발자 등록($5 1회), 심사 대기 |
-| 챗봇 (카카오·디스코드·텔레그램) | 서버는 위 웹 스택(Workers) + 웹훅 주소 | `npm run deploy:first` 후 플랫폼 콘솔에 웹훅 주소 붙여 넣기 | 플랫폼 개발자 등록(카카오 비즈니스 채널 등) |
-| 데스크톱 앱 | Tauri(가벼움) 또는 Electron, 자동 업데이트 포함 | 빌드 → GitHub Releases | 코드 서명 인증서는 유료(윈도우·맥) — 없으면 설치 때 경고가 뜬다고 미리 안내 |
+| 브라우저 확장 프로그램 | `extension/` (MV3 예시·점검·zip) — `add.mjs extension` | `node scripts/ext.mjs check` → `pack` → 크롬 웹 스토어 업로드 | 크롬 웹 스토어 개발자 등록(1회 $5) |
+| 챗봇 (카카오·디스코드·텔레그램) | `bot/` (서명·비밀 값 확인, 플랫폼별 응답) + 웹 스택 | `npm run deploy:first` → `node scripts/bot-setup.mjs <플랫폼> <주소>` | 플랫폼 봇 만들기(BotFather·디스코드 포털·카카오 오픈빌더) |
+| 데스크톱 앱 | `desktop/` (Tauri 2 + GitHub Actions 3개 운영체제 빌드) | `git tag v0.1.0 && git push --tags` → Releases 초안 | GitHub 가입. 코드 서명은 선택(유료) — 없으면 설치 경고 |
+
+## 기능 템플릿 — `node <atelier>/skills/build/templates/add.mjs <이름>` 으로 넣는다 (테스트로 검증됨)
+| 기능 | 이름 | 무엇이 들어 있나 | 사람 몫 |
+|---|---|---|---|
+| 결제·구독 (국내 웹) | `pay` | 토스페이먼츠 단건·정기·웹훅·환불·자동 갱신·가격표 | 토스페이먼츠 가입(테스트 키 즉시) → 실판매는 사업자·가맹 |
+| 앱 안 결제 | `iap` | RevenueCat 구매·복원·유료 판단 | 스토어 상품 등록·RevenueCat 가입 |
+| 광고 | `ads` | 애드센스·애드핏, 결제 화면 제외, ads.txt | 광고 승인 신청 |
+| AI 기능 | `ai` | Claude API, 사용자별 한도·하루 비용 상한·쉬운 오류·AI 표시 | Anthropic 콘솔 가입·결제 수단·API 키 |
+| 파일 올리기 | `upload` | R2, 종류 확인(매직 바이트)·크기·총량·주인만 삭제 | (R2 처음이면 대시보드에서 사용 시작) |
+| 실시간 (채팅·함께 편집·게임 방) | `realtime` | Durable Objects WebSocket 방, 끊기면 다시 붙는 클라이언트 | 없음 |
+| 챗봇 | `bot` | 카카오·디스코드·텔레그램 | 봇 만들기 |
+| 확장 프로그램 | `extension` | MV3 예시·점검·zip | 웹 스토어 등록 |
+| 데스크톱 | `desktop` | Tauri 2 + CI 빌드 | GitHub |
+
 | 공통 운영 | `../../operate/templates/` `watchdog/` · `backup.mjs` | `npm run watch:setup` · `npm run backup` | 휴대폰 ntfy 앱, 백업 폴더 선택 |
 
 ## 웹 서비스 / SaaS

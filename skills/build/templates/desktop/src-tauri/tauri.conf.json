@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "내 앱",
+  "version": "0.1.0",
+  "identifier": "com.example.myapp",
+  "build": { "frontendDist": "../dist" },
+  "app": {
+    "windows": [{ "label": "main", "title": "내 앱", "width": 1000, "height": 700, "minWidth": 360, "minHeight": 480 }],
+    "security": { "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'" }
+  },
+  "bundle": { "active": true, "targets": "all", "icon": ["icons/icon.png"] }
+}

@@ -104,3 +104,15 @@ test('deploy-first: 파일 저장소(R2) 버킷이 없으면 만들고, 있으�
   const run2 = async (args) => (args[2] === 'create' ? { code: 1, out: 'Please enable R2 through the Cloudflare Dashboard' } : { code: 0, out: '' });
   await assert.rejects(deployFirst({ run: run2, file: join(dir, 'wrangler.toml'), log: () => {}, varsExample: join(dir, 'none') }), /대시보드 → R2/);
 });
+
+test('templates/add: 9개 템플릿을 표준 위치에 넣고, 마이그레이션 번호를 이어 붙이고, 고친 파일은 덮지 않는다', async () => {
+  const { add, MAP } = await import('../skills/build/templates/add.mjs');
+  const { existsSync: ex, readdirSync: rd } = await import('node:fs');
+  const root = mkdtempSync(join(tmpdir(), 'add-'));
+  writeFileSync(join(root, 'x'), '');
+  for (const name of Object.keys(MAP)) assert.ok(add(name, root).length > 0, name);
+  for (const p of ['src/pay/pay.js', 'public/pay/checkout.html', 'src/ai/ai.js', 'src/upload/upload.js', 'src/realtime/room.js', 'public/realtime.js', 'src/bot/bot.js', 'extension/manifest.json', 'extension/_locales/ko/messages.json', 'src-tauri/tauri.conf.json', '.github/workflows/desktop.yml', 'src/purchases.js', 'public/ads.js']) assert.ok(ex(join(root, p)), p);
+  assert.deepEqual(rd(join(root, 'migrations')).sort(), ['0001_pay.sql', '0002_ai.sql']);
+  assert.deepEqual(add('pay', root), [], '다시 넣어도 그대로');
+  assert.throws(() => add('nope', root), /쓸 수 있는 것/);
+});

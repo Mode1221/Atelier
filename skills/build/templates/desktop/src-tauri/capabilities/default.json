@@ -1,0 +1,6 @@
+{
+  "identifier": "default",
+  "description": "기본 창이 쓸 수 있는 것 — 파일·셸 같은 권한은 필요할 때만 추가",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}
