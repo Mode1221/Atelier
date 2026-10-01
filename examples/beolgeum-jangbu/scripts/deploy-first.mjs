@@ -69,18 +69,24 @@ export const findUrl = (out) => out.match(/https:\/\/[\w.-]+\.workers\.dev\b/)?.
 // wrangler 를 실행한다. stdin 은 그대로 넘겨 로그인·주소 등록 질문에 답할 수 있게 하고, 출력은 보여 주면서 모은다.
 function wrangler(args, { quiet = false, env = {}, input } = {}) {
   return new Promise((resolve) => {
-    const p = spawn('npx', ['wrangler', ...args], { stdio: [input === undefined ? 'inherit' : 'pipe', 'pipe', 'inherit'], env: { ...process.env, WRANGLER_SEND_METRICS: 'false', ...env }, shell: process.platform === 'win32' });
+    const p = spawn('npx', ['wrangler', ...args], { stdio: [input === undefined ? 'inherit' : 'pipe', 'pipe', 'pipe'], env: { ...process.env, WRANGLER_SEND_METRICS: 'false', ...env }, shell: process.platform === 'win32' });
     if (input !== undefined) p.stdin.end(input);
     let out = '';
     p.stdout.on('data', (d) => { out += d; if (!quiet) process.stdout.write(d); });
+    p.stderr.on('data', (d) => { out += d; process.stderr.write(d); }); // 오류도 모아서 아래 풀이(doctor)에 쓴다
     p.on('close', (code) => resolve({ code, out }));
   });
 }
 
-export async function deployFirst({ run = wrangler, file = 'wrangler.toml', log = console.log, ask = askHidden, secretsFile = SECRETS_FILE, varsExample = '.dev.vars.example' } = {}) {
+// 실패 메시지 풀이 — 같은 폴더에 doctor.mjs 가 있으면 쓴다 (없어도 동작)
+async function explainFailure(out) {
+  try { const { formatExplain } = await import('./doctor.mjs'); return `\n${formatExplain(out)}`; } catch { return ''; }
+}
+
+export async function deployFirst({ run = wrangler, file = 'wrangler.toml', log = console.log, ask = askHidden, secretsFile = SECRETS_FILE, varsExample = '.dev.vars.example', explain = explainFailure } = {}) {
   const must = async (args, opts, what) => {
     const r = await run(args, opts);
-    if (r.code !== 0) throw new Error(`${what} 실패 — 위 메시지를 확인하고 다시 실행하세요 (다시 실행해도 안전해요)`);
+    if (r.code !== 0) throw new Error(`${what} 실패 (다시 실행해도 안전해요)${await explain(r.out ?? '')}`);
     return r;
   };
 

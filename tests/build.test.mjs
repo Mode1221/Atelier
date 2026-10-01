@@ -116,3 +116,31 @@ test('templates/add: 9개 템플릿을 표준 위치에 넣고, 마이그레이�
   assert.deepEqual(add('pay', root), [], '다시 넣어도 그대로');
   assert.throws(() => add('nope', root), /쓸 수 있는 것/);
 });
+
+test('doctor: 흔한 오류를 쉬운 말로, 모르는 오류는 마지막 줄 + 비밀값 주의', async () => {
+  const { explain, formatExplain, checkup, KNOWN } = await import('../skills/build/templates/doctor.mjs');
+  const cases = {
+    'cf-login': 'You are not authenticated. Please run `wrangler login`.',
+    'no-table': 'D1_ERROR: no such table: lists: SQLITE_ERROR',
+    resolve: '✘ [ERROR] Could not resolve "nanoid"',
+    port: 'Error: listen EADDRINUSE: address already in use :::8787',
+    'git-auth': 'git@github.com: Permission denied (publickey).',
+    'cf-r2': 'Please enable R2 through the Cloudflare Dashboard.',
+    'versioncode': 'Version code 3 has already been used. versionCode has already been used',
+  };
+  for (const [id, msg] of Object.entries(cases)) assert.ok(explain(msg)?.some((h) => h.id === id), id);
+  assert.equal(new Set(KNOWN.map((k) => k.id)).size, KNOWN.length);
+  assert.match(formatExplain('뭔가 이상함'), /처음 보는 오류[\s\S]*비밀값[\s\S]*뭔가 이상함/);
+  const root = mkdtempSync(join(tmpdir(), 'doc-'));
+  writeFileSync(join(root, 'package.json'), '{}');
+  writeFileSync(join(root, 'wrangler.toml'), 'compatibility_date = "2099-01-01"\n[[d1_databases]]\nbinding = "DB"\ndatabase_name = "x"\n');
+  const bad = checkup(root, { node: '18.0.0' }).filter((r) => !r.ok).map((r) => r.what);
+  assert.ok(bad.some((w) => w.startsWith('Node.js')) && bad.some((w) => w.startsWith('compatibility_date')) && bad.includes('DB 연결(database_id)'));
+});
+
+test('deploy-first: 실패하면 풀이를 붙인다', async () => {
+  const run = async (args) => (args[0] === 'whoami' ? { code: 0, out: 'ok' } : { code: 1, out: 'You need to register a workers.dev subdomain' });
+  const root = mkdtempSync(join(tmpdir(), 'dfx-'));
+  writeFileSync(join(root, 'wrangler.toml'), 'name = "x"\n');
+  await assert.rejects(deployFirst({ run, file: join(root, 'wrangler.toml'), log: () => {}, varsExample: join(root, 'none') }), /배포 실패[\s\S]*workers\.dev 주소/);
+});
