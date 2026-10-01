@@ -1,5 +1,6 @@
 // AI 기능 붙이기 (Claude API) — 키는 서버에만, 사용자별 하루 한도, 하루 전체 비용 상한, 쉬운 오류 문구, AI 결과 표시.
 //   npm i @anthropic-ai/sdk     /  .dev.vars 와 wrangler secret 에 ANTHROPIC_API_KEY (채팅에 붙여 넣지 않기)
+//   (선택) ANTHROPIC_BASE_URL — Cloudflare AI Gateway 같은 중계 주소(호출 기록·캐시)를 쓸 때
 //   const ai = createAi({ db: env.DB, env });   const r = await ai.ask({ customer, prompt });
 // 대화 내용은 저장하지 않고 토큰 수만 센다(개인정보·비용 기록 겸용). 처리방침에 "AI 처리·국외 이전(Anthropic)"을 넣는다(guard).
 
@@ -36,7 +37,7 @@ export function createAi({ db, env, client, options = {}, now = () => new Date()
   const model = env.AI_MODEL || o.model;
   // SDK 는 처음 쓸 때 불러온다 (테스트는 가짜 client 를 넘긴다)
   let anthropic = client;
-  const sdk = async () => (anthropic ??= new (await import('@anthropic-ai/sdk')).default({ apiKey: env.ANTHROPIC_API_KEY, timeout: o.timeoutMs, maxRetries: 2 }));
+  const sdk = async () => (anthropic ??= new (await import('@anthropic-ai/sdk')).default({ apiKey: env.ANTHROPIC_API_KEY, timeout: o.timeoutMs, maxRetries: 2, ...(env.ANTHROPIC_BASE_URL ? { baseURL: env.ANTHROPIC_BASE_URL } : {}) }));
   const get = (day, who) => db.prepare('SELECT * FROM ai_usage WHERE day = ? AND customer = ?').bind(day, who).first();
   const add = (day, who, u, cost) => db.prepare(`INSERT INTO ai_usage (day, customer, calls, input_tokens, output_tokens, cost_micro_usd) VALUES (?, ?, 1, ?, ?, ?)
     ON CONFLICT(day, customer) DO UPDATE SET calls = calls + 1, input_tokens = input_tokens + excluded.input_tokens, output_tokens = output_tokens + excluded.output_tokens, cost_micro_usd = cost_micro_usd + excluded.cost_micro_usd`)
@@ -85,6 +86,6 @@ export function createAi({ db, env, client, options = {}, now = () => new Date()
       }
     },
     // 운영 지표: 날짜별 호출·비용 (본부 stats series: ai_calls, ai_cost_usd)
-    usageByDay: (fromDay) => db.prepare("SELECT day AS date, calls AS ai_calls, ROUND(cost_micro_usd / 1e6, 2) AS ai_cost_usd FROM ai_usage WHERE customer = '*' AND day >= ? ORDER BY day").bind(fromDay).all().then((r) => r.results),
+    usageByDay: (fromDay) => db.prepare("SELECT day AS date, calls AS ai_calls, ROUND(cost_micro_usd / 1e6, 4) AS ai_cost_usd FROM ai_usage WHERE customer = '*' AND day >= ? ORDER BY day").bind(fromDay).all().then((r) => r.results),
   };
 }
