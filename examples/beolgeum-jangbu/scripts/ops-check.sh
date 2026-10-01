@@ -8,6 +8,7 @@
 #   EXPIRY_WARN_DAYS     만료일 경고 기준 (기본 30)
 #   BACKUP_CHECK_CMD     백업 신선도 확인 명령. 0 이 아니면 실패 (weekly 이상)
 #   SKIP_DEP_AUDIT=1     의존성 취약점 검사 생략 (weekly 이상)
+#   CLOUDFLARE_API_TOKEN 있으면 scripts/usage.mjs 로 무료 한도 사용률 (매일, 70% 경고·90% 실패)
 # 결과: 마크다운 보고서를 표준출력(+ GITHUB_STEP_SUMMARY)으로. 실패가 있으면 종료 코드 1.
 set -u
 
@@ -82,6 +83,13 @@ fi
 if [ $lvl -ge 2 ] && [ -n "${BACKUP_CHECK_CMD:-}" ]; then
   if bash -c "$BACKUP_CHECK_CMD" >/dev/null 2>&1; then row OK "백업" "확인 명령 통과"
   else row FAIL "백업" "확인 명령 실패 — 최근 백업이 없거나 접근 불가"; fi
+fi
+
+# 5-1. 무료 한도 사용률 (Cloudflare, operate O5)
+if [ -f scripts/usage.mjs ] && [ -n "${CLOUDFLARE_API_TOKEN:-}" ]; then
+  if out=$(node scripts/usage.mjs 2>&1); then
+    if grep -q '🟡' <<< "$out"; then row WARN "무료 한도" "$(oneline "$(grep '🟡' <<< "$out")")"; else row OK "무료 한도" "70% 미만"; fi
+  else row FAIL "무료 한도" "$(oneline "$(grep -E '🔴|⚠️' <<< "$out" | head -3)")"; fi
 fi
 
 # 6. 사람이 할 일 알림 (monthly+)

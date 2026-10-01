@@ -34,7 +34,7 @@ export async function check(env, fetchImpl = fetch) {
   const fails = state.fails + 1;
   let alerted = null;
   if (!state.down && fails >= FAILS_TO_ALERT) {
-    await notify(env, { title: `🔴 ${name} 응답 없음`, message: `${name}가 ${FAILS_TO_ALERT * 5}분째 응답하지 않아요: ${detail}\n${env.HEALTH_URL}\nClaude Code 에서 "서비스가 죽었어" 라고 말하면 복구를 도와줘요.` }, fetchImpl);
+    await notify(env, { title: `🔴 ${name} 응답 없음`, message: `${name}가 ${FAILS_TO_ALERT * 5}분째 응답하지 않아요: ${detail}\n${env.HEALTH_URL}\n프로젝트에서 npm run incident (또는 Claude Code 에 "서비스가 죽었어").` }, fetchImpl);
     alerted = 'down';
   }
   await env.STATE.put('state', JSON.stringify({ down: state.down || fails >= FAILS_TO_ALERT, fails }));

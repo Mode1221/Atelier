@@ -18,6 +18,8 @@
     "feedback:pull": "node scripts/feedback-pull.mjs",
     "watch:setup": "node ops/watchdog/setup.mjs",
     "backup": "node scripts/backup.mjs",
+    "incident": "node scripts/incident.mjs",
+    "usage": "node scripts/usage.mjs",
     "quality": "node scripts/atelier/quality-gate.mjs"
   },
   "devDependencies": {

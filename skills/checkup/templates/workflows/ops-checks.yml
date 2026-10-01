@@ -39,6 +39,8 @@ jobs:
           HEALTH_URLS: ${{ vars.HEALTH_URLS }}
           TLS_HOSTS: ${{ vars.TLS_HOSTS }}
           BACKUP_CHECK_CMD: ${{ secrets.BACKUP_CHECK_CMD }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}   # 있으면 무료 한도 사용률도 (npm run usage)
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set +e
           ./scripts/ops-check.sh "${{ steps.p.outputs.period }}" > report.md
