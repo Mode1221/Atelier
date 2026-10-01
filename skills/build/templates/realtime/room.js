@@ -7,6 +7,8 @@
 //   tag = "v1"
 //   new_sqlite_classes = ["Room"]
 // 워커 진입점: export { Room } from './realtime/room.js';  그리고 app.get('/rt/:room', (c) => roomFetch(c.env, c.req.param('room'), c.req.raw))
+// 메시지: 보내기 {type:'say', body} (기록 남김) · {type:'state', body} (기록 없이, 커서·위치) · {type:'ping'}
+//         받기 hello{you, peers, recent} · join/leave{peer} · say/state{from, body, at} · error{message}
 // 방 하나 = 객체 하나. 같은 방 사람들은 같은 객체에 붙어 서로 메시지를 받는다. 잠자기(hibernation)로 접속만 있고 조용할 때는 요금이 거의 없다.
 export const LIMITS = { maxPeers: 50, maxBytes: 4000, perSecond: 10, keep: 50 };
 
@@ -29,7 +31,7 @@ export class Room {
     this.state.acceptWebSocket(server);
     server.serializeAttachment({ id: crypto.randomUUID().slice(0, 8), name, t: [] });
     const recent = (await this.state.storage.get('recent')) ?? [];
-    server.send(JSON.stringify({ type: 'hello', you: server.deserializeAttachment(), peers: this.peers(), recent }));
+    server.send(JSON.stringify({ type: 'hello', you: this.who(server), peers: this.peers(), recent }));
     this.broadcast({ type: 'join', peer: this.who(server) }, server);
     return new Response(null, { status: 101, webSocket: client });
   }

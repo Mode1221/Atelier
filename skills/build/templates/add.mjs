@@ -4,7 +4,7 @@
 //   이름: pay · ai · upload · realtime · bot · extension · desktop · iap · ads · admin · notify · search · map
 // 넣은 뒤 할 일(코드 연결·비밀값·사람 할 일)은 각 템플릿 README / 파일 맨 위 설명에 있다.
 import { existsSync, mkdirSync, copyFileSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -35,7 +35,7 @@ function copy(src, dest, out, root) {
   if (existsSync(dest)) return;
   mkdirSync(dirname(dest), { recursive: true });
   copyFileSync(src, dest);
-  out.push(dest.slice(root.length + 1).split('\\').join('/'));
+  out.push(relative(root, dest).split('\\').join('/'));
 }
 export function add(name, root = '.') {
   const map = MAP[name];

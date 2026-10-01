@@ -144,3 +144,11 @@ test('deploy-first: 실패하면 풀이를 붙인다', async () => {
   writeFileSync(join(root, 'wrangler.toml'), 'name = "x"\n');
   await assert.rejects(deployFirst({ run, file: join(root, 'wrangler.toml'), log: () => {}, varsExample: join(root, 'none') }), /배포 실패[\s\S]*workers\.dev 주소/);
 });
+
+test('templates/add: 프로젝트 폴더를 "." 로 줘도 넣은 경로가 온전하다', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const root = mkdtempSync(join(tmpdir(), 'add-dot-'));
+  const out = execFileSync('node', [new URL('../skills/build/templates/add.mjs', import.meta.url).pathname, 'search', '.'], { cwd: root, encoding: 'utf8' });
+  assert.match(out, /\+ src\/search\/search\.js/);
+  assert.match(out, /\+ migrations\/0001_search\.sql/);
+});
