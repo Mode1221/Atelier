@@ -94,8 +94,12 @@ function cell(entries, installed, budget) {
   return [use, missing.length ? `${[...new Set(missing)].join(', ')} 없음 → 괄호 안 대체` : ''];
 }
 
+// 한글 유형 이름도 받는다 (pilot 2-1 의 판정 이름 그대로 넘겨도 되게)
+export const ALIAS = { 도구형: 'tool', 감성형: 'emotional', 소비자형: 'emotional', '감성·소비자형': 'emotional', 랜딩: 'landing', '랜딩 중심': 'landing', 게임: 'game', 모바일: 'native', '모바일 네이티브': 'native', 앱: 'native' };
+const norm = (t) => ALIAS[String(t ?? '').trim()] ?? String(t ?? '').trim();
 export function plan({ type, screens = null, tier = 'pro', installed = [] }) {
-  const groups = screens?.length ? screens : [{ screen: '전체', type }];
+  if (!type && !screens?.length) throw new Error('--type 이 필요해요 (tool·emotional·landing·game·native 또는 도구형·감성형·랜딩·게임·모바일)');
+  const groups = (screens?.length ? screens : [{ screen: '전체', type }]).map((g) => ({ ...g, type: norm(g.type) }));
   for (const g of groups) if (!ROUTES[g.type]) throw new Error(`모르는 유형 "${g.type}" (가능: ${Object.keys(ROUTES).join(', ')})`);
   const budget = BUDGET[tier] ?? BUDGET.pro;
   const types = [...new Set(groups.map((g) => g.type))];

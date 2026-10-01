@@ -15,7 +15,7 @@ export const EVIDENCE = {
   D0: ['docs/design.md'], D1: ['docs/design.md'], D2: ['docs/design.md'], D3: ['**/tokens.css', 'design/tokens.*'],
   D4: ['design/shots/*.png', 'design/shots/*.jpg', 'design/shots/**/*.png'], D6: ['docs/design.md'],
   D7: ['**/favicon.*', '**/og.png', '**/icon.png'],
-  B1: ['.gitignore'], B2: ['migrations/*', '**/migrations/*', 'supabase/migrations/*', 'prisma/schema.prisma'],
+  B1: ['.gitignore'], B2: ['migrations/*', '**/migrations/*', 'supabase/migrations/*', 'prisma/schema.prisma', { file: 'docs/spec.md', has: '기기 저장' }], // 서버 DB 없는 앱은 spec 에 저장 방식(기기 저장·스키마 버전)을 적은 것으로
   B10: ['test/*', 'tests/*', 'e2e/*', '**/*.test.*', '**/*.spec.*'], B12: ['.github/workflows/*', 'scripts/deploy-first.mjs', 'eas.json'],
   B13: ['docs/build.md'], B14: ['docs/service-map.md'],
   G1: ['docs/guard.md'], G3: ['docs/guard.md'], G4: ['legal/*privacy*', 'legal/*개인정보*'], G5: ['THIRD_PARTY_NOTICES.md', 'NOTICE*'],

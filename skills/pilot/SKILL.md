@@ -47,7 +47,7 @@ PROJECT.md "디자인 도구 계획" 절을 만든다. **이후 단계는 이 �
 1. 서비스 유형 판정(도구형 / 감성·소비자형 / 랜딩 중심 / 게임 / 모바일 네이티브), 섞여 있으면 화면별로.
 2. 설치 확인은 **실제로**: `node <atelier>/skills/design/scripts/tool-plan.mjs … --detect` 로 파일·설정을 보고, 이 세션의 스킬 목록·MCP 도구 목록과 한 번 더 맞춘다.
 3. 요금제: 물어보고, 모르면(자동 모드 포함) Pro 로 가정 → 예산 모드 "절약".
-4. 실행: `node <atelier>/skills/design/scripts/tool-plan.mjs --type <유형> [--screens "화면=유형,…"] --plan pro|max --installed <확인된 것> --write PROJECT.md`
+4. 실행: `node <atelier>/skills/design/scripts/tool-plan.mjs --type <tool|emotional|landing|game|native>`(한글 도구형·감성형·랜딩·게임·모바일도 됨) [--screens "화면=유형,…"] --plan pro|max --installed <확인된 것> --write PROJECT.md`
 5. 이 유형에 필요한데 설치 안 된 스킬이 있을 때만 **한 번** 안내한다(스크립트가 출력하는 설치 명령, 선택 사항, 없으면 대체 수단으로 진행). 다시 묻지 않는다.
 
 ## 3. 프로필로 로드맵 맞추기

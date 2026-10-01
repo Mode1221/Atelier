@@ -73,6 +73,10 @@ export function install(root, { check = false } = {}) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const args = process.argv.slice(2);
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log('사용: node install-tools.mjs [프로젝트 폴더=.] [--check]\n  검사 도구를 <프로젝트>/scripts/atelier/ 에 복사하고 package.json 에 "quality" 를 넣는다. --check 는 바꾸지 않고 낡았는지만 본다.');
+    process.exit(0);
+  }
   const root = args.find((a) => !a.startsWith('--')) ?? '.';
   const check = args.includes('--check');
   const { results, script } = install(root, { check });

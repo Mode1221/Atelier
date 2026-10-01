@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Atelier 0.21.1 의 skills/pilot/scripts/gate-check.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
+// Atelier 0.26.0 의 skills/pilot/scripts/gate-check.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
 // Atelier pilot — 체크박스와 실제 산출물이 맞는지 확인한다 (PROJECT.md 에 [x] 인데 증거 파일이 없으면 알림).
 // "했다"는 말이 아니라 파일로 확인 — 테스트는 통과했는데 화면을 한 번도 안 본 경우 같은 빈틈을 잡는다.
 // 사용 (프로젝트 폴더에서): node <atelier>/skills/pilot/scripts/gate-check.mjs [PROJECT.md] [--json]
@@ -16,7 +16,7 @@ export const EVIDENCE = {
   D0: ['docs/design.md'], D1: ['docs/design.md'], D2: ['docs/design.md'], D3: ['**/tokens.css', 'design/tokens.*'],
   D4: ['design/shots/*.png', 'design/shots/*.jpg', 'design/shots/**/*.png'], D6: ['docs/design.md'],
   D7: ['**/favicon.*', '**/og.png', '**/icon.png'],
-  B1: ['.gitignore'], B2: ['migrations/*', '**/migrations/*', 'supabase/migrations/*', 'prisma/schema.prisma'],
+  B1: ['.gitignore'], B2: ['migrations/*', '**/migrations/*', 'supabase/migrations/*', 'prisma/schema.prisma', { file: 'docs/spec.md', has: '기기 저장' }], // 서버 DB 없는 앱은 spec 에 저장 방식(기기 저장·스키마 버전)을 적은 것으로
   B10: ['test/*', 'tests/*', 'e2e/*', '**/*.test.*', '**/*.spec.*'], B12: ['.github/workflows/*', 'scripts/deploy-first.mjs', 'eas.json'],
   B13: ['docs/build.md'], B14: ['docs/service-map.md'],
   G1: ['docs/guard.md'], G3: ['docs/guard.md'], G4: ['legal/*privacy*', 'legal/*개인정보*'], G5: ['THIRD_PARTY_NOTICES.md', 'NOTICE*'],
