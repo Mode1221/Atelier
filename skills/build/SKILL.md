@@ -27,7 +27,7 @@ description: 구현 단계. 스택 선택, 프로젝트 생성, 환경 분리(�
 - 스택 확정: `references/free-tier.md` → `references/stack-templates.md`. 기준 = **무료 등급으로 운영 가능 > 사용자가 아는 것 > 운영 부담 적은 것 > 유행.**
 - 유료가 필요한 선택은 실행 전에 금액·무료 대안을 보여 주고 결정을 받는다.
 - 공식 생성 도구로 스캐폴딩. 린터·포매터·타입체크·테스트 러너 설정.
-- **환경 분리**: 개발(local) / 스테이징(미리보기) / 운영. 환경마다 DB·키 분리. 운영 데이터로 개발하지 않는다.
+- **환경 분리**: 개발(local) / 스테이징(미리보기) / 운영. 무료·1인 서비스는 스테이징 서버를 따로 두지 않고 **미리보기 배포**(Workers `versions upload`·Pages 미리보기 주소 등)로 대신해도 된다 — 운영 DB 를 쓰지 않는 것만 지킨다. 환경마다 DB·키 분리. 운영 데이터로 개발하지 않는다.
 - 시크릿: `.env.example`(이름만), 실제 값은 플랫폼 시크릿. `.gitignore` 확인.
 - CI: 푸시마다 린트·타입체크·테스트·빌드 (`references/ci-deploy.md`).
 - **검사 도구 설치**: `node <atelier>/skills/pilot/scripts/install-tools.mjs` → 프로젝트 `scripts/atelier/` 에 품질 게이트·사용성 테스트 실행기 복사 + `npm run quality`. CI 에 "품질 게이트" 단계를 테스트보다 먼저 넣는다.

@@ -34,6 +34,8 @@ test('trace: 테스트 없는 기능을 잡는다', () => {
 
 test('events: 계획 표기(속성·묶음)를 읽고 코드와 대조한다', () => {
   assert.deepEqual([...parseDeclared('## S6. 분석 이벤트\n`landing{src}`, `item_claim|unclaim|pack`, `shared`\n## S7\n`other`')], ['landing', 'item_claim', 'item_unclaim', 'item_pack', 'shared']);
+  // 표가 있으면 첫 칸만: 속성 칸·표 밖 설명의 백틱 이름은 이벤트가 아니다
+  assert.deepEqual([...parseDeclared('## S6 분석 이벤트\n| 이벤트 | 속성 |\n|---|---|\n| `game_start` | `visit_days` |\n| `game_end{score}` | — |\n- 재방문은 `visit_days` 로 보냄\n')], ['game_start', 'game_end']);
   const dir = project({
     'docs/spec.md': '## S6. 분석 이벤트\n`landing{src}` `item_claim|pack` `signup_done`',
     'src/app.js': "event(c, 'landing'); event(c, `item_${a}`); track('surprise'); log({ event: 'landing' })",

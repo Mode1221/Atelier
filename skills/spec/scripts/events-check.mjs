@@ -11,7 +11,10 @@ export function parseDeclared(spec) {
   const sec = spec.split(/\n(?=##\s)/).find((s) => /^##\s*S6\b|^##\s.*(분석 이벤트|이벤트 설계)/m.test(s.split('\n')[0]));
   if (!sec) return null;
   const names = new Set();
-  for (const m of sec.matchAll(/`([a-z][a-z0-9_]*(?:\|[a-z0-9_]+)*)(?:\{[^}`]*\})?`/g)) {
+  // 표가 있으면 이벤트는 표의 첫 칸에서만 읽는다 (속성 칸·설명 줄의 `visit_days` 같은 이름을 이벤트로 오인하지 않게)
+  const rows = sec.split('\n').filter((l) => /^\s*\|/.test(l) && !/^\s*\|\s*-/.test(l)).map((l) => l.split('|')[1] ?? '');
+  const text = rows.some((c) => c.includes('`')) ? rows.join('\n') : sec;
+  for (const m of text.matchAll(/`([a-z][a-z0-9_]*(?:\|[a-z0-9_]+)*)(?:\{[^}`]*\})?`/g)) {
     const [first, ...rest] = m[1].split('|');
     names.add(first);
     const prefix = first.includes('_') ? first.slice(0, first.lastIndexOf('_') + 1) : '';

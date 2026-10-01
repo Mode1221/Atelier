@@ -31,6 +31,7 @@ node scripts/atelier/walk.mjs docs/usertest/plan.json docs/usertest/<날짜>
 (`scripts/atelier/` 가 없으면 `node <atelier>/skills/pilot/scripts/install-tools.mjs` 로 먼저 설치 — CI 에서도 같은 경로로 돈다)
 - 로컬 서버를 띄워 실행한다(운영 DB 오염 금지). IP 기준 속도 제한이 있으면 `"ipHeader"` 로 방문자를 나눈다.
 - playwright 가 없으면 `npm i -D playwright` (무료). 결과: `summary.md`, `results.json`, `shots/`.
+- **무작위 요소**(게임 시작 단어·추천 순서 등)가 있으면 서비스에 테스트용 고정 시드(`?seed=1` 처럼, 운영에서도 해가 없는 것)를 두고 plan 의 `url` 에 붙인다 — 정적 steps 로 같은 결과를 재현할 수 있어야 한다. 기대 단어(`words`)는 사람이 찾을 화면 말로 적고, 정답 데이터를 추측해 넣지 않는다.
 - 서버와 실행기를 한 스크립트에서 돌릴 때 서버는 **비동기**(`spawn`, 백그라운드 `&`)로 띄운다 — `spawnSync`/`execSync` 로 띄우면 서버가 끝나지 않아 멈춘다. 브라우저가 이미 설치된 환경(예: 클라우드 세션)은 `PW_CHROMIUM=<실행 파일 경로>` 로 그 브라우저를 쓴다.
 - **스크립트가 기본이다.** playwright-mcp(대화형 브라우저)는 PROJECT.md "디자인 도구 계획"의 usertest 칸에 있을 때만, 스크립트로 못 찾는 막힘 탐색·재현이 어려운 레이아웃 버그 추적에만 쓴다. 모바일 네이티브는 쓰지 않는다.
 

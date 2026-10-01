@@ -6,18 +6,24 @@
 // 사용: node walk.mjs <plan.json> [출력 폴더=docs/usertest/<날짜>]
 // 필요: 프로젝트에 playwright 또는 @playwright/test (선택: @axe-core/playwright). 크로미움 경로를 바꾸려면 PW_CHROMIUM.
 import { createRequire } from 'node:module';
+import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const STEP_TIMEOUT = 5000; // 사람이 5초 안에 못 찾으면 막힌 것으로 본다
 
 export function loadPlaywright(from = process.cwd()) {
-  const req = createRequire(join(resolve(from), 'noop.js'));
-  for (const name of ['playwright', '@playwright/test']) {
-    try {
-      return req(name);
-    } catch {
-      /* 다음 후보 */
+  // 프로젝트 → NODE_PATH → 전역 설치(npm i -g playwright) 순서로 찾는다
+  const roots = [resolve(from), ...(process.env.NODE_PATH ?? '').split(/[:;]/).filter(Boolean)];
+  try { roots.push(execSync('npm root -g', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()); } catch { /* npm 없음 */ }
+  for (const root of roots) {
+    const req = createRequire(join(root, 'noop.js'));
+    for (const name of ['playwright', '@playwright/test']) {
+      try {
+        return req(name);
+      } catch {
+        /* 다음 후보 */
+      }
     }
   }
   throw new Error('playwright 가 없어요. 프로젝트에서 `npm i -D playwright` 후 다시 실행하세요 (무료).');

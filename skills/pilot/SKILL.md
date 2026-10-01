@@ -69,7 +69,7 @@ PROJECT.md "디자인 도구 계획" 절을 만든다. **이후 단계는 이 �
 | 1 | 아이디어 검증 | idea | MVP 범위·중단 기준 확정 |
 | 2 | 기획 | spec | 사용자 스토리·데이터 모델·아키텍처 확정 (꼼꼼한 길이면 비기능 요구도) |
 | 3 | 디자인 | design | 핵심 화면 시안 확정, 접근성 기준 통과 |
-| 4 | 구현 | build (+ 로컬 usertest) | 운영 준비 체크리스트(`../build/references/production-readiness.md`) 필수 항목 통과, **로컬 서버로 돌린 AI 대리 사용성 테스트 치명·높음 0** |
+| 4 | 구현 | build (+ 로컬 usertest) | 운영 준비 체크리스트(`../build/references/production-readiness.md`) 필수 항목 통과(🚀 배포 후 항목은 첫 배포 전까지 보류로 둔다), **로컬 서버로 돌린 AI 대리 사용성 테스트 치명·높음 0** |
 | 5 | 보안·법률 | guard | 치명 이슈 0, 법률 문서 게시, 출시 준비 점검 통과 |
 | 6 | 출시 | launch (+ usertest · beta · share) | 공개 출시 완료, 출시 회고 작성 |
 | 7 | 운영 | operate | 모니터링·장애 대응·백업·CS 체계 가동 (출시 직후 병행 시작) |
