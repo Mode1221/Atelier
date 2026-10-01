@@ -90,3 +90,17 @@ test('deploy-first: DB 없는 정적 웹·웹 게임은 DB 단계 없이 배포'
   assert.equal(await deployFirst({ run, file: join(dir, 'wrangler.toml'), log: () => {}, varsExample: join(dir, 'none') }), 'https://my-game.me.workers.dev');
   assert.deepEqual(calls, ['whoami', 'deploy']);
 });
+
+test('deploy-first: 파일 저장소(R2) 버킷이 없으면 만들고, 있으면 그대로, R2 미사용 계정은 할 일 안내', async () => {
+  const { r2Buckets, r2Names } = await import('../skills/build/templates/deploy-first.mjs');
+  assert.deepEqual(r2Buckets('[[r2_buckets]]\nbinding = "FILES"\nbucket_name = "shop-files"\n'), ['shop-files']);
+  assert.deepEqual(r2Names('name:           a-files\ncreation_date:  x\n\nname:           b\n'), ['a-files', 'b']);
+  const dir = mkdtempSync(join(tmpdir(), 'r2-'));
+  writeFileSync(join(dir, 'wrangler.toml'), 'name = "shop"\n[[r2_buckets]]\nbinding = "FILES"\nbucket_name = "shop-files"\n');
+  const calls = [];
+  const run = async (args) => { calls.push(args.slice(0, 3).join(' ')); return { code: 0, out: args[0] === 'deploy' ? 'https://shop.me.workers.dev' : args[1] === 'bucket' && args[2] === 'list' ? 'name: other\n' : '' }; };
+  await deployFirst({ run, file: join(dir, 'wrangler.toml'), log: () => {}, varsExample: join(dir, 'none') });
+  assert.ok(calls.includes('r2 bucket create'));
+  const run2 = async (args) => (args[2] === 'create' ? { code: 1, out: 'Please enable R2 through the Cloudflare Dashboard' } : { code: 0, out: '' });
+  await assert.rejects(deployFirst({ run: run2, file: join(dir, 'wrangler.toml'), log: () => {}, varsExample: join(dir, 'none') }), /대시보드 → R2/);
+});

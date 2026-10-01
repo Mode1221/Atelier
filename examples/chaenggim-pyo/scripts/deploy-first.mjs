@@ -33,6 +33,10 @@ export function setDatabaseId(toml, name, id) {
   return parts.join('');
 }
 
+// wrangler.toml 의 [[r2_buckets]] → bucket_name 목록 (파일 올리기 템플릿이 쓴다)
+export const r2Buckets = (toml) => toml.split(/^\[\[r2_buckets\]\]\s*$/m).slice(1).map((b) => b.split(/^\[/m)[0].match(/^bucket_name\s*=\s*"([^"]+)"/m)?.[1]).filter(Boolean);
+// `wrangler r2 bucket list` 출력에서 이름들
+export const r2Names = (out) => [...String(out).matchAll(/^name:\s*(\S+)/gm)].map((m) => m[1]);
 export const isUuid = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s ?? '');
 export const findDb = (listJson, name) => JSON.parse(listJson || '[]').find((d) => d.name === name);
 // .dev.vars.example → [{ name, auto }] (주석·빈 줄 무시)
@@ -103,6 +107,18 @@ export async function deployFirst({ run = wrangler, file = 'wrangler.toml', log 
     await must(['d1', 'migrations', 'apply', db.binding ?? db.name, '--remote'], { env: { CI: '1' } }, '마이그레이션');
   }
 
+  const buckets = r2Buckets(toml);
+  if (buckets.length) {
+    log('   파일 저장소(R2) 준비');
+    const have = r2Names((await run(['r2', 'bucket', 'list'], { quiet: true })).out);
+    for (const b of buckets) {
+      if (have.includes(b)) { log(`   ${b}: 이미 있어요`); continue; }
+      const r = await run(['r2', 'bucket', 'create', b], { quiet: true });
+      if (r.code !== 0 && /(enable|purchas|subscri).*R2|R2.*(enable|purchas|subscri)/i.test(r.out)) throw new Error('R2 를 처음 쓰려면 Cloudflare 대시보드 → R2 에서 한 번 "사용 시작"(무료, 카드 등록이 필요할 수 있음)을 눌러 주세요 — 그다음 다시 실행');
+      if (r.code !== 0) throw new Error(`파일 저장소 ${b} 만들기 실패 — 위 메시지를 확인하고 다시 실행하세요`);
+      log(`   ${b}: 만들었어요`);
+    }
+  }
   log('5/6 배포');
   const url = findUrl((await must(['deploy'], {}, '배포')).out);
 
