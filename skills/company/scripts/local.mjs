@@ -20,7 +20,7 @@ export const DEPTS = {
   ceo: '대표실', plan: '기획', design: '디자인', dev: '개발', qa: 'QA',
   security: '보안·법무', marketing: '마케팅', support: '고객지원', ops: '운영', data: '데이터·재무',
 };
-export const DEFAULT_ENABLED = ['ceo', 'support', 'marketing'];
+export const DEFAULT_ENABLED = ['ceo', 'support', 'marketing', 'data'];
 export const COLLECTIONS = ['approvals', 'tasks', 'human', 'reports', 'feedback', 'plan', 'metrics', 'share', 'shared'];
 export const CHANNEL_IDS = ['everytime', 'kakaotalk', 'threads', 'x', 'bluesky', 'facebook', 'linkedin', 'reddit', 'band', 'naver_blog', 'naver_cafe', 'daangn', 'disquiet', 'instagram', 'discord'];
 

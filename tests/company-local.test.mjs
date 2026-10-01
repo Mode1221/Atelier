@@ -9,11 +9,11 @@ import { init, write, read, docPath, pending, decide, humanDone, setEnabled, run
 const T = new Date('2026-09-30T00:05:00.123Z');
 const fresh = () => mkdtempSync(join(tmpdir(), 'co-'));
 
-test('local: init 은 service.json 과 폴더를 만들고 다시 실행해도 값을 지키며 기본 부서는 대표실·고객지원·마케팅', () => {
+test('local: init 은 service.json 과 폴더를 만들고 다시 실행해도 값을 지키며 기본 부서는 대표실·고객지원·마케팅·데이터재무', () => {
   const root = fresh();
   init(root, 'timer', { name: '스터디 타이머' }, T);
   const svc = JSON.parse(readFileSync(join(root, 'company/timer/service.json'), 'utf8'));
-  assert.deepEqual(svc.enabled, ['ceo', 'support', 'marketing']);
+  assert.deepEqual(svc.enabled, ['ceo', 'support', 'marketing', 'data']);
   assert.equal(svc.createdAt, '2026-09-30T00:05:00Z');
   assert.ok(existsSync(join(root, 'company/timer/approvals')));
   init(root, 'timer', { url: 'https://t.dev' });
@@ -69,11 +69,11 @@ test('local: 대표 할 일 완료, 부서 켜기·끄기, all 실행 순서는 
   assert.match(humanDone(root, 's', 1), /Threads 올리기/);
   assert.equal(read(root, 's', 'human', 'marketing-20260930-post').done, true);
 
-  assert.deepEqual(runOrder(root, 's', 'all'), ['ceo', 'marketing', 'support']);
+  assert.deepEqual(runOrder(root, 's', 'all'), ['ceo', 'marketing', 'support', 'data']);
   assert.match(setEnabled(root, 's', 'dev', true), /사용량/);
   setEnabled(root, 's', 'ceo', false);
-  assert.deepEqual(read(root, 's', null).enabled, ['dev', 'marketing', 'support']);
-  assert.deepEqual(runOrder(root, 's', 'all'), ['dev', 'marketing', 'support']);
+  assert.deepEqual(read(root, 's', null).enabled, ['dev', 'marketing', 'support', 'data']);
+  assert.deepEqual(runOrder(root, 's', 'all'), ['dev', 'marketing', 'support', 'data']);
   setEnabled(root, 's', 'ceo', true);
   assert.equal(runOrder(root, 's', 'all')[0], 'ceo');
   assert.deepEqual(runOrder(root, 's', 'qa'), ['qa']);
@@ -120,7 +120,7 @@ test('local: 서비스가 여럿이면 ID 를 묻고, 명령줄은 서비스 ID 
   assert.deepEqual(services(root).map((s) => s.id), ['a', 'b']);
   assert.throws(() => pickService(root), /여럿/);
   assert.match(cli(['brief', 'b'], root), /■ B/);
-  assert.equal(cli(['order', 'a', 'all'], root), 'ceo marketing support');
+  assert.equal(cli(['order', 'a', 'all'], root), 'ceo marketing support data');
 });
 
 // 클라우드 본부 절차 동기화 (skills/company/scripts/playbook.mjs)

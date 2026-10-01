@@ -18,6 +18,7 @@
 | `human/<id>.json` | `human/<id>` | 〃 |
 | `reports/<부서>.json` | `reports/<DEPT>` | 부서가 실행 끝에 덮어씀 |
 | `metrics/main.json` | `metrics/main` | 측정값만 |
+| `metrics/daily.json` | `metrics/daily` | 날짜별 운영 지표(방문자·기능별·출처) — `service.json` 의 `stats.url` 응답을 값 그대로 (`../../build/references/ops-stats.md`) |
 | `share/posts.json` | `share/posts` | channel 은 ID, 본문에 링크 없음 |
 | `shared/<채널__번호>.json` | `shared/…` | 대표가 "올렸어요" |
 | `feedback/<YYYY-MM-DD>.json` | `feedback/<날짜>` | 고객지원 |
