@@ -134,6 +134,7 @@ table.data th:first-child,table.data td:first-child{text-align:left}
 progress{width:100%;height:8px;accent-color:var(--accent)}
 .focus{font-size:16px;font-weight:700;margin:0}
 code{overflow-wrap:anywhere}
+ul.changes{margin:4px 0;padding-left:18px}
 pre.post{white-space:pre-wrap;word-break:break-all;margin:0;font:inherit;background:var(--sunk);border-radius:8px;padding:12px}
 ul.plain{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .item{padding:8px 0;border-top:1px solid var(--line)}
@@ -176,6 +177,7 @@ const STAGE = { pilot: '시작', idea: '아이디어', spec: '명세', design: '
 const stageOf = (st) => STAGE[st] ?? st;
 const LEVEL = { good: '정상', warning: '확인 필요', critical: '문제', idle: '보고 없음' };
 const REMOTE = 'Claude Code Remote';
+const HQ_VERSION = '0.24.0'; // 플러그인 버전과 같게 (테스트가 확인) — 본부 규칙(playbook)이 이보다 낡았는지 본다
 
 // SNS 공식 공유 창 (Atelier share 스킬 channels.mjs 와 같은 규칙)
 const enc = encodeURIComponent;
@@ -214,7 +216,7 @@ const withUtm = (url, source, campaign) => {
 };
 
 // ---- 상태: 서비스마다 운영에 필요한 것만 구독한다. 상세 화면을 열면 로드맵·홍보·부서 일을 더 구독한다.
-const S = { services: [], svc: {}, loaded: false, routines: null, routinesErr: null };
+const S = { services: [], svc: {}, loaded: false, routines: null, routinesErr: null, playbook: null };
 const blank = () => ({ approvals: [], human: [], reports: {}, metrics: null, daily: null, feedback: [], plan: null, posts: null, shared: new Set(), tasks: [], extra: false });
 let db = null, mcp = null, canWrite = true;
 let view = parseHash();
@@ -302,6 +304,18 @@ function perWeek(cron) {
   const n = count(c[0], 0, 59) * count(c[1], 0, 23) * count(c[4].replace(/\b7\b/, '0'), 0, 6);
   return Number.isFinite(n) ? n : null;
 }
+// 한 번 실행에 걸린 분 (마지막 실행 기준) — 사용량 감각용
+const runMin = (r) => { const a = Date.parse(r?.last_run?.fired_at ?? ''), b = Date.parse(r?.last_run?.finished_at ?? ''); return a && b && b > a ? Math.max(1, Math.round((b - a) / 60000)) : null; };
+// 부서 기본 지시문 (playbook/dept-prompt) 을 서비스 값으로 채운다 — 지워진 예약 다시 세우기·지시문 고치기에 쓴다
+function deptPrompt(v, dept) {
+  const t = S.playbook?.['dept-prompt']?.text;
+  const hq = (Object.values(v.routines ?? {}).map((id) => (S.routines ?? []).find((x) => x.id === id)?.derived_state?.prompt ?? '').join('\n').match(/HQ=(\S+)/) ?? [])[1] ?? v.hq;
+  if (!t || !hq || !DEPT[dept]) return null;
+  const val = { COMPANY: v.name ?? v.id, DEPT_NAME: DEPT[dept].name, HQ_URL: hq, SERVICE: v.id, REPO: v.repo ?? '', PROJECT: v.project ?? '(저장소 루트)', DEPT: dept };
+  return t.replace(/\{\{(\w+)\}\}/g, (m, k) => val[k] ?? m).trim();
+}
+const verLess = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0); return false; };
+
 // 일정 바꾸기 선택지 (한국 시각, 정각·30분을 피한 분)
 const PRESETS = [
   ['CRON_TZ=Asia/Seoul 50 8 * * *', '매일 아침 08:50'],
@@ -332,6 +346,7 @@ function inboxOf(id) {
     const r = routineOf(id, dep.id);
     if (r?.enabled && runState(r) === 'fail') out.push({ kind: 'runfail', svc: id, dept: dep.id, key: `f-${id}-${dep.id}`, title: `${dep.name} 부서 실행이 실패했어요`, text: `${failWhy(r) ? `이유: ${failWhy(r)} — ` : ''}실행 기록에서 멈춘 이유를 보고, 고친 뒤 다시 실행해 보세요.`, link: sessionUrl(r.last_run.session_id), at: r.last_run.fired_at });
   }
+  for (const m of metricAlerts(d)) out.push({ kind: 'metric', svc: id, key: `m-${id}-${m.key}`, title: m.title, text: m.text, at: d.daily?.at });
   for (const a of d.approvals.filter((x) => x.status === 'pending')) out.push({ kind: 'approval', svc: id, key: `a-${id}-${a.id}`, a, title: a.title, at: a.createdAt });
   for (const h of d.human.filter((x) => !x.done)) out.push({ kind: 'human', svc: id, key: `h-${id}-${h.id}`, h, title: h.text, at: h.createdAt });
   const fresh = d.feedback.filter((f) => f.status !== 'triaged');
@@ -339,7 +354,22 @@ function inboxOf(id) {
   if (fresh.length) out.push({ kind: 'voice', svc: id, key: `v-${id}`, title: `정리 전 사용자 의견 ${n}건`, text: '고객지원 부서가 다음 실행 때 분류해요. 급하면 내용을 먼저 보세요.', at: fresh[0].date });
   return out;
 }
-const ORDER = { report: 0, runfail: 1, stale: 1, approval: 2, human: 3, voice: 4 };
+const ORDER = { report: 0, runfail: 1, stale: 1, metric: 1, approval: 2, human: 3, voice: 4 };
+// 지표 경보: 어제(마지막 완성된 날)를 그 전 7일 평균과 비교 — 오늘은 아직 덜 찼으므로 보지 않는다
+const ERRKEY = /error|fail|오류|실패/i;
+function metricAlerts(d) {
+  const st = d.daily, days = st?.days ?? [];
+  if (days.length < 9) return [];
+  const y = days.at(-2), base = days.slice(-9, -2), out = [];
+  const avg = (k) => base.reduce((n, r) => n + (Number(r[k]) || 0), 0) / base.length;
+  const mk = mainKey(st), a = avg(mk), v = Number(y[mk]) || 0;
+  if (a >= 5 && v <= a * 0.5) out.push({ key: mk, title: `${keyName(st, mk)}가 평소의 절반 아래로 줄었어요`, text: `${md(y.date)} ${fmt(v)} — 지난 7일 평균 ${fmt(Math.round(a))}. 사이트가 열리는지, 유입 채널이 끊겼는지 확인해 보세요.` });
+  for (const k of Object.keys(st.series ?? {}).filter((x) => ERRKEY.test(x) || ERRKEY.test(st.series[x]))) {
+    const e = avg(k), ev = Number(y[k]) || 0;
+    if (ev >= 3 && ev >= Math.max(1, e) * 2) out.push({ key: k, title: `${keyName(st, k)}가 평소보다 크게 늘었어요`, text: `${md(y.date)} ${fmt(ev)}건 — 지난 7일 평균 ${fmt(Math.round(e * 10) / 10)}건. 운영 부서 보고와 오류 기록을 확인해 보세요.` });
+  }
+  return out;
+}
 const STALE_MS = 48 * 3600e3;
 const inboxAll = () => S.services.flatMap((v) => inboxOf(v.id)).sort((x, y) => ORDER[x.kind] - ORDER[y.kind] || String(y.at ?? '').localeCompare(String(x.at ?? '')));
 
@@ -356,12 +386,14 @@ const countOf = (id) => inboxOf(id).filter((x) => x.kind !== 'voice').length;
 
 function inboxItem(it, showSvc) {
   const tag = showSvc ? `<button class="svc-tag link" data-go="${esc(it.svc)}" aria-label="${esc(nameOf(it.svc))} 상세 보기">${esc(nameOf(it.svc))}</button>` : '';
-  const label = { report: pill('critical', '문제'), approval: pill('warning', '결재'), human: pill('', '대표 할 일'), stale: pill('warning', '멈춤?'), runfail: pill('critical', '실행 실패'), voice: pill('', '새 의견') }[it.kind];
+  const label = { report: pill('critical', '문제'), approval: pill('warning', '결재'), human: pill('', '대표 할 일'), stale: pill('warning', '멈춤?'), runfail: pill('critical', '실행 실패'), metric: pill('warning', '지표 이상'), voice: pill('', '새 의견') }[it.kind];
   let body = '';
   if (it.kind === 'approval') {
     const a = it.a;
     body = `<p class="small muted">${esc(DEPT[a.dept]?.name ?? a.dept)}${a.kind && !(a.cost && a.kind === '비용') ? ` · ${esc(a.kind)}` : ''}${a.cost ? ` · 비용 ${esc(a.cost)}` : ''} · ${ago(a.createdAt)}</p>
       ${a.detail ? `<p>${esc(a.detail)}</p>` : ''}
+      ${Array.isArray(a.changes) && a.changes.length ? `<ul class="small changes">${a.changes.slice(0, 6).map((c) => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
+      ${a.link && /^https:\/\//.test(a.link) ? `<p class="small"><a href="${esc(a.link)}" target="_blank" rel="noopener">바뀐 내용 보기 ↗</a>${a.files ? ` <span class="muted">· 파일 ${esc(a.files)}개</span>` : ''}</p>` : ''}
       ${a.ifApprove ? `<p class="small"><b>승인하면</b> ${esc(a.ifApprove)}</p>` : ''}
       ${a.ifReject ? `<p class="small"><b>반려하면</b> ${esc(a.ifReject)}</p>` : ''}
       ${canWrite ? `<div class="row"><button class="primary" data-act="approve" data-svc="${esc(it.svc)}" data-id="${esc(a.id)}" aria-label="승인: ${esc(a.title)}">승인</button>
@@ -378,6 +410,8 @@ function inboxItem(it, showSvc) {
   } else if (it.kind === 'runfail') {
     body = `<p class="small muted">${esc(it.text)} · ${ago(it.at)}</p><div class="row">${it.link ? `<a class="btn" href="${esc(it.link)}" target="_blank" rel="noopener">실행 기록 ↗</a>` : ''}
       ${canWrite ? `<button data-act="run" data-svc="${esc(it.svc)}" data-dept="${esc(it.dept)}">다시 실행</button>` : ''}<button data-go="${esc(it.svc)}" data-anchor="more">부서 보기</button></div>`;
+  } else if (it.kind === 'metric') {
+    body = `<p class="small muted">${esc(it.text)}</p><div class="row"><button data-go="${esc(it.svc)}">운영 지표 보기</button></div>`;
   } else if (it.kind === 'voice') {
     body = `<p class="small muted">${esc(it.text)}</p><div class="row"><button data-go="${esc(it.svc)}" data-anchor="voice">의견 보기</button></div>`;
   } else {
@@ -619,19 +653,35 @@ function deptPanel(v) {
   else if (!S.routines) head = '<p class="note">부서 일정을 불러오는 중…</p>';
   const on = DEPTS.filter((x) => routineOf(v.id, x.id)?.enabled);
   const week = on.reduce((n, x) => n + (perWeek(routineOf(v.id, x.id).cron_expression) ?? 0), 0);
+  const weekMin = on.reduce((n, x) => { const r = routineOf(v.id, x.id); return n + (perWeek(r.cron_expression) ?? 0) * (runMin(r) ?? 0); }, 0);
   const rows = DEPTS.filter((x) => map[x.id]).map((x) => {
     const r = routineOf(v.id, x.id);
-    if (S.routines && !r) return `<li class="item"><div class="row"><b>${esc(x.name)}</b>${pill('critical', '예약 없음')}</div><p class="small muted" style="margin:4px 0 0">예약을 찾을 수 없어요 — 지워졌다면 Claude 에게 "${esc(x.name)} 부서 다시 세워 줘"라고 말해 주세요.</p></li>`;
+    if (S.routines && !r) return `<li class="item"><div class="row"><b>${esc(x.name)}</b>${pill('critical', '예약 없음')}</div><p class="small muted" style="margin:4px 0 0">예약을 찾을 수 없어요 (지워졌을 수 있어요).</p>
+      ${canWrite && deptPrompt(v, x.id) ? `<div class="row"><button data-act="create" data-svc="${esc(v.id)}" data-dept="${x.id}">다시 세우기</button></div>` : ''}</li>`;
     if (!r) return `<li class="item"><div class="row"><b>${esc(x.name)}</b></div></li>`;
-    const rs = runState(r), link = sessionUrl(r.last_run?.session_id), n = perWeek(r.cron_expression);
-    return `<li class="item"><div class="row"><b>${esc(x.name)}</b>${pill(r.enabled ? 'good' : '', r.enabled ? '켜짐' : '꺼짐')}<span class="small muted">${esc(schedule(r.cron_expression))}${n ? ` · 주 ${n}회` : ''}</span></div>
+    const rs = runState(r), link = sessionUrl(r.last_run?.session_id), n = perWeek(r.cron_expression), mins = runMin(r);
+    const prompt = r.derived_state?.prompt ?? '', base = deptPrompt(v, x.id);
+    const old = prompt && !/playbook\/cloud-run/.test(prompt) ? '본부 규칙을 읽지 않는 옛 지시문' : prompt && v.repo && !/git clone/.test(prompt) ? '저장소를 받지 않는 지시문' : '';
+    return `<li class="item"><div class="row"><b>${esc(x.name)}</b>${pill(r.enabled ? 'good' : '', r.enabled ? '켜짐' : '꺼짐')}<span class="small muted">${esc(schedule(r.cron_expression))}${n ? ` · 주 ${n}회` : ''}${mins ? ` · 1회 약 ${mins}분` : ''}</span>${old ? pill('warning', '지시문 확인') : ''}</div>
       <p class="small muted" style="margin:4px 0 0">마지막 실행 ${r.last_run ? `${ago(r.last_run.fired_at)} ${rs === 'fail' ? pill('critical', '실패') : RUN[rs]}` : RUN.none}${link ? ` · <a href="${esc(link)}" target="_blank" rel="noopener">실행 기록 ↗</a>` : ''}${r.enabled && r.next_run_at ? ` · 다음 ${esc(when(r.next_run_at))}` : ''}</p>
       ${canWrite ? `<div class="row"><button data-act="toggle" data-svc="${esc(v.id)}" data-dept="${x.id}" data-on="${r.enabled ? '1' : '0'}">${r.enabled ? '끄기' : '켜기'}</button><button data-act="run" data-svc="${esc(v.id)}" data-dept="${x.id}">지금 일하기</button>
         <details data-k="cron-${esc(v.id)}-${x.id}"><summary class="small">일정 바꾸기</summary><form class="row" data-act="cron" data-k="cronf-${esc(v.id)}-${x.id}" data-svc="${esc(v.id)}" data-dept="${x.id}">
-          <label class="small">${esc(x.name)} 일정<select name="cron">${PRESETS.map(([c, t]) => `<option value="${esc(c)}">${esc(t)} (주 ${perWeek(c)}회)</option>`).join('')}</select></label><button>바꾸기</button></form></details></div>` : ''}</li>`;
+          <label class="small">${esc(x.name)} 일정<select name="cron">${PRESETS.map(([c, t]) => `<option value="${esc(c)}">${esc(t)} (주 ${perWeek(c)}회)</option>`).join('')}</select></label><button>바꾸기</button></form></details>
+        ${prompt ? `<details data-k="pr-${esc(v.id)}-${x.id}"><summary class="small">지시문${old ? ` — ${esc(old)}` : ''}</summary><pre class="post small">${esc(prompt)}</pre>
+          ${base && base !== prompt ? `<p class="small muted">기본 지시문으로 바꾸면 이 부서만을 위해 따로 적은 내용은 사라져요.</p><button data-act="reprompt" data-svc="${esc(v.id)}" data-dept="${x.id}">기본 지시문으로 바꾸기</button>` : ''}</details>` : ''}</div>` : ''}</li>`;
   }).join('');
   return `<div class="sec-head"><h3>부서 켜기·끄기</h3><button data-act="reload-routines">새로 고침</button></div>
-    <p class="note">켜진 부서 ${on.length}개 · 일주일에 약 ${week}번 실행 — 실행마다 Claude 사용량이 들어요. 사용량이 빠듯하면 자주 도는 부서의 일정을 줄이세요.</p>${head}<ul class="plain">${rows}</ul>`;
+    <p class="note">켜진 부서 ${on.length}개 · 일주일에 약 ${week}번 실행${weekMin ? ` (약 ${weekMin >= 120 ? `${Math.round(weekMin / 60)}시간` : `${weekMin}분`})` : ''} — 실행마다 Claude 사용량이 들어요. 사용량이 빠듯하면 자주 도는 부서의 일정을 줄이세요.</p>${head}<ul class="plain">${rows}</ul>${newDept(v)}`;
+}
+// 아직 예약이 없는 부서를 본부에서 바로 세운다 (기본 지시문 + 고른 일정, 꺼진 채로 시작하지 않고 켜진 채로)
+function newDept(v) {
+  const free = DEPTS.filter((x) => !v.routines?.[x.id]);
+  if (!canWrite || !mcp || !free.length) return '';
+  if (!deptPrompt(v, free[0].id)) return '<p class="note">새 부서를 세우려면 본부 규칙에 부서 지시문(playbook/dept-prompt)이 있어야 해요 — Claude 에게 "본부 규칙 갱신해 줘".</p>';
+  return `<details data-k="nd-${esc(v.id)}"><summary class="small">부서 더 세우기</summary><form class="grid" data-act="create" data-k="ndf-${esc(v.id)}" data-svc="${esc(v.id)}">
+    <label>부서<select name="dept">${free.map((x) => `<option value="${x.id}">${esc(x.name)} — ${esc(x.role)}</option>`).join('')}</select></label>
+    <label>일정<select name="cron">${PRESETS.map(([c, t]) => `<option value="${esc(c)}">${esc(t)} (주 ${perWeek(c)}회)</option>`).join('')}</select></label>
+    <button>세우기</button></form></details>`;
 }
 
 // ---- 설정 점검: 부서가 조용히 못 일하는 이유를 한곳에서 (개발자용 정보는 접어 둔다)
@@ -653,6 +703,15 @@ function checkup(v, d) {
     else if (!r.last_run && !rep) add(true, `${x.name}: 첫 실행 전 (${schedule(r.cron_expression)})`);
     else if (!rep?.at || Date.now() - new Date(rep.at).getTime() > limit) add(false, `${x.name}: 보고가 ${rep?.at ? ago(rep.at) + '에 멈춤' : '없음'}`, '실행은 됐는데 보고를 못 썼다면 실행 기록에서 본부 쓰기가 막혔는지 보세요.');
     if (rep && BLOCKED.test(`${rep.summary ?? ''} ${rep.detail ?? ''}`)) add(false, `${x.name}: 실행 환경에서 접속이 막혔다고 보고했어요`, 'claude.ai → 클라우드 환경 설정에서 네트워크 허용 도메인을 추가하거나, 루틴에 저장소를 연결해 주세요.');
+  }
+  const pb = S.playbook;
+  if (pb && Object.keys(pb).length) {
+    const vers = Object.values(pb).map((x) => x.atelier).filter(Boolean);
+    const low = vers.reduce((m, x) => (!m || verLess(x, m) ? x : m), '');
+    const need = DEPTS.filter((x) => routineOf(v.id, x.id)?.enabled && !pb[`dept-${x.id}`]).map((x) => x.name);
+    if (need.length) add(false, `본부 규칙에 부서 역할이 없어요: ${need.join(', ')}`, 'Claude 에게 "본부 규칙 갱신해 줘"라고 말하면 플러그인 문서로 다시 채워요.');
+    if (low && verLess(low, HQ_VERSION)) add(false, `본부 규칙이 낡았어요 (규칙 ${low} · 본부 화면 ${HQ_VERSION})`, 'Claude 에게 "본부 규칙 갱신해 줘"라고 말하면 부서들이 최신 절차로 일해요.');
+    else add(true, `본부 규칙 ${low || '버전 표시 없음'}`);
   }
   if (!out.some((c) => !c.ok)) add(true, '부서가 일하는 데 막힌 것이 없어요');
   return out;
@@ -787,6 +846,28 @@ async function act(el, ev) {
       el.closest('details')?.removeAttribute('open');
       flash(`${DEPT[el.dataset.dept].name} 부서 일정을 "${PRESETS.find(([c]) => c === cron)[1]}"로 바꿨어요`);
       await loadRoutines();
+    } else if (a === 'create') {
+      ev.preventDefault?.();
+      const v = S.services.find((x) => x.id === svc);
+      const f = el.tagName === 'FORM' ? new FormData(el) : null;
+      const dept = f ? f.get('dept')?.toString() : el.dataset.dept;
+      const cron = f ? f.get('cron')?.toString() : PRESETS[0][0];
+      const prompt = deptPrompt(v, dept);
+      if (!prompt || !PRESETS.some(([c]) => c === cron)) { el.disabled = false; return flash('기본 지시문이 없어 세울 수 없어요'); }
+      const env = v.environment ?? (S.routines ?? []).map((t) => t.session_request?.environment_id).find(Boolean);
+      const r = await mcp.callTool(REMOTE, 'create_trigger', { name: `Atelier · ${v.name ?? v.id} · ${DEPT[dept].name}`, prompt, cron_expression: cron, create_new_session_on_fire: true, initiation: 'human_request', notifications: {}, ...(env ? { environment_id: env } : {}) }, { cache: false });
+      const id = r.payload?.trigger?.id ?? r.payload?.id;
+      if (!id) throw Object.assign(new Error('예약 번호를 받지 못했어요'), { code: 'tool_error' });
+      await db.doc(`companies/${svc}`).update({ routines: { ...(v.routines ?? {}), [dept]: id } });
+      flash(`${DEPT[dept].name} 부서를 세웠어요 — ${schedule(cron)}에 일해요`);
+      await loadRoutines();
+    } else if (a === 'reprompt') {
+      const v = S.services.find((x) => x.id === svc);
+      const prompt = deptPrompt(v, el.dataset.dept);
+      if (!prompt || !confirm(`${DEPT[el.dataset.dept].name} 부서 지시문을 기본값으로 바꿀까요? 따로 적어 둔 내용은 사라져요.`)) { el.disabled = false; return; }
+      await mcp.callTool(REMOTE, 'update_trigger', { trigger_id: v.routines[el.dataset.dept], prompt }, { cache: false });
+      flash(`${DEPT[el.dataset.dept].name} 부서 지시문을 바꿨어요`);
+      await loadRoutines();
     } else if (a === 'run') {
       if (await wake(svc, el.dataset.dept, '대표가 지금 일하라고 했어요. 평소 루틴대로 처리하세요.')) flash(`${DEPT[el.dataset.dept].name} 부서가 지금 일을 시작해요. 몇 분 뒤 보고가 올라와요`);
       await loadRoutines();
@@ -863,6 +944,7 @@ render();
     const ids = new Set(S.services.map((v) => v.id));
     Object.keys(subs).filter((id) => !ids.has(id)).forEach(unwatch);
     S.services.forEach((v) => watch(v.id));
+    if (!S.playbookSub) S.playbookSub = db.collection('playbook').onSnapshot((x) => { S.playbook = Object.fromEntries(docs(x).map((p) => [p.id, p])); render(); }, () => {});
     if (view.svc) loadExtra(view.svc);
     // 실행 실패를 첫 화면 할 일함에서도 알리려면 부서 예약 상태가 필요하다 (한 번만)
     if (mcp && !S.routines && !S.routinesErr) loadRoutines();

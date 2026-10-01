@@ -68,12 +68,12 @@ description: AI 회사 운영. 부서(대표실·기획·디자인·개발·QA·
 본부는 **사람당 하나**다. 서비스가 여럿이면 같은 본부에 `companies/<서비스ID>` 로 추가하고, 본부 첫 화면 "전체"가 모든 서비스의 할 일함(문제 보고 → 부서 실행 실패 → 결재 → 대표 할 일 → 새 의견)과 서비스 카드를 한곳에 모으고, 서비스를 누르면 그 서비스 한 페이지(할 일함·목표·숫자·부서 보고·의견·홍보 글, 드문 일은 "더 보기")가 열린다.
 0. 이미 본부가 있으면(PROJECT.md "AI 회사" 절, 또는 `Artifact list` 에서 "Atelier 본부") 1번을 건너뛰고 그 주소를 쓴다.
 1. **본부 페이지**: `cloud/hq.html` 을 그대로 Artifact 로 게시한다 (제목 "Atelier 본부").
-   capabilities: `{"db":{}, "user":{}, "mcp":{"servers":[{"server":"Claude Code Remote","tools":["list_triggers","update_trigger","fire_trigger"]}]}}`
+   capabilities: `{"db":{}, "user":{}, "mcp":{"servers":[{"server":"Claude Code Remote","tools":["list_triggers","update_trigger","fire_trigger","create_trigger"]}]}}`
 2. **첫 데이터**(ArtifactData batch). 서비스 ID 는 영문 소문자·숫자·`-` (예: `beolgeum`). 서비스 문서 `companies/<ID>`(name, summary 한 줄 설명, audience 대상 사용자, kind 웹/앱/게임, url, stage, done 이미 해 둔 것, cautions 제약, existing 이미 도는 자동 점검 — PROJECT.md·STATUS 문서에서, repo, project), 그 아래 `share/posts`·`human/*`. 본부 공통 절차 `playbook/*`(예약 실행 세션은 GitHub 에 못 갈 수 있어 절차를 본부에 둔다)는 손으로 옮기지 말고 `node scripts/playbook.mjs build <임시폴더>` 가 만든 `writes.json` 을 그대로 batch 의 writes 로 쓴다(이미 있는 문서는 먼저 list 로 받아 if_version 을 붙임). `companies/<ID>/share/posts` 는 `docs/share/posts.json` 이 있으면, `companies/<ID>/human/*` 는 PROJECT.md "사람 할 일" 미완료 항목.
 3. **부서 예약 실행**: 부서마다 `create_trigger` — `create_new_session_on_fire: true`, `cron_expression: "CRON_TZ=Asia/Seoul M H * * 요일"`(정각·30분 피하기), 이름 `Atelier · <서비스이름> · <부서이름>`, 프롬프트는 `cloud/dept-prompt.md` 를 채운 것(`SERVICE` 포함).
    기본으로 **대표실·고객지원·마케팅·데이터재무(매일)만 켜고** 나머지는 `update_trigger enabled:false` — 부서 실행마다 Claude 사용량이 든다고 대표에게 알린다.
 3-1. **운영 지표 (항상)** — 아래 "운영 지표 연결" 절대로 서비스 문서 `stats.url` 을 채우고 **데이터·재무 부서를 매일**(아침, 대표실보다 먼저) 켠다. 본부 "운영 지표"(방문자·기능별 사용·유입 출처 그래프)는 이 숫자로 그려진다. 통계가 아직 없는 서비스도 부서는 켜 두고, 만드는 일을 사람 할 일·개발 일로 남긴다.
-4. 서비스 문서 `companies/<ID>.routines` 에 `{부서: trigger_id}` 를 적는다 (본부 서비스 상세 "더 보기"의 켜기·끄기·지금 일하기·일정 바꾸기·실행 기록 링크·설정 점검이 이걸 쓴다).
+4. 서비스 문서 `companies/<ID>.routines` 에 `{부서: trigger_id}`, `environment` 에 이 세션의 클라우드 환경 ID(`env_…`, 본부에서 부서를 새로 세울 때 씀)를 적는다 (본부 서비스 상세 "더 보기"의 켜기·끄기·지금 일하기·일정 바꾸기·실행 기록 링크·설정 점검이 이걸 쓴다).
 5. 대표실을 `fire_trigger` 로 한 번 돌린다 — 첫 실행에서 `references/planning.md` 절차로 **서비스에 맞는 목표·로드맵을 자동으로 만들고** 부서에 첫 할 일을 나눈다. 본부 서비스 상세 "이번 목표"에 뜨는지 확인한다.
 6. PROJECT.md 에 "AI 회사" 절(본부 주소, 서비스 ID)을 남긴다. 대표에게: 본부 링크 하나(서비스가 여럿이어도 같은 링크), 켜 둔 부서, "claude.ai 설정 → 커넥터에 Claude Code Remote 가 있어야 부서 켜기·끄기가 된다".
 

@@ -18,6 +18,7 @@ export function sources(root = SKILLS) {
     planning: 'company/references/planning.md',
     stages: 'pilot/SKILL.md',
     channels: 'share/references/channel-guide.md',
+    'dept-prompt': 'company/cloud/dept-prompt.md', // 본부에서 부서를 새로 세우거나 지시문을 고칠 때 채우는 틀
   };
   for (const f of readdirSync(join(root, 'company/references/departments')).filter((x) => x.endsWith('.md')).sort()) {
     map[`dept-${f.slice(0, -3)}`] = `company/references/departments/${f}`;

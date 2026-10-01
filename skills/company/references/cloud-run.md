@@ -17,7 +17,7 @@ Claude 클라우드 예약 실행(Routine)이 새 세션을 열고 이 절차로
 | `companies/<SERVICE>` (서비스 문서 자체) | name, summary(한 줄 설명), audience(대상 사용자), kind(웹/앱/게임), url, stage, repo, project, routines{부서: trigger_id}, stats{url} (공개 통계 주소 — 비밀 경로라 본부 밖에 적지 않음), metrics{url, header, env} (지표 주소·인증 헤더 이름·토큰이 든 환경변수 이름 — 토큰 값은 절대 적지 않음) | 설치 시, 단계는 승인 후 대표실 |
 | `plan/roadmap` | stage, focus, goals[], items[], updatedAt, reviewAt, history[] — 형식은 `playbook/planning` | 대표실이 자동 생성·갱신 |
 | `playbook/<이름>` (**본부 공통**, 앞에 companies 안 붙임) | text — 이 절차(`cloud-run`), 부서 역할(`dept-<부서>`), 계획(`planning`), 8단계·게이트(`stages`), 채널 가이드(`channels`) | 설치 시 (스킬 문서 복사) |
-| `approvals/<id>` | dept, title, kind(배포/외부 게시/지출/약관/데이터 삭제), cost, detail, ifApprove, ifReject, status(pending/approved/rejected), reason, createdAt, decidedAt, done, result | 부서가 만들고 대표가 결정 |
+| `approvals/<id>` | dept, title, kind(배포/외부 게시/지출/약관/데이터 삭제), cost, detail, changes[](바뀌는 것), link(바뀐 내용 주소), files, ifApprove, ifReject, status(pending/approved/rejected), reason, createdAt, decidedAt, done, result | 부서가 만들고 대표가 결정 |
 | `tasks/<id>` | dept, title, detail, status(todo/doing/review/done), by(ceo 또는 부서), note, createdAt, updatedAt | 대표·부서 |
 | `human/<id>` | text, why, link, done, createdAt | 부서가 만들고 대표가 체크 |
 | `reports/<DEPT>` | level(good/warning/critical), summary(결론 한 줄), todo(대표 할 일 한 줄, 없으면 비움), detail(근거 3줄 이하, 선택), history(지난 보고 최대 7개), at — 쓰는 법·level 기준은 2절 6 | 각 부서가 실행 끝에 덮어씀 |
@@ -53,7 +53,7 @@ id 규칙: `approvals`·`tasks`·`human` 은 `<DEPT>-<YYYYMMDD>-<짧은이름>` 
 
 ## 3. 코드와 배포
 - 코드는 `REPO` 에서 고친다. 테스트·린트를 돌리고 통과해야 커밋한다.
-- **운영에 나가는 push(배포)는 결재 대상.** 브랜치 `atelier/<DEPT>-<짧은이름>` 에 올리고 `approvals`(kind: 배포)에 무엇이 바뀌는지 쉬운 말로 적는다. 승인되면 최신 main 에 합쳐 push 하고 배포 결과(성공/실패)를 result 에.
+- **운영에 나가는 push(배포)는 결재 대상.** 브랜치 `atelier/<DEPT>-<짧은이름>` 에 올리고 `approvals`(kind: 배포)에 무엇이 바뀌는지 쉬운 말로 적는다. 배포 결재에는 `changes`(바뀌는 것 쉬운 말 목록, 6개 이하), `link`(GitHub 비교 주소 `https://github.com/<REPO>/compare/main...<브랜치>`), `files`(바뀐 파일 수)를 함께 넣는다 — 본부가 "바뀐 내용 보기"로 보여 준다. 승인되면 최신 main 에 합쳐 push 하고 배포 결과(성공/실패)를 result 에.
 - 비밀값을 본부·커밋·로그에 쓰지 않는다.
 
 ## 4. 부서별 추가 규칙

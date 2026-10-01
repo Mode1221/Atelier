@@ -76,6 +76,8 @@ function fakeRuntime({ seed, triggers, canWrite }) {
     async callTool(server, tool, args) {
       window.__calls.push({ server, tool, args });
       if (tool === 'list_triggers') { const i = args.cursor ? 2 : 0; return { payload: { data: triggers.slice(i, i + 2), has_more: !args.cursor, next_cursor: args.cursor ? '' : 'p2' } }; }
+      if (tool === 'create_trigger') { const t = { id: `trig_new${triggers.length}`, enabled: true, cron_expression: args.cron_expression, derived_state: { prompt: args.prompt } }; triggers.push(t); return { payload: { trigger: t } }; }
+      if (tool === 'update_trigger' && args.prompt) { const t = triggers.find((x) => x.id === args.trigger_id); t.derived_state = { prompt: args.prompt }; }
       if (tool === 'update_trigger') { const t = triggers.find((x) => x.id === args.trigger_id); if ('enabled' in args) t.enabled = args.enabled; if (args.cron_expression) t.cron_expression = args.cron_expression; }
       return { payload: {} };
     },
@@ -265,6 +267,57 @@ test('부서 운영: 실행 실패는 할 일함에 실행 기록과 함께, 일
   const rep = main.locator('section[aria-labelledby="h-rep"] li', { hasText: '홍보 글 2개 중 1개' });
   await rep.getByText('자세히').click();
   await expect(rep).toContainText('홍보 글 2개를 새로 썼어요');
+});
+
+test('고급 운영: 지표 경보, 결재 변경 내용, 사용량, 부서 세우기·다시 세우기·지시문 고치기, 규칙 버전', async ({ page }) => {
+  page.on('dialog', (d) => d.accept());
+  const TPL = 'Atelier AI 회사 — {{COMPANY}} {{DEPT_NAME}} 부서 실행.\n\nHQ={{HQ_URL}}\nSERVICE={{SERVICE}}\nREPO={{REPO}}\nDEPT={{DEPT}}\n\n1. `playbook/cloud-run` 을 따른다.\n2. `git clone --depth 1 https://github.com/{{REPO}}.git`';
+  const day = (i) => new Date(Date.now() - (13 - i) * 864e5).toISOString().slice(0, 10);
+  const seed = {
+    ...SEED,
+    'playbook/dept-prompt': { text: TPL, atelier: '0.20.0' },
+    'playbook/cloud-run': { text: '절차', atelier: '0.20.0' },
+    'companies/chaenggim': { ...SEED['companies/chaenggim'], repo: 'me/chaenggim', routines: { ...SEED['companies/chaenggim'].routines, qa: 'trig_gone' } },
+    'companies/chaenggim/metrics/daily': { at: H(1), series: { visitors: '방문자', errors: '오류' }, days: Array.from({ length: 14 }, (_, i) => ({ date: day(i), visitors: i === 12 ? 3 : 20, errors: i === 12 ? 9 : 1 })), sources: {} },
+    'companies/chaenggim/approvals/a3': { title: '초대 미리보기 배포', dept: 'dev', kind: '배포', status: 'pending', createdAt: H(1), changes: ['초대 링크에 미리보기 이미지', '오류 문구 정리'], link: 'https://github.com/me/chaenggim/compare/main...atelier/dev-og', files: 4 },
+  };
+  const triggers = TRIGGERS.map((t) => (t.id === 'trig_c_ceo' ? { ...t, last_run: { status: 'ROUTINE_RUN_STATUS_SUCCEEDED', fired_at: H(26), finished_at: new Date(Date.now() - 26 * 3600e3 + 4 * 60e3).toISOString(), session_id: 'cse_x' }, derived_state: { prompt: 'HQ=https://claude.ai/artifact/HQ1\n옛 지시문: 매일 계획을 세운다' } } : t));
+  await open(page, { seed, triggers });
+  const main = page.getByRole('main');
+  await expect(main.locator('.inbox > li[data-kind="metric"]', { hasText: '방문자가 평소의 절반 아래로 줄었어요' })).toContainText('지난 7일 평균 20');
+  await expect(main.locator('.inbox > li[data-kind="metric"]', { hasText: '오류가 평소보다 크게 늘었어요' })).toBeVisible();
+  const ap = main.locator('.inbox > li[data-kind="approval"]', { hasText: '초대 미리보기 배포' });
+  await expect(ap).toContainText('초대 링크에 미리보기 이미지');
+  await expect(ap.getByRole('link', { name: '바뀐 내용 보기 ↗' })).toHaveAttribute('href', /compare\/main\.\.\.atelier\/dev-og/);
+  await expect(ap).toContainText('파일 4개');
+
+  await page.getByRole('navigation', { name: '서비스 목록' }).getByRole('button', { name: /챙김표/ }).click();
+  await main.getByText(/더 보기/).click();
+  const more = main.locator('#more');
+  const ceo = more.locator('li.item', { hasText: '대표실' }).first();
+  await expect(ceo).toContainText('1회 약 4분');
+  await expect(more).toContainText('(약 28분)'); // 매일 7회 × 4분
+  await expect(ceo).toContainText('지시문 확인');
+  await ceo.locator('summary', { hasText: /^지시문/ }).click();
+  await ceo.getByRole('button', { name: '기본 지시문으로 바꾸기' }).click();
+  await expect.poll(async () => (await calls(page)).find((c) => c.tool === 'update_trigger' && c.args.prompt)?.args.prompt).toContain('SERVICE=chaenggim\nREPO=me/chaenggim\nDEPT=ceo');
+  expect((await calls(page)).find((c) => c.tool === 'update_trigger' && c.args.prompt).args.prompt).toContain('HQ=https://claude.ai/artifact/HQ1');
+
+  // 지워진 예약 다시 세우기 → 서비스 문서의 routines 가 새 번호로
+  const qa = more.locator('li.item', { hasText: 'QA' }).first();
+  await qa.getByRole('button', { name: '다시 세우기' }).click();
+  await expect.poll(async () => (await stored(page, 'companies/chaenggim')).routines.qa).toMatch(/^trig_new/);
+  const created = (await calls(page)).find((c) => c.tool === 'create_trigger').args;
+  expect(created).toMatchObject({ name: 'Atelier · 챙김표 · QA', create_new_session_on_fire: true, initiation: 'human_request', notifications: {} });
+
+  // 부서 더 세우기
+  await more.getByText('부서 더 세우기').click();
+  await more.getByLabel('부서').selectOption({ label: '고객지원 — 사용자 의견 정리·답변' });
+  await more.getByRole('button', { name: '세우기', exact: true }).click();
+  await expect.poll(async () => (await stored(page, 'companies/chaenggim')).routines.support).toMatch(/^trig_new/);
+
+  // 규칙 버전
+  await expect(more.locator('.checkup')).toContainText('본부 규칙이 낡았어요 (규칙 0.20.0');
 });
 
 test('운영 지표: 방문자 추이·기능별 사용·유입 출처·표, 카드에 7일 방문자', async ({ page }) => {

@@ -126,11 +126,12 @@ test('local: 서비스가 여럿이면 ID 를 묻고, 명령줄은 서비스 ID 
 // 클라우드 본부 절차 동기화 (skills/company/scripts/playbook.mjs)
 import { build as pbBuild, diff as pbDiff, sources as pbSources, hash as pbHash, cli as pbCli } from '../skills/company/scripts/playbook.mjs';
 
-test('playbook: 공통 절차 4개 + 부서 10개, 문서마다 원본·지문·버전', () => {
+test('playbook: 공통 절차 4개 + 부서 10개 + 부서 지시문 틀, 문서마다 원본·지문·버전', () => {
   const docs = pbBuild();
   const names = docs.map((d) => d.name);
   for (const n of ['cloud-run', 'planning', 'stages', 'channels', 'dept-ceo', 'dept-ops', 'dept-support']) assert.ok(names.includes(n), n);
-  assert.equal(names.filter((n) => n.startsWith('dept-')).length, 10);
+  assert.equal(names.filter((n) => n.startsWith('dept-') && n !== 'dept-prompt').length, 10);
+  assert.match(docs.find((d) => d.name === 'dept-prompt').doc.text, /\{\{SERVICE\}\}/);
   const run = docs.find((d) => d.name === 'cloud-run').doc;
   assert.match(run.source, /skills\/company\/references\/cloud-run\.md$/);
   assert.equal(run.hash, pbHash(run.text));
@@ -168,4 +169,10 @@ test('local: 부서 보고는 결론 한 줄·할 일 한 줄·근거 3줄 — �
   const p = check(root, 's').join('\n');
   assert.match(p, /reports\/qa: summary 는 결론 한 줄/);
   assert.match(p, /reports\/qa: detail 은 3줄 이하/);
+});
+
+test('본부 화면 버전(HQ_VERSION)은 플러그인 버전과 같다 — 본부 규칙이 낡았는지 비교하는 기준', () => {
+  const html = readFileSync(new URL('../skills/company/cloud/hq.html', import.meta.url), 'utf8');
+  const plugin = JSON.parse(readFileSync(new URL('../.claude-plugin/plugin.json', import.meta.url), 'utf8'));
+  assert.equal(html.match(/const HQ_VERSION = '([\d.]+)'/)?.[1], plugin.version);
 });
