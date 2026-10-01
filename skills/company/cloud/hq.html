@@ -314,7 +314,8 @@ function deptPrompt(v, dept) {
   const val = { COMPANY: v.name ?? v.id, DEPT_NAME: DEPT[dept].name, HQ_URL: hq, SERVICE: v.id, REPO: v.repo ?? '', PROJECT: v.project ?? '(저장소 루트)', DEPT: dept };
   return t.replace(/\{\{(\w+)\}\}/g, (m, k) => val[k] ?? m).trim();
 }
-const verLess = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0); return false; };
+// 규칙 낡음은 0.24 처럼 앞 두 자리로만 본다 (고침 버전 0.24.1 은 규칙이 안 바뀌는 경우가 많다)
+const verLess = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 2; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0); return false; };
 
 // 일정 바꾸기 선택지 (한국 시각, 정각·30분을 피한 분)
 const PRESETS = [
