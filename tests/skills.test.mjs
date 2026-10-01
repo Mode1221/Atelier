@@ -246,3 +246,15 @@ test('skills: 모든 참고 파일은 SKILL.md 에서 연결돼 있다', async (
   }
   assert.deepEqual(orphans, []);
 });
+
+test('share: 리워드 글은 대가·조건이 본문에 있어야 하고, 참여자 후기 표시 문구가 킷에 나온다', async () => {
+  const { disclosureLine } = await import('../skills/share/scripts/channels.mjs');
+  const bad = check({ posts: [{ channel: 'threads', text: '후기 남겨 주세요', reward: '커피 쿠폰' }] });
+  assert.equal(bad.length, 2);
+  assert.deepEqual(check({ posts: [{ channel: 'threads', text: '써 보고 후기를 남기면 5명께 커피 쿠폰을 드려요', reward: '커피 쿠폰' }] }), []);
+  const hidden = check({ posts: [{ channel: 'x', text: '후기 쓰면 기프티콘 증정!' }] });
+  assert.match(hidden[0], /reward/);
+  assert.deepEqual(check({ posts: [{ channel: 'x', text: '둘이 갈 코스를 추천해 드려요' }] }), []);
+  const html = render({ product: 'P', url: 'https://a.dev/', posts: [{ channel: 'x', text: '후기를 남기면 커피 쿠폰', reward: '커피 쿠폰' }] });
+  assert.ok(html.includes(disclosureLine('커피 쿠폰')));
+});

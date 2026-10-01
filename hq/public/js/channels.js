@@ -38,6 +38,11 @@ export function length(text, ch) {
 // 링크가 본문에 같이 들어가는 채널은 링크 길이(대략 23자)까지 센다
 export const postLength = (text, ch) => length(text, ch) + (CHANNELS[ch]?.linkInComment ? 0 : 24);
 
+// 리워드·경품이 걸린 글: 대가를 숨기면 뒷광고(추천·보증 심사지침 위반)가 된다.
+// 글에 reward(무엇을 주는지)를 적으면 본문에 그 대가와 조건이 보여야 하고, 참여자가 후기에 붙일 표시 문구를 만들어 준다.
+const REWARD_WORDS = /(추첨|증정|기프티콘|경품|리워드|쿠폰|사례금|선물|포인트 지급)/;
+const CONDITION_WORDS = /(남기면|작성하면|참여하면|올리면|공유하면|가입하면|추첨|조건|선착순|대상)/;
+export const disclosureLine = (reward) => `[${reward} 제공] 이 후기는 ${reward}을(를) 받고 작성했어요`;
 export function check(spec) {
   const problems = [];
   for (const [i, p] of (spec.posts ?? []).entries()) {
@@ -47,6 +52,12 @@ export function check(spec) {
     else {
       const n = postLength(p.text, p.channel);
       if (n > ch.limit) problems.push(`${i + 1}번 글(${ch.name}): ${n}자 > 한도 ${ch.limit}자`);
+      if (p.reward) {
+        if (!p.text.includes(p.reward)) problems.push(`${i + 1}번 글(${ch.name}): 리워드 "${p.reward}" 가 본문에 안 보여요 — 무엇을 주는지 본문에 적어요`);
+        if (!CONDITION_WORDS.test(p.text)) problems.push(`${i + 1}번 글(${ch.name}): 리워드를 받는 조건(무엇을 하면, 몇 명)이 본문에 없어요`);
+      } else if (REWARD_WORDS.test(p.text) && /(후기|리뷰)/.test(p.text)) {
+        problems.push(`${i + 1}번 글(${ch.name}): 후기·추천에 대가가 걸린 글로 보여요 — "reward" 칸에 주는 것을 적어 대가 표시를 붙여요 (아니면 문구를 바꿔요)`);
+      }
     }
   }
   return problems;

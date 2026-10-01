@@ -9,7 +9,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { CHANNELS, withUtm, length, postLength, check } from './channels.mjs';
+import { CHANNELS, withUtm, length, postLength, check, disclosureLine } from './channels.mjs';
 export { CHANNELS, withUtm, length, postLength, check };
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -25,6 +25,7 @@ export function links(spec) {
     out.push(ch.intent ? `   → 올리기: ${ch.intent(p.text, url)}` : '   → 공유 창이 없어요: 위 글을 복사해 붙여넣기');
     if (ch.linkInComment) out.push(`   → 첫 댓글에 넣을 링크: ${url}`);
     if (p.note ?? ch.note) out.push(`   · ${p.note ?? ch.note}`);
+    if (p.reward) out.push(`   · 참여자에게 알려 줄 후기 표시 문구: ${disclosureLine(p.reward)}`);
     return out.join('\n');
   }).join('\n\n');
 }
@@ -38,7 +39,7 @@ export function render(spec) {
     const open = ch.intent ? `<a class="btn primary" href="${esc(ch.intent(p.text, url))}" target="_blank" rel="noopener">${esc(ch.name)}에 올리기</a>` : '';
     return `<article class="card"><h2>${i + 1}. ${esc(ch.name)}${p.when ? ` <small>${esc(p.when)}</small>` : ''}</h2>
 <pre id="t${i}">${esc(full)}</pre>
-${comment}<p class="meta">${postLength(p.text, p.channel)} / ${ch.limit}자${(p.note ?? ch.note) ? ` · ${esc(p.note ?? ch.note)}` : ''}</p>
+${comment}${p.reward ? `<p class="meta">참여자에게 알려 줄 후기 표시 문구: <code>${esc(disclosureLine(p.reward))}</code></p>` : ''}<p class="meta">${postLength(p.text, p.channel)} / ${ch.limit}자${(p.note ?? ch.note) ? ` · ${esc(p.note ?? ch.note)}` : ''}</p>
 <div class="row"><button type="button" data-copy="t${i}">글 복사</button>${ch.linkInComment ? `<button type="button" data-copy="l${i}">링크 복사</button>` : ''}${open}<label><input type="checkbox" data-done="${i}"> 올렸어요</label></div></article>`;
   });
   return `<!doctype html>
