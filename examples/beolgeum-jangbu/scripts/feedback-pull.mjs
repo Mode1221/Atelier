@@ -5,6 +5,8 @@
 // 주소: company/<서비스>/service.json 의 url (또는 SERVICE_URL). 토큰: .atelier/secrets.json 의 FEEDBACK_TOKEN
 //   (npm run deploy:first 가 만들어 둔다 — .dev.vars.example 에 FEEDBACK_TOKEN=auto) 또는 환경변수 FEEDBACK_TOKEN.
 // 사용 (프로젝트 폴더에서): node scripts/feedback-pull.mjs [서비스ID]
+// 클라우드 본부 연결: node scripts/feedback-pull.mjs --cloud [서비스ID] → 열쇠 확인 + 클립보드 복사 + 붙여 넣을 곳 안내 (값은 화면에 안 나옴)
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -54,6 +56,35 @@ export async function pull({ root = process.cwd(), service, env = process.env, f
   return { added, file };
 }
 
+// 클립보드에 넣기 — 운영체제마다 다른 명령. 없으면 false
+export function copyToClipboard(text, { platform = process.platform, spawn = spawnSync } = {}) {
+  const cmds = platform === 'darwin' ? [['pbcopy']] : platform === 'win32' ? [['clip']] : [['wl-copy'], ['xclip', '-selection', 'clipboard'], ['xsel', '-b', '-i']];
+  for (const [cmd, ...args] of cmds) { const r = spawn(cmd, args, { input: text }); if (r.status === 0) return true; }
+  return false;
+}
+
+// 클라우드 본부(루틴)가 의견을 가져오게 연결 — 사람은 "붙여 넣기" 한 번만
+export async function connectCloud({ root = process.cwd(), service, env = process.env, fetchImpl = fetch, copy = copyToClipboard, log = console.log } = {}) {
+  const id = pickService(root, service);
+  const svc = readJson(join(root, 'company', id, 'service.json')) ?? {};
+  const url = (env.SERVICE_URL || svc.url || '').replace(/\/$/, '');
+  const token = env.FEEDBACK_TOKEN || readJson(join(root, '.atelier', 'secrets.json'))?.FEEDBACK_TOKEN;
+  if (!url) throw new Error(`서비스 주소가 없어요 — company/${id}/service.json 의 url`);
+  if (!token) throw new Error('열쇠(FEEDBACK_TOKEN)가 없어요 — npm run deploy:first 를 한 번 실행하면 만들어져요');
+  const res = await fetchImpl(`${url}/api/feedback`, { headers: { authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error(res.status === 401 ? '서비스가 열쇠를 거절했어요 — npm run deploy:first 를 다시 실행해 맞춘 뒤 다시' : `서비스 확인 실패: HTTP ${res.status}`);
+  const name = `FEEDBACK_TOKEN_${id.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`;
+  const copied = copy(token);
+  const host = new URL(url).host;
+  log(`✅ 열쇠가 서비스와 맞아요.${copied ? ' 열쇠를 클립보드에 복사했어요 (화면엔 안 보여요).' : ''}`);
+  log(`\n대표가 할 일 (1분, claude.ai):\n 1. 본부 루틴이 도는 클라우드 환경 → 편집(Edit) → 환경변수에 새 줄: ${name}=${copied ? '<붙여 넣기>' : '<.atelier/secrets.json 의 FEEDBACK_TOKEN 값>'}\n 2. 같은 화면 네트워크 허용 도메인에 ${host} (막혀 있으면)\n 3. 채팅에는 붙여 넣지 않기`);
+  const feedback = { url: `${url}/api/feedback`, env: name };
+  log(`\n서비스 문서(companies/${id})에 적을 값: ${JSON.stringify({ feedback })}`);
+  return { name, host, copied, feedback };
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
-  pull({ service: process.argv[2] }).catch((e) => { console.error(`✗ ${e.message}`); process.exit(1); });
+  const args = process.argv.slice(2);
+  if (args[0] === '--cloud') connectCloud({ service: args[1] }).catch((e) => { console.error(`✗ ${e.message}`); process.exit(1); });
+  else pull({ service: args[0] }).catch((e) => { console.error(`✗ ${e.message}`); process.exit(1); });
 }

@@ -258,3 +258,24 @@ test('share: 리워드 글은 대가·조건이 본문에 있어야 하고, 참�
   const html = render({ product: 'P', url: 'https://a.dev/', posts: [{ channel: 'x', text: '후기를 남기면 커피 쿠폰', reward: '커피 쿠폰' }] });
   assert.ok(html.includes(disclosureLine('커피 쿠폰')));
 });
+
+test('feedback-pull --cloud: 열쇠를 확인하고 복사, 값은 출력하지 않음', async () => {
+  const { connectCloud, copyToClipboard } = await import('../skills/beta/templates/feedback-pull.mjs');
+  const { mkdirSync } = await import('node:fs');
+  const root = mkdtempSync(join(tmpdir(), 'fbc-'));
+  mkdirSync(join(root, 'company', 'chaeng-gim'), { recursive: true });
+  writeFileSync(join(root, 'company', 'chaeng-gim', 'service.json'), JSON.stringify({ url: 'https://x.workers.dev/' }));
+  mkdirSync(join(root, '.atelier'));
+  const secret = ['tok', 'en', '123'].join('');
+  writeFileSync(join(root, '.atelier', 'secrets.json'), JSON.stringify({ FEEDBACK_TOKEN: secret }));
+  const lines = [];
+  let copied;
+  const ok = async (u, o) => { assert.equal(o.headers.authorization, `Bearer ${secret}`); return { ok: true, status: 200 }; };
+  const r = await connectCloud({ root, env: {}, fetchImpl: ok, copy: (t) => { copied = t; return true; }, log: (l) => lines.push(l) });
+  assert.equal(r.name, 'FEEDBACK_TOKEN_CHAENG_GIM');
+  assert.equal(copied, secret);
+  assert.deepEqual(r.feedback, { url: 'https://x.workers.dev/api/feedback', env: 'FEEDBACK_TOKEN_CHAENG_GIM' });
+  assert.ok(!lines.join('\n').includes(secret), '값은 화면에 안 나옴');
+  await assert.rejects(connectCloud({ root, env: {}, fetchImpl: async () => ({ ok: false, status: 401 }), copy: () => true, log: () => {} }), /거절/);
+  assert.equal(copyToClipboard('x', { platform: 'linux', spawn: () => ({ status: 1 }) }), false);
+});
