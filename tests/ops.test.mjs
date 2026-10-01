@@ -122,7 +122,7 @@ test('repo-traffic: GitHub Traffic 을 날짜별 행으로, 이전 기록과 합
     stargazers: [{ starred_at: '2026-09-30T20:00:00Z' }],
   };
   const r = rowsFrom(gh);
-  assert.deepEqual(r['2026-10-01'], { date: '2026-10-01', views: 4, visitors: 2, clones: 2, cloners: 1, stars: 1 }); // 20시 UTC = 한국 10/1
+  assert.deepEqual(r['2026-10-01'], { date: '2026-10-01', views: 4, visitors: 2, stars: 1 }); // 20시 UTC = 한국 10/1, 클론은 세지 않음
   const prev = { history: [{ date: '2026-07-01', views: 9, visitors: 9 }, { date: '2026-09-20', views: 1, visitors: 1 }] };
   const out = trafficBuild(prev, gh, new Date('2026-10-01T12:00:00Z'));
   assert.equal(out.history[0].date, '2026-09-20'); // 90일 넘은 7/1 은 버림
@@ -130,5 +130,6 @@ test('repo-traffic: GitHub Traffic 을 날짜별 행으로, 이전 기록과 합
   assert.equal(out.days.at(-1).visitors, 2);
   assert.deepEqual(out.sources, { 'threads.net': 3 });
   assert.equal(out.series.visitors, '저장소 방문자');
+  assert.ok(!('clones' in out.series) && !('clones' in out.days.at(-1)));
   assert.equal(merge([], {}, '2026-10-01').length, 0);
 });

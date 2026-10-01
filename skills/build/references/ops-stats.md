@@ -23,7 +23,7 @@
 | **웹 서비스** | 하루 고유 방문자 — IP·브라우저를 그날 날짜와 섞은 해시로 센다(다른 날과 이어지지 않음, 30일 뒤 삭제). 로봇·링크 미리보기·스크립트(curl 등) 제외 | 핵심 행동 테이블의 날짜별 개수 | 첫 화면 `?ref=`·`utm_source` | 서비스의 공개 통계 주소 `/api/stats/p/<비밀 경로>` — 경로는 `STATS_TOKEN` 에서 HMAC 으로 파생(새 비밀값 없음) |
 | **앱** (서버 있음) | **활성 사용자**(DAU) — 앱이 하루 한 번 보내는 "열림" 신호를 기기 id 해시+날짜로 센다. 키 `visitors` 에 넣고 이름은 "활성 사용자" | 핵심 행동 수, 필요하면 `version:<버전>` 별 사용자 | 설치 경로는 스토어 콘솔(사람 확인) — 앱 안에서는 초대 링크 `ref` 만 | 웹과 같은 공개 통계 주소 |
 | **앱** (서버 없음) | 스토어 콘솔·Firebase 의 활성 사용자는 로그인이 필요해 부서가 못 읽는다 → 숫자는 사람이 주 1회 입력하거나, 작은 집계 서버(Workers 무료)를 붙인다 | — | — | (사람 입력) |
-| **저장소** (플러그인·라이브러리·오픈소스) | GitHub Traffic 고유 방문자 — 14일만 보관되므로 매일 모은다 | 조회·클론·새 스타 | 참조 사이트(Traffic referrers) | `atelier-stats` 브랜치 `traffic.json` (공개 저장소면 raw 주소) |
+| **저장소** (플러그인·라이브러리·오픈소스) | GitHub Traffic 고유 방문자 — 14일만 보관되므로 매일 모은다 | 조회·새 스타 (클론은 자동 점검이 섞여 빼요) | 참조 사이트(Traffic referrers) | `atelier-stats` 브랜치 `traffic.json` (공개 저장소면 raw 주소) |
 
 ## 웹·앱 — 구현 (Cloudflare Workers + D1 기준)
 참고 구현: `examples/chaenggim-pyo` 의 `migrations/0005_visits.sql`, `src/repo.js` 의 `recordVisit`·`publicStats`·`purgeVisits`, `src/app.js` 의 `countVisit`·`/api/stats/p/:key`, `src/security.js` 의 `publicStatsKey`·`visitorId`.

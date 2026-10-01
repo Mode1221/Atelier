@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Atelier 0.19.0 의 skills/operate/scripts/repo-traffic.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
+// Atelier 0.21.0 의 skills/operate/scripts/repo-traffic.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
 // 저장소(플러그인·라이브러리·오픈소스) 방문 통계 — GitHub Traffic 을 매일 모아 운영 통계 형식(ops-stats)으로 쌓는다.
 // GitHub 은 최근 14일만 보여 주므로 매일 모아 두지 않으면 사라진다. 그래서 이전 파일과 날짜별로 합쳐 90일을 남긴다.
 //   GITHUB_REPOSITORY=owner/repo STATS_PAT=<토큰> node repo-traffic.mjs <이전·출력 파일(traffic.json)>
@@ -11,16 +11,16 @@ import { resolve } from 'node:path';
 
 const KEEP_DAYS = 90;
 const SHOW_DAYS = 30;
-export const SERIES = { visitors: '저장소 방문자', views: '저장소 조회', cloners: '클론한 사람', clones: '클론', stars: '새 스타' };
+// 클론은 넣지 않는다 — 자동 점검(CI)이 push 마다 저장소를 받아 가는 것까지 세어져 사용자 지표가 아니다
+export const SERIES = { visitors: '저장소 방문자', views: '저장소 조회', stars: '새 스타' };
 
 const kstDate = (iso) => new Date(new Date(iso).getTime() + 9 * 3_600_000).toISOString().slice(0, 10);
 
 // GitHub 응답들 → 날짜별 행. GitHub Traffic 의 timestamp 는 UTC 자정 기준 하루다(한국 날짜로 옮기지 않고 그 날짜를 쓴다).
-export function rowsFrom({ views, clones, stargazers = [] }) {
+export function rowsFrom({ views, stargazers = [] }) {
   const byDate = {};
   const at = (d) => (byDate[d] ??= { date: d });
   for (const v of views?.views ?? []) Object.assign(at(v.timestamp.slice(0, 10)), { views: v.count, visitors: v.uniques });
-  for (const c of clones?.clones ?? []) Object.assign(at(c.timestamp.slice(0, 10)), { clones: c.count, cloners: c.uniques });
   for (const s of stargazers) if (s.starred_at) { const r = at(kstDate(s.starred_at)); r.stars = (r.stars ?? 0) + 1; }
   return byDate;
 }
@@ -52,7 +52,7 @@ export function build(prev, gh, now = new Date()) {
     series: SERIES,
     days: days.slice(-SHOW_DAYS),
     sources,
-    totals: { 스타: gh.repo?.stargazers_count ?? null, 포크: gh.repo?.forks_count ?? null, '최근 14일 방문자': gh.views?.uniques ?? null, '최근 14일 클론': gh.clones?.count ?? null },
+    totals: { 스타: gh.repo?.stargazers_count ?? null, 포크: gh.repo?.forks_count ?? null, '최근 14일 방문자': gh.views?.uniques ?? null, '최근 14일 조회': gh.views?.count ?? null },
     history: days,
   };
 }
@@ -68,12 +68,12 @@ async function main([file = 'traffic.json']) {
     if (!r.ok) throw new Error(`${path} → ${r.status} (토큰 권한: 이 저장소의 Administration: Read-only 가 필요)`);
     return r.json();
   };
-  const [views, clones, referrers, info, stargazers] = await Promise.all([
-    get('/traffic/views'), get('/traffic/clones'), get('/traffic/popular/referrers'), get(''),
+  const [views, referrers, info, stargazers] = await Promise.all([
+    get('/traffic/views'), get('/traffic/popular/referrers'), get(''),
     get('/stargazers?per_page=100', 'application/vnd.github.star+json').catch(() => []),
   ]);
   const prev = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null;
-  const out = build(prev, { views, clones, referrers, repo: info, stargazers });
+  const out = build(prev, { views, referrers, repo: info, stargazers });
   writeFileSync(file, JSON.stringify(out, null, 2) + '\n');
   console.log(`${file}: ${out.days.length}일, 최근 14일 방문자 ${views.uniques}, 조회 ${views.count}`);
   return 0;

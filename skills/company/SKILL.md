@@ -87,7 +87,7 @@ description: AI 회사 운영. 부서(대표실·기획·디자인·개발·QA·
 | 웹 | 하루 방문자 + 기능별 사용 + 유입 출처 | 서비스의 `/api/stats/p/<비밀 경로>` | 통계 주소가 없으면 ops-stats 절차로 만든다(개발 일 → 배포는 결재). 있으면 경로를 `STATS_TOKEN` 에서 계산해 적는다(대화·보고에 출력 금지) | (클라우드) 클라우드 환경 → 네트워크 허용 도메인에 서비스 호스트 추가 |
 | 앱 (서버 있음) | 하루 활성 사용자 + 기능별 사용 | 웹과 같음 | 앱 "열림" 신호와 통계 주소 (개발 일) | 웹과 같음 |
 | 앱 (서버 없음) | 활성 사용자 | 없음 | 주 1회 숫자를 받을 사람 할 일을 만든다(스토어 콘솔·Firebase 화면에서 옮겨 적기), 또는 작은 집계 서버를 개발 일로 제안 | 주 1회 숫자 입력 |
-| **저장소** (플러그인·라이브러리·오픈소스 — **GitHub 필수**) | 저장소 방문자·조회·클론·새 스타 + 참조 사이트 | `https://raw.githubusercontent.com/<owner>/<repo>/atelier-stats/traffic.json` | `../operate/templates/repo-traffic.yml` 을 `.github/workflows/` 에 넣고 install-tools 로 수집기 복사, 커밋 | 아래 "GitHub 안내" |
+| **저장소** (플러그인·라이브러리·오픈소스 — **GitHub 필수**) | 저장소 방문자·조회·새 스타 + 참조 사이트 | `https://raw.githubusercontent.com/<owner>/<repo>/atelier-stats/traffic.json` | `../operate/templates/repo-traffic.yml` 을 `.github/workflows/` 에 넣고 install-tools 로 수집기 복사, 커밋 | 아래 "GitHub 안내" |
 
 **GitHub 안내 (저장소 종류일 때 대표에게 그대로 보여 준다)**
 > 이 서비스는 GitHub 저장소 자체가 서비스라서, 방문자 숫자를 GitHub 에서 가져와요. 세 가지만 해 주세요 (10분).
