@@ -125,7 +125,7 @@ export async function main(args = process.argv.slice(2), { run = wrangler, fetch
   const opt = (k) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : undefined; };
   if (args.includes('--rollback')) {
     log('직전 배포로 되돌립니다 (코드만, DB 그대로)…');
-    const r = await run(['rollback', '--message', 'atelier incident rollback'], { input: 'y\n' });
+    const r = await run(['rollback', '--message', 'atelier incident rollback', '--yes']);
     if (r.code !== 0) { log('되돌리기 실패 — 위 메시지를 AI 에게 보여 주세요 (npm run doctor -- --explain)'); return 1; }
     log('✅ 되돌렸어요. 1분 뒤 npm run incident 로 정상인지 확인하세요.');
     return 0;

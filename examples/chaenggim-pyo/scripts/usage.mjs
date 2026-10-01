@@ -43,7 +43,7 @@ export async function collect({ run, toml }) {
   const add = (key, used) => { const l = LIMITS[key]; const ratio = used / l.max; rows.push({ key, label: l.label, used, max: l.max, ratio, level: ratio >= DANGER ? 'danger' : ratio >= WARN ? 'warn' : 'ok', text: `${human(used, l.bytes)} / ${human(l.max, l.bytes)}` }); };
   if (blocks(toml, 'd1_databases', 'database_name').length) { add('d1RowsRead', read); add('d1RowsWritten', written); add('d1Storage', bytes); }
   const buckets = blocks(toml, 'r2_buckets', 'bucket_name');
-  if (buckets.length) { let r2 = 0; for (const b of buckets) r2 += parseR2Size((await run(['r2', 'bucket', 'info', b])).out); add('r2Storage', r2); }
+  if (buckets.length) { let r2 = 0; for (const b of buckets) r2 += parseR2Size((await run(['r2', 'bucket', 'info', b, '--json'])).out); add('r2Storage', r2); }
   // AI 템플릿을 쓰면 오늘·이번 달 비용 (ai_usage 표, customer='*' 가 하루 합계)
   const db = blocks(toml, 'd1_databases', 'database_name')[0];
   if (db) {
