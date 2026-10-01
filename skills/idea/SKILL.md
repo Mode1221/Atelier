@@ -63,6 +63,9 @@ description: 아이디어 검증 단계. 아이디어 구체화, 대상 사용�
 - 우선순위가 애매하면 RICE 점수 = 도달(Reach) × 영향(Impact) × 확신(Confidence) ÷ 노력(Effort).
 - 1인 개발 기준 **4~8주 안에 출시 가능한 크기**인지 확인한다. 넘으면 더 자른다.
 
+#### 업종 규제 먼저 보기 (1분)
+`node <atelier>/skills/guard/scripts/rules-kr.mjs . --write` → `docs/rules.md`. "물을 것"은 대표 결정 질문에 함께 묶어 묻고 `--yes/--no` 로 다시 돌린다. **종류 "금지"·"설계 때" 항목은 지금 Must 기능을 바꾼다**(예: 거래 대금 직접 보관 → PG 지급대행). 신고는 guard G7 에서.
+
 #### 중단 기준 (Kill criteria)
 미리 정해 둔다. 예: "랜딩 방문자 대비 대기 등록률 5% 미만이면 방향을 바꾼다."
 

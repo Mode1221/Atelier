@@ -19,7 +19,7 @@ export const EVIDENCE = {
   B10: ['test/*', 'tests/*', 'e2e/*', '**/*.test.*', '**/*.spec.*'], B12: ['.github/workflows/*', 'scripts/deploy-first.mjs', 'eas.json'],
   B13: ['docs/build.md'], B14: ['docs/service-map.md'],
   G1: ['docs/guard.md'], G3: ['docs/guard.md'], G4: ['legal/*privacy*', 'legal/*개인정보*'], G5: ['THIRD_PARTY_NOTICES.md', 'NOTICE*'],
-  G8: [{ file: 'docs/service-map.md', has: '2단계' }],
+  G7: ['docs/rules.md'], G8: [{ file: 'docs/service-map.md', has: '2단계' }],
   L1: ['docs/usertest/*/summary.md', 'docs/usertest/*.md'], L3: ['docs/launch.md'], L4: ['docs/share/posts.json', 'docs/launch.md'],
   L5: ['docs/launch.md'], L7: [{ file: 'docs/launch.md', has: '회고' }],
   O2: ['docs/runbook.md', 'docs/operations.md'], O3: ['docs/operations.md', 'scripts/backup.mjs'], O4: ['docs/operations.md', 'docs/support.md'],
