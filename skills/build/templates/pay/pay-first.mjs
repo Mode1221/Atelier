@@ -35,6 +35,15 @@ export function checkKeys(v) {
   return { ok: problems.length === 0, problems, live };
 }
 
+// 시크릿 키를 토스 서버에 실제로 확인 — 없는 주문을 조회해서 "없음"(404)이면 키가 맞고, 401 이면 틀림. 돈은 안 움직인다.
+export async function verifySecret(secret, fetchImpl = fetch) {
+  try {
+    const r = await fetchImpl(`https://api.tosspayments.com/v1/payments/orders/atelier-keycheck-${Date.now()}`, { headers: { authorization: `Basic ${Buffer.from(`${secret}:`).toString('base64')}` }, signal: AbortSignal.timeout(10_000) });
+    if (r.status === 401 || r.status === 403) return { ok: false, why: '토스가 시크릿 키를 거절했어요 — 개발자센터에서 다시 복사(앞뒤 공백·다른 상점 키 확인)' };
+    return { ok: true };
+  } catch { return { ok: null, why: '인터넷 문제로 키를 확인하지 못했어요 — 결제 시험 때 다시 확인돼요' }; }
+}
+
 // 템플릿 복사 (이미 있는 파일은 덮지 않는다 — 고친 plans.js 를 지키기 위해)
 export function install(root) {
   const copied = [];
@@ -83,6 +92,9 @@ async function main(argv) {
     return;
   }
   if (!v.PAY_ADMIN_TOKEN) setVar(varsFile, 'PAY_ADMIN_TOKEN', randomBytes(24).toString('hex'));
+  const online = await verifySecret(v.TOSS_SECRET_KEY);
+  if (online.ok === false) { say(`✗ ${online.why}`); process.exitCode = 1; return; }
+  if (online.ok === null) say(`  (${online.why})`);
   say(`✓ 결제 키 확인 (${k.live ? '실서비스 키 — 진짜 돈이 나가요' : '테스트 키 — 실제 돈은 나가지 않아요'})`);
   try { wrangler(['d1', 'migrations', 'apply', 'DB', '--local']); } catch { say('  (로컬 DB 반영은 npm run dev 가 해요)'); }
   if (argv.includes('--deploy')) {

@@ -172,3 +172,12 @@ test('pay-first: 키 확인(빈 값·뒤바뀜·실서비스), .dev.vars 쓰기,
   assert.ok(existsSync(join(root, 'scripts/pay-first.mjs')));
   assert.equal(readdirSync(join(root, 'migrations')).length, 1);
 });
+
+test('pay-first: 시크릿 키를 토스에 실제로 확인 (404=맞음, 401=틀림, 네트워크=모름)', async () => {
+  const { verifySecret } = await import('../skills/build/templates/pay/pay-first.mjs');
+  let seen;
+  assert.deepEqual(await verifySecret('k', async (u, o) => { seen = o.headers.authorization; return { status: 404 }; }), { ok: true });
+  assert.equal(seen, `Basic ${Buffer.from('k:').toString('base64')}`);
+  assert.equal((await verifySecret('k', async () => ({ status: 401 }))).ok, false);
+  assert.equal((await verifySecret('k', async () => { throw new Error('x'); })).ok, null);
+});
