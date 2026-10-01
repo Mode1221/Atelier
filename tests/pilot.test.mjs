@@ -12,6 +12,16 @@ test('gate-check: 로드맵 줄 읽기 (완료·N/A·사람 대기)', () => {
   assert.deepEqual(items.map((i) => [i.id, i.done, i.na, i.waiting]), [['I1', true, false, false], ['B5', false, true, false], ['I4', false, false, true], ['B12', true, false, false]]);
 });
 
+test('gate-check: 빠른 길로 미룬 항목은 할 일이 아니라 나중 — 템플릿은 필수만 할 일로 남는다', () => {
+  const [a, b] = parseRoadmap('- [ ] B6 알림 — 나중 (빠른 길)\n- [ ] B4 핵심 기능');
+  assert.equal(a.later, true);
+  assert.equal(b.later, false);
+  const rows = check(new URL('../skills/pilot/templates/', import.meta.url).pathname, TEMPLATE).rows;
+  const later = rows.filter((r) => r.status === 'later').map((r) => r.id);
+  for (const id of ['I3', 'I4', 'D5', 'B6', 'B7', 'G2', 'O9']) assert.ok(later.includes(id), id);
+  for (const id of ['I1', 'I7', 'S1', 'S6', 'D4', 'B4', 'B9', 'B12', 'G1', 'G4', 'L1', 'L5', 'O1', 'O3', 'R1']) assert.ok(!later.includes(id), id);
+});
+
 test('gate-check: 파일 패턴', () => {
   assert.ok(globToRegExp('**/tokens.css').test('public/static/tokens.css'));
   assert.ok(globToRegExp('**/tokens.css').test('tokens.css'));

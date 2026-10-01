@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Atelier 0.11.0 의 skills/pilot/scripts/gate-check.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
+// Atelier 0.21.1 의 skills/pilot/scripts/gate-check.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
 // Atelier pilot — 체크박스와 실제 산출물이 맞는지 확인한다 (PROJECT.md 에 [x] 인데 증거 파일이 없으면 알림).
 // "했다"는 말이 아니라 파일로 확인 — 테스트는 통과했는데 화면을 한 번도 안 본 경우 같은 빈틈을 잡는다.
 // 사용 (프로젝트 폴더에서): node <atelier>/skills/pilot/scripts/gate-check.mjs [PROJECT.md] [--json]
@@ -55,14 +55,14 @@ export function globToRegExp(glob) {
   return new RegExp(`^${re}$`);
 }
 
-// PROJECT.md 로드맵 줄: "- [x] B14 서비스 지도 — 메모"
+// PROJECT.md 로드맵 줄: "- [x] B14 서비스 지도 — 메모" / "- [ ] B6 알림 — 나중 (빠른 길)" (빠른 길로 미룬 항목은 할 일로 세지 않는다)
 export function parseRoadmap(text) {
   const items = [];
   for (const line of text.split('\n')) {
     const m = line.match(/^\s*- \[( |x|X)\] ([A-Z]\d+)\b(.*)$/);
     if (!m) continue;
     const rest = m[3];
-    items.push({ id: m[2], done: m[1] !== ' ', na: /N\/A|건너뜀/.test(rest), waiting: /사람 대기/.test(rest), text: rest.trim() });
+    items.push({ id: m[2], done: m[1] !== ' ', na: /N\/A|건너뜀/.test(rest), later: m[1] === ' ' && /나중 \(빠른 길\)/.test(rest), waiting: /사람 대기/.test(rest), text: rest.trim() });
   }
   return items;
 }
@@ -80,7 +80,7 @@ export function check(root, projectText) {
   const items = parseRoadmap(projectText);
   const rows = items.map((it) => {
     const rules = EVIDENCE[it.id];
-    if (!it.done || it.na || !rules) return { ...it, status: it.na ? 'na' : it.done ? 'done' : 'todo' };
+    if (!it.done || it.na || !rules) return { ...it, status: it.na ? 'na' : it.done ? 'done' : it.later ? 'later' : 'todo' };
     return { ...it, status: rules.some(has) ? 'done' : 'no-evidence', expected: rules.map((r) => (typeof r === 'string' ? r : `${r.file} 에 "${r.has}"`)) };
   });
   return { rows, problems: rows.filter((r) => r.status === 'no-evidence') };
@@ -98,7 +98,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (args.includes('--json')) console.log(JSON.stringify({ rows, problems }, null, 2));
   else {
     const n = (s) => rows.filter((r) => r.status === s).length;
-    console.log(`완료 ${n('done')} · 할 일 ${n('todo')} · 해당 없음 ${n('na')} · 증거 없는 완료 ${problems.length}`);
+    console.log(`완료 ${n('done')} · 할 일 ${n('todo')} · 나중 ${n('later')} · 해당 없음 ${n('na')} · 증거 없는 완료 ${problems.length}`);
     for (const p of problems) console.log(`✗ ${p.id} 완료로 표시됐지만 증거가 없어요 — 있어야 할 것: ${p.expected.join(' 또는 ')}`);
     if (!problems.length) console.log('✓ 완료 표시와 산출물이 맞아요');
   }
