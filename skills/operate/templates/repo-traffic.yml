@@ -6,6 +6,9 @@ on:
   schedule:
     - cron: "17 15 * * *"   # 매일 한국 시간 0시 17분
   workflow_dispatch:
+  push:   # 수집기나 이 파일이 바뀌면 바로 한 번 (토큰을 넣은 뒤 확인용)
+    branches: [main]
+    paths: ['.github/workflows/repo-traffic.yml', 'scripts/atelier/repo-traffic.mjs']
 permissions:
   contents: write
 concurrency: { group: repo-traffic, cancel-in-progress: false }
