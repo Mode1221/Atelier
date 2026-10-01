@@ -1,5 +1,7 @@
 // 결제 흐름 (프레임워크와 무관한 순수 함수) — routes.js 가 Hono 에 붙인다.
 // 원칙: 금액은 서버가 정하고, 결제 성공은 서버가 토스에 확인한 뒤에만 인정한다. 같은 요청·알림이 두 번 와도 한 번만 처리한다.
+// 환불하면(부분 환불 포함) 그 구매로 연 권한은 닫힌다 — 부분 환불 뒤에도 쓰게 하려면 store.access 조건을 바꾼다.
+// (시험용) TOSS_API_BASE — 가짜 토스 서버로 전체 흐름을 로컬에서 돌릴 때만. 운영에는 넣지 않는다.
 import { createToss, TossError } from './toss.js';
 import { createPayStore } from './store.js';
 import { PRODUCTS, GRACE_DAYS } from './plans.js';
@@ -10,7 +12,7 @@ const newOrderId = () => `ord_${crypto.randomUUID().replace(/-/g, '').slice(0, 2
 
 export function createPay({ db, env, fetch: f, products = PRODUCTS, graceDays = GRACE_DAYS, now = () => new Date().toISOString(), log = () => {} }) {
   const store = createPayStore(db);
-  const toss = () => createToss({ secretKey: env.TOSS_SECRET_KEY, fetch: f });
+  const toss = () => createToss({ secretKey: env.TOSS_SECRET_KEY, fetch: f, ...(env.TOSS_API_BASE ? { base: env.TOSS_API_BASE } : {}) });
   const product = (key) => {
     const p = products[key];
     if (!p) throw Object.assign(new Error('없는 상품이에요'), { status: 400 });
@@ -135,7 +137,7 @@ export function createPay({ db, env, fetch: f, products = PRODUCTS, graceDays = 
     const id = newOrderId();
     await store.createOrder({ id, product: key, amount: p.amount, customer });
     try {
-      const r = await createToss({ secretKey: env.TOSS_SECRET_KEY, fetch: f }).chargeBilling(billingKey, { customerKey: customer, amount: p.amount, orderId: id, orderName: p.name });
+      const r = await createToss({ secretKey: env.TOSS_SECRET_KEY, fetch: f, ...(env.TOSS_API_BASE ? { base: env.TOSS_API_BASE } : {}) }).chargeBilling(billingKey, { customerKey: customer, amount: p.amount, orderId: id, orderName: p.name });
       if (r.status !== 'DONE') { await store.markFailed(id); return { ok: false, reason: r.status }; }
       await store.markPaid(id, r);
       log({ event: 'pay_billed', orderId: id, product: key, amount: p.amount });
