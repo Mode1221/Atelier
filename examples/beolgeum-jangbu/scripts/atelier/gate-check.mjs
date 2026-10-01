@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Atelier 0.26.0 의 skills/pilot/scripts/gate-check.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
+// Atelier 0.26.2 의 skills/pilot/scripts/gate-check.mjs 복사본 — 직접 고치지 말고 install-tools.mjs 를 다시 실행해 업데이트
 // Atelier pilot — 체크박스와 실제 산출물이 맞는지 확인한다 (PROJECT.md 에 [x] 인데 증거 파일이 없으면 알림).
 // "했다"는 말이 아니라 파일로 확인 — 테스트는 통과했는데 화면을 한 번도 안 본 경우 같은 빈틈을 잡는다.
 // 사용 (프로젝트 폴더에서): node <atelier>/skills/pilot/scripts/gate-check.mjs [PROJECT.md] [--json]
@@ -20,7 +20,7 @@ export const EVIDENCE = {
   B10: ['test/*', 'tests/*', 'e2e/*', '**/*.test.*', '**/*.spec.*'], B12: ['.github/workflows/*', 'scripts/deploy-first.mjs', 'eas.json'],
   B13: ['docs/build.md'], B14: ['docs/service-map.md'],
   G1: ['docs/guard.md'], G3: ['docs/guard.md'], G4: ['legal/*privacy*', 'legal/*개인정보*'], G5: ['THIRD_PARTY_NOTICES.md', 'NOTICE*'],
-  G8: [{ file: 'docs/service-map.md', has: '2단계' }],
+  G7: ['docs/rules.md'], G8: [{ file: 'docs/service-map.md', has: '2단계' }],
   L1: ['docs/usertest/*/summary.md', 'docs/usertest/*.md'], L3: ['docs/launch.md'], L4: ['docs/share/posts.json', 'docs/launch.md'],
   L5: ['docs/launch.md'], L7: [{ file: 'docs/launch.md', has: '회고' }],
   O2: ['docs/runbook.md', 'docs/operations.md'], O3: ['docs/operations.md', 'scripts/backup.mjs'], O4: ['docs/operations.md', 'docs/support.md'],
