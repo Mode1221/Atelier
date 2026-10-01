@@ -259,10 +259,10 @@ export function createRepo(db) {
       const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
       const [t, c, p, g, e, f] = await Promise.all([
         one('SELECT COUNT(*) AS n FROM trips WHERE deleted_at IS NULL'),
-        one('SELECT COUNT(*) AS n FROM trips WHERE created_at >= ?', since),
-        one('SELECT COUNT(DISTINCT trip_id) AS n FROM people WHERE created_at >= ?', since),
-        one('SELECT COUNT(*) AS n FROM (SELECT trip_id FROM people WHERE created_at >= ? GROUP BY trip_id HAVING COUNT(*) >= 2)', since),
-        one('SELECT COUNT(DISTINCT trip_id) AS n FROM expenses WHERE created_at >= ?', since),
+        one('SELECT COUNT(*) AS n FROM trips WHERE created_at >= ? AND deleted_at IS NULL', since),
+        one('SELECT COUNT(DISTINCT p.trip_id) AS n FROM people p JOIN trips t ON t.id = p.trip_id WHERE p.created_at >= ? AND t.deleted_at IS NULL', since),
+        one('SELECT COUNT(*) AS n FROM (SELECT p.trip_id FROM people p JOIN trips t ON t.id = p.trip_id WHERE p.created_at >= ? AND t.deleted_at IS NULL GROUP BY p.trip_id HAVING COUNT(*) >= 2)', since),
+        one('SELECT COUNT(DISTINCT e.trip_id) AS n FROM expenses e JOIN trips t ON t.id = e.trip_id WHERE e.created_at >= ? AND t.deleted_at IS NULL', since),
         one('SELECT COUNT(*) AS n FROM feedback WHERE created_at >= ?', since),
       ]);
       return { '전체 목록': t.n, '이번 주 새 목록': c.n, '이번 주 참여가 생긴 목록': p.n, '이번 주 2명 이상 함께 쓴 목록': g.n, '이번 주 정산 쓴 목록': e.n, '이번 주 피드백': f.n };
