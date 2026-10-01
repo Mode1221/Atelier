@@ -1,0 +1,32 @@
+schema_version: "1.0"
+name: pilot-auto-fastpath
+description: "자동 모드(알아서 해) — PROJECT.md 가 빠른 길로 만들어지고, 1단계 산출물에 이름·상표 표가 있다"
+tags: [pilot, fast-path]
+runs: 1
+execution:
+  prompt: "/atelier-dev:pilot 알아서 해. 동네 독서모임 출석·책 기록 웹을 만들 거야. 질문하지 말고 합리적으로 가정해서, 1단계 아이디어 검증까지만 끝내고 멈춰. 외부 가입·배포는 하지 마."
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Skill, Read, Write, Edit, Glob, Grep, Bash, WebSearch]
+graders:
+  - type: file_exists
+    name: project-md
+    path: PROJECT.md
+  - type: regex
+    name: fast-path-profile
+    pattern: "진행: *빠른 길"
+    target: {source: file, path: PROJECT.md}
+  - type: regex
+    name: later-marked
+    pattern: "I3 .*나중 \\(빠른 길\\)"
+    target: {source: file, path: PROJECT.md}
+  - type: file_exists
+    name: idea-doc
+    path: docs/idea.md
+  - type: regex
+    name: name-trademark-table
+    pattern: "상표"
+    target: {source: file, path: docs/idea.md}
+  - type: llm
+    name: short-report
+    criteria: 마지막 답변이 대표에게 하는 보고로서 짧고(웹 검색 출처 목록을 빼고 대략 12줄 이하) 결과·대표가 할 일·다음 할 일을 담는다. 2단계(기획) 이후 일을 했다고 하지 않는다.

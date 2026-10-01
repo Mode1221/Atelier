@@ -1,0 +1,20 @@
+schema_version: "1.0"
+name: pilot-next-step
+description: 진행 중 프로젝트에서 "다음에 뭐 해?" — 나중으로 미룬 항목이 아니라 필수 다음 단계(B4)를 짧게 안내한다
+tags: [pilot, fast-path, cheap]
+runs: 2
+context:
+  scaffold_script: setup.sh
+execution:
+  prompt: "/atelier-dev:pilot 다음에 뭐 해?"
+  max_turns: 12
+  timeout_seconds: 300
+  allowed_tools: [Skill, Read, Glob, Grep, Bash]
+graders:
+  - type: regex
+    name: names-b4
+    pattern: "B4|핵심 기능"
+  - type: llm
+    name: not-deferred
+    criteria: |
+      통과 조건: 다음 할 일로 B4(핵심 기능 구현)를 안내하고, 알림(B6)·관리자 도구(B7)·성능(B11)·자체 도메인(B15) 같은 "나중" 항목을 지금 할 일로 권하지 않는다. 답변이 짧다(대략 12줄 이하).

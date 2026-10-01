@@ -1,0 +1,9 @@
+{
+  "dept": "marketing",
+  "title": "스레드에 출시 글 올리기",
+  "kind": "외부 게시",
+  "status": "pending",
+  "ifApprove": "오늘 오후 글이 올라가요",
+  "ifReject": "글을 고쳐 다시 올려요",
+  "createdAt": "2026-10-01T00:00:00Z"
+}

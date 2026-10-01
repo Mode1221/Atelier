@@ -1,0 +1,20 @@
+{
+  "name": "책모임",
+  "summary": "",
+  "audience": "",
+  "kind": "웹",
+  "url": "https://bookclub.example.dev",
+  "stage": "",
+  "repo": null,
+  "project": ".",
+  "done": [],
+  "cautions": [],
+  "existing": [],
+  "enabled": [
+    "ceo",
+    "support",
+    "marketing",
+    "data"
+  ],
+  "createdAt": "2026-10-01T00:00:00Z"
+}
