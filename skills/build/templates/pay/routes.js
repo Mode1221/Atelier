@@ -8,7 +8,17 @@ import { PRODUCTS } from './plans.js';
 const page = (title, body) => `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><link rel="stylesheet" href="/pay/pay.css"></head><body><main class="pay"><h1>${title}</h1>${body}<p><a class="btn" href="/">처음으로</a></p></main></body></html>`;
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-export function mountPay(app, { customerOf, products = PRODUCTS, log } = {}) {
+// 로그인이 없는 서비스용 고객 식별자: 기기마다 무작위 쿠키(1년). 쿠키를 지우면 구매 내역을 못 찾으므로
+// 정기결제·비싼 상품이 있으면 로그인(Supabase 템플릿)을 붙이고 customerOf 를 로그인 id 로 바꾼다.
+export function deviceCustomer(c) {
+  const m = /(?:^|;\s*)cid=([a-f0-9]{32})/.exec(c.req.header('cookie') ?? '');
+  if (m) return m[1];
+  const id = crypto.randomUUID().replace(/-/g, '');
+  c.header('set-cookie', `cid=${id}; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax`, { append: true });
+  return id;
+}
+
+export function mountPay(app, { customerOf = deviceCustomer, products = PRODUCTS, log } = {}) {
   const pay = (c) => createPay({ db: c.env.DB, env: c.env, products, log });
   const fail = (c, e) => c.json({ error: e.message }, e.status ?? 500);
 

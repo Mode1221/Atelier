@@ -32,6 +32,10 @@
 - 개발 중에는 반드시 **테스트 광고 ID** 로만(내 광고를 직접 누르면 계정이 정지될 수 있다).
 - 스토어 개인정보 표시(데이터 보안 섹션·개인정보 라벨)에 광고 SDK 수집 항목을 넣는다(guard G3 세 곳 일치).
 
+## 붙이기 (승인 뒤)
+- 웹: `../../build/templates/ads/ads.js` 를 `public/` 에 — `ADS.client`·`slots` 만 채우면 결제·가입 화면은 빼고 자리를 미리 잡아 붙인다. `/ads.txt` 는 `adsTxt(client)` 결과를 그대로.
+- 앱(AdMob): `react-native-google-mobile-ads`, 개발 중엔 테스트 광고 단위 ID 만, 출시 빌드에서만 실제 ID.
+
 ## 붙인 뒤
 - 광고 때문에 핵심 지표(활성화·리텐션)가 떨어지는지 전후 비교(`experiments.md`).
 - 수익은 `metrics.md` 수익 줄에, 월말 지급액은 세금 신고 자료로(`tax-kr.md` 경비·수입 기록).

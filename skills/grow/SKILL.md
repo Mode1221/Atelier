@@ -31,7 +31,7 @@ description: 성장 단계(출시 후 반복). 지표 대시보드, 퍼널·코�
 `references/retention.md`. 활성화(aha moment)까지 시간 단축, 습관 트리거, 이탈 이유 인터뷰.
 
 ### R4. 수익화·가격
-`references/pricing.md`. 가치 지표 기준 과금, 무료/유료 경계, 가격 실험.
+`references/pricing.md`. 가치 지표 기준 과금, 무료/유료 경계, 가격 실험. **수익 모델 고르기 표**와 **첫 매출까지 4주 계획**을 따른다(결제는 `../build/templates/pay/`, 앱은 `iap/`, 광고는 `ads/`).
 - **광고형**(idea I5 수익 경로가 광고)이면 `references/ads-monetization.md`: 광고 전 수익 추정 → 승인 전 체크리스트(자체 도메인·콘텐츠·정책 페이지·ads.txt) → 승인 신청은 사람 할 일. 승인까지 몇 주 걸리므로 출시 전에 준비를 시작한다.
 - 수익이 생기면 세금 할 일(guard G7, `../guard/references/tax-kr.md`)이 PROJECT.md 에 있는지 확인한다.
 

@@ -7,7 +7,9 @@
 3. 파는 것은 `src/pay/plans.js` 에서만 정한다(금액·기간). 약관 조항은 `../../guard/templates/paid-terms-kr.md` 를 같은 값으로 채운다.
 4. 사람 몫: 토스페이먼츠 가입 → 테스트 키 2개를 `.dev.vars` 에 → `npm run pay:first` (테스트 결제는 실제 돈이 나가지 않음). 실제 판매는 사업자등록·통신판매업 신고·전자결제 신청(가맹 심사) 뒤 실서비스 키로 `npm run pay:first -- --deploy`, 웹훅 주소 등록.
 5. 운영 지표: stats 응답의 `series` 에 `revenue: "매출(원)"`·`paid_orders: "결제 건수"` 를 `store.revenueByDay()` 로 넣으면 본부 운영 지표에 매출이 그려진다.
-- 해외 판매·세금 대행이 필요하면 Lemon Squeezy·Paddle, 앱 안 디지털 상품은 스토어 인앱 결제(아래 표).
+- 해외 판매·세금 대행이 필요하면 Lemon Squeezy·Paddle.
+- **앱 안 디지털 상품·구독**은 스토어 결제가 의무 — `../templates/iap/`(RevenueCat, 구매·복원·유료 판단·구독 관리 링크, `README.md` 에 사람 할 일 순서).
+- 로그인이 없는 웹은 `deviceCustomer`(기기 쿠키)가 기본 — 정기결제·비싼 상품이면 로그인(auth 템플릿)을 붙여 `customerOf` 를 로그인 id 로.
 
 결제 정보(카드번호)는 **절대 직접 저장하지 않는다.** PG·스토어가 처리한다.
 
