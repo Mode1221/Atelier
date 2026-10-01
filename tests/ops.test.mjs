@@ -110,3 +110,25 @@ test('backup: 폴더를 안 정했으면 멈추고 안내, 오래된 백업은 �
   assert.equal(prune(dest, 'app', 3).length, 7);
   assert.deepEqual(readdirSync(dest).sort(), ['app-20260917-0000.bundle', 'app-20260918-0000.bundle', 'app-20260919-0000.bundle', 'other-20260901-0000.bundle']);
 });
+
+// 저장소 방문 통계 (skills/operate/scripts/repo-traffic.mjs)
+import { rowsFrom, merge, build as trafficBuild } from '../skills/operate/scripts/repo-traffic.mjs';
+test('repo-traffic: GitHub Traffic 을 날짜별 행으로, 이전 기록과 합쳐 빈 날은 0, 90일만', () => {
+  const gh = {
+    views: { count: 10, uniques: 4, views: [{ timestamp: '2026-09-29T00:00:00Z', count: 6, uniques: 3 }, { timestamp: '2026-10-01T00:00:00Z', count: 4, uniques: 2 }] },
+    clones: { count: 2, uniques: 1, clones: [{ timestamp: '2026-10-01T00:00:00Z', count: 2, uniques: 1 }] },
+    referrers: [{ referrer: 'threads.net', count: 5, uniques: 3 }],
+    repo: { stargazers_count: 2, forks_count: 0 },
+    stargazers: [{ starred_at: '2026-09-30T20:00:00Z' }],
+  };
+  const r = rowsFrom(gh);
+  assert.deepEqual(r['2026-10-01'], { date: '2026-10-01', views: 4, visitors: 2, clones: 2, cloners: 1, stars: 1 }); // 20시 UTC = 한국 10/1
+  const prev = { history: [{ date: '2026-07-01', views: 9, visitors: 9 }, { date: '2026-09-20', views: 1, visitors: 1 }] };
+  const out = trafficBuild(prev, gh, new Date('2026-10-01T12:00:00Z'));
+  assert.equal(out.history[0].date, '2026-09-20'); // 90일 넘은 7/1 은 버림
+  assert.equal(out.history.find((d) => d.date === '2026-09-25').views, 0); // 빈 날 0
+  assert.equal(out.days.at(-1).visitors, 2);
+  assert.deepEqual(out.sources, { 'threads.net': 3 });
+  assert.equal(out.series.visitors, '저장소 방문자');
+  assert.equal(merge([], {}, '2026-10-01').length, 0);
+});

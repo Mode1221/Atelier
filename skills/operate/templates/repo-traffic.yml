@@ -1,0 +1,40 @@
+# 저장소 방문 통계 (GitHub Traffic) 를 매일 모아 atelier-stats 브랜치의 traffic.json 에 쌓는다.
+# GitHub 은 14일만 보여 주므로 매일 모아야 남는다. 필요: 저장소 Secrets 에 STATS_PAT
+# (fine-grained PAT, 이 저장소 하나만, 권한 Administration: Read-only). 없으면 아무것도 안 하고 끝난다.
+name: Repo traffic
+on:
+  schedule:
+    - cron: "17 15 * * *"   # 매일 한국 시간 0시 17분
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: repo-traffic, cancel-in-progress: false }
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: 통계 브랜치 꺼내기 (없으면 새로)
+        run: |
+          git fetch origin atelier-stats || true
+          mkdir -p /tmp/stats && cd /tmp/stats
+          if git -C "$GITHUB_WORKSPACE" show origin/atelier-stats:traffic.json > traffic.json 2>/dev/null; then echo "이전 기록 있음"; else rm -f traffic.json; fi
+      - name: 모으기
+        env:
+          STATS_PAT: ${{ secrets.STATS_PAT }}
+        run: node scripts/atelier/repo-traffic.mjs /tmp/stats/traffic.json
+      - name: 저장
+        run: |
+          [ -f /tmp/stats/traffic.json ] || exit 0
+          git config user.name "atelier-bot"; git config user.email "atelier-bot@users.noreply.github.com"
+          git switch --orphan atelier-stats-tmp
+          git rm -rq --cached . >/dev/null 2>&1 || true
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp /tmp/stats/traffic.json traffic.json
+          printf '# 운영 통계\n\n이 브랜치는 Atelier 가 매일 쓰는 집계 숫자만 있어요 (개인 정보 없음).\n' > README.md
+          git add traffic.json README.md
+          git commit -qm "stats: $(date -u +%F)"
+          git push -f origin HEAD:atelier-stats

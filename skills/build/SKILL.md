@@ -71,6 +71,7 @@ spec 의 신원 모델을 구현한다.
 
 ### B9. 계측
 `references/observability.md` 를 따른다: 에러 모니터링, 구조화 로그, 분석 이벤트(spec S6), 헬스체크.
+**운영 통계**: `references/ops-stats.md` — 종류별(웹: 하루 방문자, 앱: 활성 사용자, 저장소: GitHub 방문자) 숫자를 공통 형식의 공개 통계 주소로 내보내 본부 "운영 지표"에 매일 그린다. 출시 전에 넣는다(launch L5 "방문 측정 확인").
 
 ### B10. 테스트
 `references/testing-strategy.md` 를 따른다. spec 수용 기준 = E2E 시나리오.

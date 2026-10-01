@@ -19,6 +19,7 @@ export const TOOLS = [
   ['guard/scripts/secret-scan.mjs', '비밀값 유출'],
   ['build/scripts/quality-gate.mjs', '품질 게이트 (위 5개)'],
   ['usertest/scripts/walk.mjs', 'AI 대리 사용성 테스트 실행기'],
+  ['operate/scripts/repo-traffic.mjs', '저장소 방문 통계 (GitHub Traffic 모으기)'],
 ];
 
 const version = () => {
