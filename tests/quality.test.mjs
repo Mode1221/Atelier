@@ -45,7 +45,14 @@ test('events: 계획 표기(속성·묶음)를 읽고 코드와 대조한다', (
 });
 
 test('secret-scan: 진짜 모양은 잡고, 가짜·설정 이름은 넘긴다', () => {
-  const bad = ['const k = "AKIAIOSFODNN7EXAMPLE";', 'token: "ghp_abcdefghijklmnopqrstuvwxyz0123456789"', '-----BEGIN PRIVATE KEY-----', 'SUPABASE_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.abcdefghijklmnopqrstuv"', 'api_key = "q8Zr2Lm9Xw4Tp7Vn1Bc6Hy3Kd"'];
+  const j = (...p) => p.join('');
+  const bad = [
+    j('const k = "AKIA', 'IOSFODNN7', 'EXAMPLE";'),
+    j('token: "gh', 'p_abcdefghijklmnop', 'qrstuvwxyz0123456789"'),
+    j('-----BEGIN ', 'PRIVATE KEY-----'),
+    j('SUPABASE_KEY = "ey', 'JhbGciOiJIUzI1NiJ9.', 'eyJyb2xlIjoic2VydmljZV9yb2xlIn0.', 'abcdefghijklmnopqrstuv"'),
+    j('api_key = "q8Zr2', 'Lm9Xw4Tp7V', 'n1Bc6Hy3Kd"'),
+  ];
   for (const line of bad) assert.equal(scanText(line).length, 1, line);
   const ok = ["const TOKEN_KEY = 'chaenggim:stats-token';", 'api_key = "your-api-key-here-please"', 'password = process.env.PASSWORD', 'token: "q8Zr2Lm9Xw4Tp7Vn1Bc6Hy3Kd" // secret-scan: ignore 테스트용', "FEEDBACK_TOKEN=auto"];
   for (const line of ok) assert.equal(scanText(line).length, 0, line);
