@@ -3,7 +3,7 @@
 //   node <atelier>/skills/build/templates/add.mjs <이름> [프로젝트 폴더=.]
 //   이름: pay · ai · upload · realtime · bot · extension · desktop · iap · ads · admin · notify · search · map
 // 넣은 뒤 할 일(코드 연결·비밀값·사람 할 일)은 각 템플릿 README / 파일 맨 위 설명에 있다.
-import { existsSync, mkdirSync, copyFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, copyFileSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -53,6 +53,10 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   try {
     const out = add(name, root);
     console.log(out.length ? `${name} 템플릿을 넣었어요:\n${out.map((x) => `  + ${x}`).join('\n')}` : '이미 들어 있어요(덮지 않음).');
-    console.log(`다음: ${join(HERE, name)} 의 README·파일 맨 위 설명대로 연결`);
+    // 다음 할 일: README 가 있으면 그것, 없으면 주 파일 맨 위 설명(사용법)을 그대로 보여 준다
+    const readme = Object.keys(MAP[name]).includes('README.md');
+    const main = Object.keys(MAP[name]).find((f) => /\.(m?js)$/.test(f));
+    const head = main ? readFileSync(join(HERE, name, main), 'utf8').split('\n').filter((l) => l.startsWith('//')).slice(0, 8).map((l) => l.replace(/^\/\/ ?/, '  ')).join('\n') : '';
+    console.log(readme ? `다음: ${MAP[name]['README.md']} 대로 연결` : `다음 (연결 방법):\n${head}`);
   } catch (e) { console.error(`✗ ${e.message}`); process.exit(1); }
 }
