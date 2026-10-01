@@ -120,6 +120,12 @@ PROJECT.md "기능 사이클" 표에 한 줄씩 기록한다.
 ## 7-1. 서비스 지도
 배포 주소가 처음 생기면(build B12) `docs/service-map.md`(build B14)를 만들고, 배포·계정·알림·자동 실행이 바뀔 때마다 고친다. 대표의 "어디에 뭐가 있어?" 질문은 이 파일로 답한다.
 
+## 7-2. 플러그인 업데이트 뒤 ("도구 업데이트해 줘")
+세션 시작 알림에 "플러그인이 업데이트됐어요"가 뜨거나 대표가 요청하면 한 번에:
+1. `node <atelier>/skills/pilot/scripts/install-tools.mjs` — 검사 도구 복사본 최신화(테스트·`npm run quality` 한 번).
+2. 클라우드 본부가 있으면 `company` SKILL 의 playbook 동기화(`playbook.mjs check` → 낡은 것만 다시 쓰기). 로컬 회사는 할 일 없음(절차를 스킬에서 바로 읽음).
+3. 바뀐 점 중 이 프로젝트에 영향 있는 것만 한 줄로(예: 빠른 길의 필수 항목이 바뀌었으면 PROJECT.md 표시 조정). 커밋 `chore: Atelier <버전> 따라잡기`.
+
 ## 8. 기록
 - 세부 단계가 끝날 때마다 PROJECT.md 체크박스를 바꾸고, "현재 단계"·"결정 기록"은 단계 끝에 한 번 갱신한다.
 - 단계 끝(구현은 기능 단위)에 git 에 기록한다(`git add -A && git commit -m "<단계·세부 단계 ID>: 한 줄"`, 폴더에 git 이 없으면 `git init` 부터). 사용자에게 git 을 가르치지 않는다 — 되돌리기가 필요하면 Claude 가 한다. 출시(6단계) 전에 `npm run backup` 으로 백업 폴더를 정한다(operate O3).

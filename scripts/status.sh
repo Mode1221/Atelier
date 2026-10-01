@@ -32,4 +32,13 @@ if command -v node >/dev/null 2>&1 && [ -f "$gc" ]; then
   out=$(node "$gc" "$f" 2>/dev/null | grep '^✗')
   [ -n "$out" ] && { echo "[atelier] 증거 없는 완료 표시가 있어요 — 먼저 확인:"; echo "$out"; }
 fi
+# 플러그인을 업데이트했는데 프로젝트에 복사해 둔 검사 도구가 옛 버전이면 알린다 (CI 는 복사본으로 돈다)
+inst="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}/skills/pilot/scripts/install-tools.mjs"
+proj="${CLAUDE_PROJECT_DIR:-.}"
+if command -v node >/dev/null 2>&1 && [ -d "$proj/scripts/atelier" ] && [ -f "$inst" ]; then
+  if ! node "$inst" "$proj" --check >/dev/null 2>&1; then
+    have=$(grep -m1 -oE 'Atelier [0-9.]+' "$proj/scripts/atelier/gate-check.mjs" 2>/dev/null | cut -d' ' -f2)
+    echo "[atelier] 플러그인이 업데이트됐어요 — 프로젝트의 검사 도구(scripts/atelier, ${have:-옛 버전})를 맞춰야 해요. \"도구 업데이트해 줘\" 라고 하면 install-tools 로 맞추고, AI 회사(company/·클라우드 본부)가 있으면 본부 규칙도 함께 갱신해요."
+  fi
+fi
 exit 0
