@@ -230,12 +230,13 @@ test('부서 보고: 결론 한 줄·대표 할 일만 보이고 근거는 "자�
 });
 
 test('부서 운영: 실행 실패는 할 일함에 실행 기록과 함께, 일정 바꾸기·주간 실행 수·설정 점검·지난 보고', async ({ page }) => {
-  const triggers = TRIGGERS.map((t) => (t.id === 'trig_c_mkt' ? { ...t, last_run: { status: 'ROUTINE_RUN_STATUS_FAILED', fired_at: H(2), session_id: 'session_01FAIL' }, next_run_at: new Date(Date.now() + 5 * 3600e3).toISOString() } : t));
+  const triggers = TRIGGERS.map((t) => (t.id === 'trig_c_mkt' ? { ...t, last_run: { status: 'ROUTINE_RUN_STATUS_FAILED', fired_at: H(2), session_id: 'cse_01FAIL', failure_reason: 'ROUTINE_RUN_FAILURE_REASON_SESSION_ERROR' }, next_run_at: new Date(Date.now() + 5 * 3600e3).toISOString() } : t));
   const seed = { ...SEED, 'companies/chaenggim/reports/marketing': { level: 'warning', summary: '홍보 글 2개 중 1개 올라감', detail: '이번 실행에서 GitHub 접속이 막혀 확인 못 함', history: [{ at: H(30), level: 'good', summary: '홍보 글 2개를 새로 썼어요' }], at: H(26) } };
   await open(page, { seed, triggers });
   const main = page.getByRole('main');
   const fail = main.locator('.inbox > li[data-kind="runfail"]');
   await expect(fail).toContainText('마케팅 부서 실행이 실패했어요');
+  await expect(fail).toContainText('이유: session error');
   await expect(fail.getByRole('link', { name: '실행 기록 ↗' })).toHaveAttribute('href', 'https://claude.ai/code/session_01FAIL');
   await fail.getByRole('button', { name: '다시 실행' }).click();
   await expect.poll(async () => (await calls(page)).filter((c) => c.tool === 'fire_trigger').pop()?.args.trigger_id).toBe('trig_c_mkt');

@@ -284,7 +284,9 @@ function schedule(cron) {
 // 부서 예약(루틴) 상태 — list_triggers 의 last_run·next_run_at
 const RUN = { ok: '끝냄', fail: '실패', running: '진행 중', none: '아직 안 함' };
 const runState = (r) => { const st = r?.last_run?.status ?? ''; return !r?.last_run ? 'none' : /SUCCEEDED/.test(st) ? 'ok' : /FAIL|ERROR|CANCEL|TIMEOUT/.test(st) ? 'fail' : 'running'; };
-const sessionUrl = (id) => (/^session_[\w-]+$/.test(id ?? '') ? `https://claude.ai/code/${id}` : '');
+// 실행 기록 주소: list_triggers 는 cse_ 로 주지만 claude.ai 주소는 같은 번호의 session_ 이다
+const sessionUrl = (id) => { const m = /^(?:cse|session)_([\w-]+)$/.exec(id ?? ''); return m ? `https://claude.ai/code/session_${m[1]}` : ''; };
+const failWhy = (r) => { const f = String(r?.last_run?.failure_reason ?? '').replace(/^ROUTINE_RUN_FAILURE_REASON_/, ''); return f && f !== 'UNSPECIFIED' ? f.toLowerCase().replace(/_/g, ' ') : ''; };
 const routineOf = (svcId, dept) => { const id = S.services.find((v) => v.id === svcId)?.routines?.[dept]; return id ? (S.routines ?? []).find((t) => t.id === id) ?? null : null; };
 const when = (iso) => { if (!iso) return ''; const t = new Date(iso); return `${t.getMonth() + 1}/${t.getDate()} ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`; };
 // 일주일에 몇 번 도는지 (사용량 감각용, 날짜·월을 정한 일정은 계산하지 않음)
@@ -328,7 +330,7 @@ function inboxOf(id) {
   // 켜진 부서의 마지막 실행이 실패 — 실행 기록(세션)으로 바로 가서 이유를 본다
   for (const dep of DEPTS) {
     const r = routineOf(id, dep.id);
-    if (r?.enabled && runState(r) === 'fail') out.push({ kind: 'runfail', svc: id, dept: dep.id, key: `f-${id}-${dep.id}`, title: `${dep.name} 부서 실행이 실패했어요`, text: '실행 기록에서 멈춘 이유를 보고, 고친 뒤 다시 실행해 보세요.', link: sessionUrl(r.last_run.session_id), at: r.last_run.fired_at });
+    if (r?.enabled && runState(r) === 'fail') out.push({ kind: 'runfail', svc: id, dept: dep.id, key: `f-${id}-${dep.id}`, title: `${dep.name} 부서 실행이 실패했어요`, text: `${failWhy(r) ? `이유: ${failWhy(r)} — ` : ''}실행 기록에서 멈춘 이유를 보고, 고친 뒤 다시 실행해 보세요.`, link: sessionUrl(r.last_run.session_id), at: r.last_run.fired_at });
   }
   for (const a of d.approvals.filter((x) => x.status === 'pending')) out.push({ kind: 'approval', svc: id, key: `a-${id}-${a.id}`, a, title: a.title, at: a.createdAt });
   for (const h of d.human.filter((x) => !x.done)) out.push({ kind: 'human', svc: id, key: `h-${id}-${h.id}`, h, title: h.text, at: h.createdAt });
