@@ -31,7 +31,7 @@
 | 운영자 화면 | `admin` | `/admin` 표 보기·검색·CSV(읽기 전용, 숨길 칸 지정, 열람 기록) | 없음 (ADMIN_TOKEN 자동) |
 | 검색 | `search` | D1 FTS5 한국어 부분 일치·하이라이트(안전한 HTML)·종류별 | 없음 |
 | 지도·장소 | `map` | 카카오 지도·장소 검색(서버 어댑터, 캐시) — 키 없으면 OpenStreetMap 지도 | 카카오 개발자 앱(REST·JS 키, 도메인 등록) |
-| 알림 (메일·앱 푸시) | `notify` | Resend 메일(중복 방지·(광고) 표시·수신 거부)·Expo 푸시 | Resend 가입·보내는 도메인 인증 |
+| 알림 (메일·앱 푸시) | `notify` | Resend 메일(중복 방지·(광고) 표시·수신 거부)·Expo 푸시(앱 등록 코드·토큰 저장·무효 토큰 정리) | Resend 가입·보내는 도메인 인증 |
 
 | 공통 운영 | `../../operate/templates/` `watchdog/` · `backup.mjs` | `npm run watch:setup` · `npm run backup` | 휴대폰 ntfy 앱, 백업 폴더 선택 |
 

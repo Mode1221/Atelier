@@ -20,7 +20,7 @@ export const MAP = {
   iap: { 'purchases.js': 'src/purchases.js', 'README.md': 'docs/iap.md' },
   ads: { 'ads.js': 'public/ads.js' },
   admin: { 'admin.js': 'src/admin/admin.js' },
-  notify: { 'notify.js': 'src/notify/notify.js' },
+  notify: { 'notify.js': 'src/notify/notify.js', 'push-routes.js': 'src/notify/push-routes.js', 'push-tokens.sql': 'migrations/{next}_push_tokens.sql', 'push-client.js': 'lib/push-client.js' },
   search: { 'search.js': 'src/search/search.js', 'search.sql': 'migrations/{next}_search.sql' },
   map: { 'geo.js': 'src/geo/geo.js', 'map.js': 'public/map.js' },
 };

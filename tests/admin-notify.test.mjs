@@ -38,3 +38,22 @@ test('notify: 키 없으면 건너뜀, 같은 알림 한 번만, 광고성은 (�
   const p = await n.push({ tokens: ['ExponentPushToken[aa]', 'ExponentPushToken[dead]', 'junk'], title: 't', body: 'b' });
   assert.deepEqual(p, { ok: 1, invalid: ['ExponentPushToken[dead]'] });
 });
+
+test('push: 토큰 등록(형식 검사·주인 갱신) → 보내기 → 무효 토큰 삭제', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { fakeD1 } = await import('./helpers/d1.mjs');
+  const { mountPushTokens, sendPush } = await import('../skills/build/templates/notify/push-routes.js');
+  const { Hono } = await import('../examples/chaenggim-pyo/node_modules/hono/dist/index.js');
+  const DB = fakeD1(readFileSync(new URL('../skills/build/templates/notify/push-tokens.sql', import.meta.url), 'utf8'));
+  const app = new Hono();
+  mountPushTokens(app, { customerOf: (c) => c.req.header('x-user') });
+  const reg = (token, user) => app.request('/api/push/register', { method: 'POST', headers: { 'content-type': 'application/json', 'x-user': user }, body: JSON.stringify({ token, platform: 'ios' }) }, { DB });
+  assert.equal((await reg('nope', 'u1')).status, 400);
+  assert.equal((await reg('ExponentPushToken[a]', 'u1')).status, 200);
+  await reg('ExponentPushToken[b]', 'u1');
+  await reg('ExponentPushToken[b]', 'u2'); // 기기 주인이 바뀜
+  const fetch = async (u, o) => { const msgs = JSON.parse(o.body); return { json: async () => ({ data: msgs.map((m) => (m.to.endsWith('[a]') ? { status: 'error', details: { error: 'DeviceNotRegistered' } } : { status: 'ok' })) }) }; };
+  assert.deepEqual(await sendPush({ DB }, { customers: ['u1'], title: 't', body: 'b' }, { fetch }), { ok: 0, invalid: 1 });
+  assert.deepEqual(await sendPush({ DB }, { customers: ['u2'], title: 't', body: 'b' }, { fetch }), { ok: 1, invalid: 0 });
+  assert.equal((await DB.prepare('SELECT COUNT(*) n FROM push_tokens').first()).n, 1);
+});

@@ -112,7 +112,7 @@ test('templates/add: 모든 기능 템플릿을 표준 위치에 넣고, 마이�
   writeFileSync(join(root, 'x'), '');
   for (const name of Object.keys(MAP)) assert.ok(add(name, root).length > 0, name);
   for (const p of ['src/pay/pay.js', 'public/pay/checkout.html', 'src/ai/ai.js', 'src/upload/upload.js', 'src/realtime/room.js', 'public/realtime.js', 'src/bot/bot.js', 'extension/manifest.json', 'extension/_locales/ko/messages.json', 'src-tauri/tauri.conf.json', '.github/workflows/desktop.yml', 'src/purchases.js', 'public/ads.js', 'src/admin/admin.js', 'src/notify/notify.js', 'src/search/search.js', 'src/geo/geo.js', 'public/map.js']) assert.ok(ex(join(root, p)), p);
-  assert.deepEqual(rd(join(root, 'migrations')).sort(), ['0001_pay.sql', '0002_ai.sql', '0003_search.sql']);
+  assert.deepEqual(rd(join(root, 'migrations')).sort(), ['0001_pay.sql', '0002_ai.sql', '0003_push_tokens.sql', '0004_search.sql']);
   assert.deepEqual(add('pay', root), [], '다시 넣어도 그대로');
   assert.throws(() => add('nope', root), /쓸 수 있는 것/);
 });

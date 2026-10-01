@@ -59,7 +59,7 @@ spec 의 신원 모델을 구현한다.
 `references/payments.md` 를 따른다. 결제는 직접 만들지 않는다 — 국내 웹은 **`templates/pay/` 를 설치**(`pay-first.mjs install`)하고 plans.js·약관(`../guard/templates/paid-terms-kr.md`)만 채운다. 완료: 테스트 키로 단건 결제·환불, 정기결제 등록·해지가 화면에서 한 번씩 된다.
 
 ### B6. 알림
-**`add.mjs notify` 를 먼저 넣는다**(메일 Resend·앱 푸시 Expo, 중복 방지·(광고) 표시·수신 거부 포함).
+**`add.mjs notify` 를 먼저 넣는다**(메일 Resend·앱 푸시 Expo, 중복 방지·(광고) 표시·수신 거부 포함). 앱이면 `lib/push-client.js` 의 `registerForPush` 를 가치를 보여 준 직후에 부르고, 서버는 `mountPushTokens`·`sendPush`(무효 토큰 자동 삭제).
 - 이메일: 트랜잭션 메일(가입 확인·재설정·영수증)은 전용 서비스, 발신 도메인 인증(SPF·DKIM·DMARC).
 - 푸시: 권한 요청은 가치를 보여 준 뒤. 알림 설정 화면에서 끌 수 있게.
 - 광고성 알림은 수신 동의자만 (guard).
