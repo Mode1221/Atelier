@@ -11,13 +11,15 @@ f="${CLAUDE_PROJECT_DIR:-.}/PROJECT.md"
 [ -f "$f" ] || { echo "[atelier] PROJECT.md 없음 — /atelier-dev:pilot 로 시작하세요."; exit 0; }
 roadmap=$(sed -n '/^## 로드맵/,/^## [^0-9]/p' "$f")
 done_n=$(grep -cE '^- \[x\]' <<< "$roadmap")
-todo_n=$(grep -cE '^- \[ \]' <<< "$roadmap")
+# 빠른 길로 미룬 것(— 나중)·해당 없음은 남은 일로 세지 않는다
+todo_n=$(grep -E '^- \[ \]' <<< "$roadmap" | grep -cvE 'N/A|건너뜀|나중 \(빠른 길\)')
+later_n=$(grep -cE '^- \[ \].*나중 \(빠른 길\)' <<< "$roadmap")
 human_n=$(sed -n '/^## 사람 할 일/,/^## /p' "$f" | grep -cE '^- \[ \]')
-echo "[atelier] 진행: ${done_n}/$((done_n + todo_n)) 세부 단계 완료 · 사람 할 일 ${human_n}개 남음"
+echo "[atelier] 진행: ${done_n}/$((done_n + todo_n)) 세부 단계 완료${later_n:+ (나중으로 미룸 ${later_n}개)} · 사람 할 일 ${human_n}개 남음"
 sed -n '/^## 현재 단계/,/^## /p' "$f" | sed '$d'
 # 다음 할 일: 현재 단계 절 안에서 N/A·건너뜀·사람 대기가 아닌 첫 미완료 (없으면 전체에서)
 stage=$(sed -n '/^## 현재 단계/,/^## /p' "$f" | grep -m1 -oE '단계: *[0-9]' | grep -oE '[0-9]')
-pick() { grep -E '^- \[ \]' | grep -vE 'N/A|건너뜀|사람 대기' | head -1 | sed 's/^- \[ \] //'; }
+pick() { grep -E '^- \[ \]' | grep -vE 'N/A|건너뜀|사람 대기|나중 \(빠른 길\)' | head -1 | sed 's/^- \[ \] //'; }
 next=""
 [ -n "$stage" ] && next=$(sed -n "/^### ${stage} /,/^### /p" <<< "$roadmap" | pick)
 [ -z "$next" ] && next=$(pick <<< "$roadmap")
