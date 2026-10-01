@@ -117,6 +117,9 @@ PROJECT.md "기능 사이클" 표에 한 줄씩 기록한다.
 - 항목마다 어느 세부 단계를 막고 있는지 적는다. 사용자에게는 이 목록을 한 번에 전달한다.
 - 첫 배포는 한 줄만 적는다: 웹·웹 게임은 `Cloudflare 가입(무료) 후 npm run deploy:first`, 로그인이 있으면 Supabase 가입·키 복사를 한 줄 더, 모바일 앱은 `expo.dev 가입 후 npm run app:first` — 나머지 설정은 스크립트가 한다(build `references/stack-templates.md` 첫 표). 토큰·Secrets 설정을 사람 할 일로 적지 않는다. Claude 가 대신 실행할 수 있으면(로그인 창만 사람이 누름) 사람 할 일로 넘기지 않고 실행한다.
 
+## 6-2. 진행 화면 ("어디까지 왔어?", "진행 화면 보여 줘")
+`node <atelier>/skills/pilot/scripts/progress.mjs` → `docs/progress.html`(전체 % · 단계 8칸 · 다음 할 일 · 대표 할 일 · 비용, 휴대폰 화면 맞춤). 게이트를 통과할 때마다 다시 만든다. 대표가 휴대폰으로 보고 싶어 하면 Artifact 로 올려 링크를 준다(비공개, 같은 주소로 갱신).
+
 ## 7-0. 막혔을 때 (명령이 실패하면)
 1. 실패 출력을 `node scripts/doctor.mjs --explain <파일>`(또는 파이프)로 풀어 본다 — 대표에게는 "무슨 일 · 어떻게 · 누가(사람/AI)" 세 줄만. `npm run deploy:first` 는 실패하면 스스로 풀이를 붙인다.
 2. 누가 = AI 면 바로 고치고 다시 실행. 누가 = 사람이면 할 일 한 줄 + 사람 할 일에 적고, 기다리는 동안 막히지 않은 다음 일을 한다.

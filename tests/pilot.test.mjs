@@ -81,3 +81,26 @@ test('install-tools: 복사본은 같은 폴더 import 로 바뀌고, 예시 프
     assert.deepEqual(results.filter((r) => r.status !== '같음').map((r) => r.file), [], `${ex}: node skills/pilot/scripts/install-tools.mjs examples/${ex} 로 갱신`);
   }
 });
+
+test('progress: PROJECT.md → 진행 화면 (나중·해당 없음은 빼고 셈, 지금 단계 표시)', async () => {
+  const { parse, render } = await import('../skills/pilot/scripts/progress.mjs');
+  const md = `# 테스트\n\n## 개요\n- 한 줄 설명: 예시 <b>\n\n## 현재 단계\n- 단계: 2 기획\n- 다음 할 일: S3\n\n## 사람 할 일\n- [ ] 가입하기\n- [x] 끝난 일\n\n## 로드맵\n### 1 아이디어 — idea\n- [x] I1 문제\n- [ ] I3 — 나중 (빠른 길)\n### 2 기획 — spec\n- [x] S1 기능\n- [ ] S2 N/A (계정 없음)\n- [ ] S3 데이터\n- [ ] S4 화면 — 사람 대기 (결정)\n\n## 결정 기록\n`;
+  const m = parse(md);
+  assert.deepEqual([m.done, m.total, m.later], [2, 4, 1]);
+  assert.deepEqual(m.stages.map((s) => s.status), ['done', 'current']);
+  assert.equal(m.stages[1].items.find((i) => i.id === 'S4').state, 'waiting');
+  const html = render(m, { now: new Date('2026-10-01') });
+  assert.match(html, /50%/);
+  assert.match(html, /예시 &lt;b&gt;/);
+  assert.match(html, /가입하기/);
+  assert.doesNotMatch(html, /끝난 일/);
+});
+
+test('progress: 예시 프로젝트도 읽힌다', async () => {
+  const { parse } = await import('../skills/pilot/scripts/progress.mjs');
+  for (const ex of ['chaenggim-pyo', 'beolgeum-jangbu']) {
+    const m = parse(readFileSync(new URL(`../examples/${ex}/PROJECT.md`, import.meta.url), 'utf8'));
+    assert.equal(m.stages.length, 8, ex);
+    assert.ok(m.total > 40 && m.done > 0, ex);
+  }
+});
