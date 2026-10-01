@@ -270,8 +270,11 @@ for (const scheme of ['light', 'dark']) {
       await page.screenshot({ path: `test-results/cloud-hq-detail-${scheme}.png`, fullPage: true });
       await page.getByRole('button', { name: '← 전체 서비스' }).click();
       await page.screenshot({ path: `test-results/cloud-hq-overview-${scheme}.png`, fullPage: true });
-      await page.setViewportSize({ width: 1280, height: 900 });
+      await page.setViewportSize({ width: 1440, height: 900 });
       await page.screenshot({ path: `test-results/cloud-hq-overview-desktop-${scheme}.png`, fullPage: true });
+      await page.getByRole('navigation', { name: '서비스 목록' }).getByRole('button', { name: /챙김표/ }).click();
+      await page.getByText(/더 보기/).click();
+      await page.screenshot({ path: `test-results/cloud-hq-detail-desktop-${scheme}.png`, fullPage: true });
     }
   });
 }
